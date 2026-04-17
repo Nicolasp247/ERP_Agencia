@@ -1,0 +1,402 @@
+Catálogo claro, numerado y sin ambigüedad 
+1. Objetivo del documento 
+Este documento define las reglas de negocio que gobernarán el ERP para mayorista de 
+turismo. Las reglas aquí descritas deben entenderse como obligatorias para el diseño 
+funcional, el modelo de datos, la lógica de backend, las validaciones de frontend y la 
+futura automatización del sistema. 
+Su propósito es asegurar que: 
+• el sistema se comporte siempre de forma coherente,  
+• la operación sea trazable,  
+• se separen correctamente los conceptos comerciales, operativos y financieros,  
+• y el crecimiento futuro del ERP no destruya la lógica del núcleo.  
+La importancia de esta claridad ya aparecía en los documentos anteriores, 
+especialmente al distinguir cotización, reserva, confirmación y liquidación como 
+etapas distintas del flujo.  
+ 
+2. Principios rectores del sistema 
+RN-001. El ERP debe tener una única fuente de verdad por entidad 
+Cada dato maestro debe existir una sola vez en el sistema. No se debe duplicar 
+información estructural si puede ser referenciada. 
+RN-002. Cotización, reserva, confirmación y liquidación son conceptos diferentes 
+El sistema no debe tratar una cotización como una reserva, ni una reserva como una 
+confirmación, ni una confirmación como una liquidación. Son etapas relacionadas, pero 
+distintas. Esto es uno de los riesgos principales identificados en la visión general.  
+RN-003. El sistema debe priorizar trazabilidad sobre flexibilidad descontrolada 
+El usuario podrá editar ciertos valores, pero cada cambio sensible deberá quedar 
+justificado, fechado o al menos preservado en la entidad correcta. Ya se advirtió que 
+demasiada lógica “a mano” vuelve frágil el sistema.  
+RN-004. El sistema debe separar costo, precio de venta, comisión y utilidad 
+Nunca deben mezclarse como si fueran el mismo dato. Esta separación fue marcada 
+como crítica para evitar errores contables y de control.  
+RN-005. Todo cálculo financiero debe poder rehacerse desde datos guardados 
+Ningún total importante debe depender solo de un texto visible o de un valor temporal 
+en pantalla. 
+ 
+3. Reglas de negocio de terceros 
+3.1 Cliente agente 
+RN-010. Un cliente agente representa una agencia intermediaria 
+El cliente agente es la entidad comercial principal cuando la mayorista vende a través de 
+una agencia. Esto forma parte de la lógica base del ERP.  
+RN-011. Un cliente agente puede tener muchos clientes finales asociados 
+La relación entre cliente agente y cliente final es de uno a muchos.  
+RN-012. Un cliente final puede estar asociado a cero o un cliente agente en el MVP 
+En la primera fase, un cliente final no debe pertenecer simultáneamente a múltiples 
+agencias. Si en el futuro se requiere historial multiagencia, se modelará con entidad 
+intermedia. 
+RN-013. Debe existir un identificador interno único para cada cliente agente 
+
+Las “iniciales diferenciales” o código interno no pueden repetirse entre agencias. El 
+documento base da importancia a estas iniciales como mecanismo de identificación 
+interna.  
+RN-014. El cliente agente debe poder existir aunque no tenga todos sus datos 
+completos 
+En la visión inicial se indicó que ningún dato sería obligatorio, aunque esto debe 
+reinterpretarse de forma prudente. En MVP se podrá guardar con datos mínimos, pero 
+al menos deberá tener un nombre o razón social.  
+RN-015. Cada cliente agente podrá tener una condición comercial base 
+Debe existir un campo o estructura para guardar al menos una comisión, margen o 
+acuerdo comercial por defecto, aunque pueda sobreescribirse en cada cotización. En el 
+flujo operativo ya se definió que la comisión puede apoyarse en el valor del 
+cliente_agente y luego editarse por cotización.  
+ 
+3.2 Cliente final 
+RN-020. Un cliente final representa al pasajero o titular del expediente 
+Debe ser posible crear clientes incluso si todavía no existe una cotización. 
+RN-021. Un cliente final puede tener muchas cotizaciones 
+Esto se desprende del diseño funcional del área de clientes.  
+RN-022. Un cliente final puede tener cotizaciones activas, descartadas y reservas 
+El historial del cliente debe reflejar todas esas etapas.  
+RN-023. El historial del cliente debe ordenarse por fecha de viaje y por año 
+Esto fue pedido expresamente en la idea base.  
+RN-024. Un cliente no debe eliminarse físicamente si ya tiene cotizaciones o 
+reservas 
+Debe marcarse como inactivo o archivado. Así se preserva integridad histórica. 
+ 
+3.3 Proveedor 
+RN-030. Un proveedor representa a la empresa que presta o vende uno o más 
+servicios turísticos 
+Debe poder vincularse a múltiples servicios.  
+RN-031. Un servicio solo puede pertenecer a un proveedor 
+La relación es muchos servicios a un proveedor. Tu base actual ya sigue esa lógica.  
+RN-032. Un proveedor puede operar en múltiples ubicaciones geográficas 
+Aunque el modelo actual esté simplificado, la regla funcional debe prever país y 
+opcionalmente ciudad. El documento operativo ya marcó que la geografía del proveedor 
+se debe ampliar.  
+RN-033. No se puede crear un servicio si no existe primero su proveedor 
+Esta regla ya aparece implícitamente en el funcionamiento ideal de punta a punta.  
+RN-034. Un proveedor no debe eliminarse físicamente si ya tiene servicios 
+asociados 
+Debe desactivarse. 
+ 
+4. Reglas de negocio del catálogo de producto 
+4.1 Tipos de servicio 
+RN-040. Todo servicio debe pertenecer a un tipo de servicio 
+No puede existir un servicio sin clasificación. La estructura actual ya funciona así.  
+
+RN-041. Los tipos de servicio base del MVP son: alojamiento, visita, excursión, 
+vuelo, tren, entrada y traslado 
+Estos son los tipos reconocidos en la documentación actual.  
+RN-042. La lógica de presentación, captura y cálculo puede variar según el tipo de 
+servicio 
+No todos los servicios comparten el mismo comportamiento. Ese principio quedó 
+establecido en el circuito operativo.  
+ 
+4.2 Servicios 
+RN-050. Todo servicio debe tener una entidad madre común 
+Debe existir una tabla o estructura general servicio con los campos transversales. 
+RN-051. Los datos específicos del servicio deben guardarse en estructuras hijas por 
+tipo 
+Esto ya está alineado con la arquitectura actual de tablas especializadas.  
+RN-052. Un servicio debe tener al menos nombre, tipo, proveedor y ubicación 
+Puede tener más atributos según el tipo, pero esos son mínimos funcionales. 
+RN-053. El nombre comercial interno del servicio debe ser único dentro del 
+catálogo activo 
+Tu SQL actual ya apunta en esa dirección con nombre_wtravel único. Esa regla conviene 
+conservarla con criterio. 
+RN-054. Un servicio puede estar activo aunque todavía no tenga precio 
+Esto aplica especialmente a vuelos y trenes, según la lógica del negocio.  
+RN-055. Un servicio debe poder desactivarse sin perder histórico 
+Si ya fue usado en cotizaciones o reservas, no se debe borrar. 
+ 
+4.3 Precios y tarifas base 
+RN-060. El precio sugerido del servicio debe poder venir de catálogo 
+El sistema propondrá precio desde la base de datos cuando exista, pero el usuario podrá 
+ajustarlo en la cotización. Esto ya está definido en el flujo operativo.  
+RN-061. El precio de catálogo no es necesariamente el precio final de venta 
+Es un valor de referencia comercial u operativa. 
+RN-062. El sistema debe poder manejar precios por periodo 
+La base actual ya contempla precios mensuales y esa lógica debe mantenerse como base 
+para tarifas más avanzadas.  
+RN-063. Los precios históricos no deben sobrescribirse sin control 
+Cuando cambie una tarifa base, debe quedar claro desde qué periodo aplica. 
+RN-064. Si no existe precio parametrizado, el usuario podrá introducir uno 
+manualmente 
+Esto es esencial para que la operación no se frene. 
+ 
+5. Reglas de negocio de cotización 
+5.1 Naturaleza de la cotización 
+RN-070. Una cotización representa una oportunidad comercial, no una venta 
+cerrada 
+Debe existir como entidad propia y editable mientras siga activa.  
+RN-071. Una cotización puede existir asociada a un cliente con o sin cliente agente 
+
+El flujo general ya contempla que pueda crearse para un cliente asociado o no a una 
+agencia.  
+RN-072. Una cotización debe tener cabecera y detalle 
+La cabecera guarda datos generales del viaje. El detalle guarda los servicios del itinerario.  
+RN-073. Una cotización debe guardar el total de pasajeros desglosado por 
+categorías etarias 
+Eso está alineado con la estructura actual de cotizacion.  
+RN-074. Una cotización debe guardar fecha de viaje principal y destino principal 
+Aunque luego se recorran varias ciudades, debe existir una referencia principal. 
+RN-075. Una cotización debe poder guardar moneda de referencia y nota general 
+Esto también está reflejado en la estructura actual.  
+ 
+5.2 Ítems de cotización 
+RN-080. Una cotización puede tener muchos ítems de servicio 
+Cada ítem representa una línea del itinerario.  
+RN-081. Un servicio puede aparecer en muchas cotizaciones 
+La relación es muchos a muchos, resuelta mediante ítems.  
+RN-082. Cada ítem debe guardar la fecha exacta del servicio 
+La fecha es obligatoria para ordenar el itinerario y calcular precios cuando aplique.  
+RN-083. Cada ítem debe guardar un orden dentro del itinerario 
+No basta con la fecha, porque pueden existir varios servicios el mismo día.  
+RN-084. Un ítem puede marcarse como opcional 
+Esto afecta visualización y tratamiento comercial, y fue señalado como requisito del 
+módulo de cotización.  
+RN-085. Un ítem puede sobrescribir ciertos textos visibles 
+Por ejemplo: título, clase o idioma. Ya aparece en la estructura actual de cotizacion_item. 
+RN-086. Un ítem debe poder guardar una nota interna de línea 
+Esto sirve para aclaraciones operativas. 
+RN-087. El precio del ítem en cotización debe quedar persistido en el ítem 
+No basta con recalcularlo siempre desde catálogo; debe guardarse el valor usado en esa 
+propuesta. 
+ 
+5.3 Presentación del itinerario 
+RN-090. El texto visible de un ítem depende del tipo de servicio 
+Esta es una regla funcional central, no estética. El circuito operativo ya dejó claro que 
+cada tipo tiene formato de presentación propio.  
+RN-091. Los alojamientos deben generar tratamiento especial en el itinerario 
+Para alojamiento deben poder representarse dos líneas cuando así lo requiera la salida 
+documental, tal como se definió en la lógica base.  
+RN-092. La fecha visible del servicio debe formatearse según el tipo 
+Alojamiento usa rango; otros servicios usan fecha puntual. Esto quedó definido en el 
+documento funcional inicial y reafirmado en el flujo.  
+ 
+5.4 Cálculo económico de la cotización 
+RN-100. El sistema debe calcular el costo total de la cotización como suma de los 
+ítems incluidos 
+
+Los opcionales no deben sumarse del mismo modo que los incluidos, porque su 
+comportamiento comercial es distinto. La necesidad de tratarlos distinto ya quedó 
+reflejada en el funcionamiento operativo.  
+RN-101. El precio de venta puede calcularse a partir de comisión o margen, pero 
+debe quedar guardado en la cotización 
+No debe depender únicamente del dato actual del cliente agente. 
+RN-102. La cotización debe guardar el valor comercial usado para esa operación 
+Si la comisión de la agencia cambia mañana, la cotización histórica no debe reescribirse 
+sola. 
+RN-103. El usuario autorizado puede editar manualmente precios de ítems y totales 
+comerciales 
+Pero el sistema debe conservar el valor base sugerido si se requiere trazabilidad futura. 
+RN-104. El sistema debe poder mostrar precio total por persona y total general 
+Eso forma parte del núcleo de cotización y de liquidación posterior.  
+ 
+5.5 Estados de cotización 
+RN-110. Toda cotización debe tener un estado 
+Como mínimo en el MVP: activa, descartada o convertida en reserva. El flujo operativo 
+ya definió estos caminos.  
+RN-111. Una cotización activa puede editarse 
+Mientras no haya sido convertida ni congelada comercialmente. 
+RN-112. Una cotización descartada no debe seguir apareciendo entre las activas 
+Pero debe conservarse para histórico.  
+RN-113. Una cotización convertida en reserva no debe seguir tratándose como 
+editable libremente 
+Puede permitir ajustes controlados, pero el expediente ya cambió de naturaleza. 
+RN-114. El cambio de estado debe quedar registrado con fecha y usuario 
+Aunque el MVP no tenga auditoría avanzada completa, esta transición merece 
+trazabilidad. 
+ 
+6. Reglas de negocio de reserva 
+6.1 Naturaleza de la reserva 
+RN-120. La reserva debe ser una entidad propia, separada de la cotización 
+Esto ya se definió como decisión arquitectónica sana en el documento operativo.  
+RN-121. Una reserva nace a partir de una cotización 
+No se crea desde cero en el MVP, salvo que en una fase futura se permita reserva directa. 
+RN-122. Una cotización puede generar como máximo una reserva principal en el 
+MVP 
+Si luego se requiere versionado o reconfirmación, se extenderá. 
+RN-123. La reserva debe heredar snapshot de la cotización al momento de 
+conversión 
+Cliente, agencia, pasajeros, servicios, precios cotizados y orden del itinerario deben 
+copiarse como fotografía de origen. El flujo operativo ya dejó claro que la reserva 
+“hereda” casi toda la información de la cotización.  
+RN-124. Cambios posteriores en la cotización original no deben alterar 
+automáticamente la reserva 
+La reserva es una entidad operativa separada. 
+
+ 
+6.2 Ítems de reserva 
+RN-130. Cada ítem de reserva debe corresponder a un ítem cotizado 
+Debe mantenerse el vínculo de trazabilidad origen-destino. 
+RN-131. Cada ítem de reserva debe guardar costo cotizado y costo final 
+El documento operativo definió que al pasar a reserva se añaden nuevas columnas y se 
+consolidan costos.  
+RN-132. El costo final puede diferir del costo cotizado 
+Esa diferencia alimentará la liquidación. 
+RN-133. El costo final no reemplaza el costo cotizado histórico 
+Ambos deben coexistir. 
+RN-134. Cada ítem de reserva puede tener número de confirmación 
+Y dicho número forma parte del control operativo real.  
+RN-135. Al registrar por primera vez un número de confirmación debe guardarse 
+fecha y hora 
+Esto fue pedido expresamente como requisito operativo.  
+RN-136. Si se modifica un número de confirmación ya existente, debe preservarse 
+trazabilidad 
+En MVP puede ser mediante updated_at; en una fase posterior, mediante historial 
+completo. 
+ 
+6.3 Estados de reserva 
+RN-140. Toda reserva debe tener estado operativo 
+Como mínimo: pendiente, parcialmente confirmada, confirmada, cancelada. 
+RN-141. Una reserva estará parcialmente confirmada si no todos sus ítems tienen 
+confirmación 
+RN-142. Una reserva estará confirmada si todos los ítems obligatorios tienen 
+confirmación válida 
+RN-143. Los opcionales no deben impedir confirmar la reserva si no fueron 
+vendidos 
+RN-144. Una reserva cancelada no debe eliminarse físicamente 
+Debe quedar para histórico y análisis. 
+ 
+7. Reglas de negocio de confirmación comercial 
+RN-150. La confirmación comercial es el acto de congelar los valores comerciales 
+finales del expediente 
+Esto se desprende directamente del documento operativo, donde se explicó la 
+“congelación comercial”.  
+RN-151. El sistema debe saber si una reserva ya fue confirmada comercialmente 
+Debe existir un indicador o estado específico.  
+RN-152. Al confirmar comercialmente, el sistema debe guardar snapshot de precios 
+de venta confirmados 
+No debe depender de los datos visibles del momento ni de la cotización editable. 
+RN-153. Una vez confirmada comercialmente, la reserva no debe permitir cambios 
+libres en los importes de venta 
+Solo usuarios autorizados podrán reabrir o corregir. 
+
+RN-154. Si una confirmación se regenera, el sistema debe versionar o al menos 
+sobrescribir de forma controlada 
+No debe quedar una nebulosa de cuál fue la venta confirmada real. 
+ 
+8. Reglas de negocio de liquidación 
+RN-160. La liquidación solo puede calcularse sobre una reserva 
+No sobre una cotización activa. 
+RN-161. La liquidación debe comparar venta confirmada vs costo real 
+Eso es lo que produce utilidad real, no utilidad teórica. El documento operativo lo dejó 
+muy claro.  
+RN-162. La liquidación debe calcular al menos: 
+• total de venta por expediente,  
+• total de costo real,  
+• utilidad bruta total,  
+• utilidad por persona,  
+• valor atribuible al cliente agente.  
+RN-163. La liquidación debe conservar el número de pasajeros usado en ese 
+expediente 
+Porque los cálculos por persona dependen de él. 
+RN-164. El valor atribuible al cliente agente puede ser editable, pero el cálculo debe 
+ser automático por defecto 
+Esto está alineado con la lógica funcional definida.  
+RN-165. La liquidación histórica no debe alterarse por cambios futuros en reglas 
+comerciales generales 
+Debe ser una fotografía de cierre del expediente. 
+ 
+9. Reglas de negocio de vistas globales y consulta 
+RN-170. El sistema debe tener vistas globales separadas para cotizaciones activas, 
+descartadas y reservas 
+Esto ya quedó definido en el circuito operativo.  
+RN-171. Las vistas globales no deben mostrar expedientes mezclados sin estado 
+Cada vista debe responder a una naturaleza clara. 
+RN-172. Debe ser posible filtrar por agencia, cliente, fecha de viaje y año 
+Esto se desprende de las necesidades de operación y análisis.  
+RN-173. La vista global debe priorizar velocidad de trabajo 
+No puede obligar al usuario a entrar cliente por cliente para operar. 
+ 
+10. Reglas de negocio de documentos 
+RN-180. Los documentos generados deben salir de datos estructurados, no de texto 
+escrito a mano sin base 
+RN-181. Una cotización debe poder generar documento comercial básico 
+RN-182. Una reserva debe poder generar documento operativo básico 
+RN-183. La carpeta de viaje y formatos avanzados no son parte obligatoria del MVP 
+funcional, aunque sí están contemplados a futuro 
+La visión general ya dejó esa contención clara.  
+RN-184. El contenido documental debe respetar las reglas de presentación por tipo 
+de servicio 
+
+No deben existir dos motores de texto distintos compitiendo entre sí. 
+ 
+11. Reglas de negocio contables y de control 
+RN-190. El ERP del MVP no será contabilidad legal completa 
+Pero sí debe generar bases confiables para análisis financiero. Esto ya quedó definido en 
+alcance y exclusiones del MVP.  
+RN-191. El sistema debe poder explotar la información por año, mes, agencia y 
+servicio 
+Eso forma parte de la utilidad gerencial esperada.  
+RN-192. Los reportes deben construirse a partir de reservas y liquidaciones, no de 
+cotizaciones activas 
+La cotización es intención; el control financiero requiere hechos. 
+RN-193. Debe poder conocerse la rentabilidad por expediente 
+RN-194. Debe poder conocerse la rentabilidad agregada por agencia 
+RN-195. Debe poder conocerse la rentabilidad agregada por servicio vendido 
+Estas necesidades ya estaban descritas como objetivo del área contable y de reportes.  
+ 
+12. Reglas de negocio de seguridad y auditoría mínima 
+RN-200. Toda entidad crítica debe tener trazabilidad mínima de creación y 
+modificación 
+Como mínimo: created_at, updated_at, usuario creador y usuario modificador cuando 
+sea posible. 
+RN-201. Los cambios de estado deben quedar auditados 
+Especialmente en cotización, reserva y confirmación. 
+RN-202. Los importes manualmente modificados deben poder distinguirse de los 
+importes sugeridos automáticamente 
+Esto protege el análisis posterior. 
+RN-203. Ninguna eliminación física debe permitirse sobre entidades con historial 
+operativo 
+Se debe usar baja lógica o inactivación. 
+ 
+13. Reglas de negocio de integridad futura del modelo 
+RN-210. La base actual sirve como semilla, pero no representa todavía el ciclo 
+completo 
+Esto ya se identificó claramente en la visión general y en el funcionamiento completo.  
+RN-211. El modelo futuro debe incorporar entidades propias para reserva, 
+confirmación y liquidación 
+No deben resolverse con atajos sobre cotizacion solamente.  
+RN-212. Las reglas de negocio deben vivir en backend y base de datos, no solo en 
+interfaz 
+El frontend ayuda, pero no puede ser el único guardián. 
+RN-213. Todo diseño futuro debe respetar la separación de fases definida para el 
+ERP 
+La visión general ya marcó que primero va el núcleo operativo y luego las capas 
+avanzadas.  
+ 
+14. Reglas críticas que no se pueden negociar 
+
+Estas son las piedras angulares. Si se rompen, el ERP se descarrila. 
+RN-220. No mezclar cotización con reserva 
+RN-221. No mezclar costo con precio de venta 
+RN-222. No perder histórico por editar datos maestros 
+RN-223. No borrar físicamente datos operativos 
+RN-224. No depender de documentos para calcular negocio 
+RN-225. No permitir confirmación sin trazabilidad 
+RN-226. No recalcular histórico con reglas nuevas sin snapshot 
+RN-227. No construir la parte financiera sobre cotizaciones no cerradas 
+Estas reglas condensan casi todo el esqueleto del proyecto y reflejan directamente los 
+riesgos principales que ya habíamos identificado.  
+ 
+15. Conclusión 
+El ERP solo será realmente sólido si sus reglas de negocio quedan definidas antes de que 
+empiece la construcción seria. Este documento convierte la visión general y el circuito 
+operativo en un conjunto de reglas concretas que delimitan el comportamiento correcto 
+del sistema. La visión ya había definido el alcance, el MVP, los riesgos y la separación 
+entre etapas; y el documento operativo ya había descrito el flujo completo desde terceros 
+hasta liquidación. Aquí, todo eso se vuelve norma.  
+La idea es sencilla: que después, cuando le demos instrucciones a una IA o a un equipo 
+de desarrollo, no tenga que adivinar. Que construya sobre rieles, no sobre arena. 
+ 

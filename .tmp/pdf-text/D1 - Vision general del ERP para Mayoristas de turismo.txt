@@ -1,0 +1,398 @@
+1. Nombre provisional del proyecto 
+ERP para Mayorista de Turismo 
+Sistema integral de gestión para tour operadores y mayoristas de viajes, diseñado para 
+centralizar en una sola plataforma la operación comercial, operativa y financiera del 
+negocio turístico. 
+Este ERP nace con una idea muy clara: tomar la lógica real de trabajo de una mayorista, 
+donde intervienen agencias minoristas, pasajeros, proveedores, servicios, cotizaciones, 
+reservas, confirmaciones y liquidaciones, y convertirla en un sistema unificado, escalable 
+y controlable.  
+ 
+2. Qué problema resuelve 
+Hoy, en una mayorista de turismo, la operación suele estar fragmentada. Parte de la 
+información vive en Excel, otra parte en correos, otra en documentos Word o PDF, y otra 
+en la cabeza de quien opera el archivo. Eso produce varios problemas: 
+• duplicidad de datos,  
+• errores al cotizar,  
+• dificultad para rastrear cambios,  
+• poca trazabilidad entre lo cotizado, lo reservado y lo finalmente vendido,  
+• riesgo de errores contables,  
+• dependencia excesiva de personas concretas,  
+• poca capacidad de crecimiento ordenado.  
+El ERP busca resolver eso centralizando todo el flujo del negocio en una sola plataforma: 
+desde la carga del producto turístico hasta la liquidación final de cada venta. El objetivo 
+no es solo “guardar datos”, sino conectar áreas que hoy trabajan separadas para que 
+la operación sea más rápida, más clara y mucho menos propensa a errores.  
+ 
+3. Para quién sirve 
+Este sistema está pensado principalmente para: 
+• Mayoristas de turismo / tour operadores  
+• empresas que venden servicios turísticos a través de agencias minoristas,  
+• negocios que manejan múltiples tipos de servicio como alojamiento, traslados, 
+excursiones, visitas, trenes, vuelos y entradas,  
+• equipos que necesitan controlar tanto la parte comercial como la operativa y 
+financiera.  
+En el diseño actual, el modelo de negocio parte de que el cliente principal de la mayorista 
+no siempre es el pasajero final, sino la agencia de viajes intermediaria, llamada en tu 
+documento “cliente_agente”. A partir de ahí se conectan los pasajeros, las cotizaciones y 
+las reservas.  
+ 
+4. Propósito del sistema 
+El propósito del ERP es convertirse en el núcleo operativo de la mayorista, permitiendo 
+que todas las áreas compartan una misma fuente de verdad. 
+De forma resumida, el sistema debe permitir: 
+• registrar agencias y clientes,  
+• registrar proveedores y servicios turísticos,  
+• construir cotizaciones ordenadas por itinerario,  
+• convertir cotizaciones en reservas,  
+
+• registrar confirmaciones y costos finales,  
+• calcular rentabilidad,  
+• preparar documentación comercial y operativa,  
+• y explotar la información con filtros y reportes.  
+La visión no es construir un simple sistema de cotizaciones, sino una plataforma modular 
+que pueda crecer hasta convertirse en un ERP turístico completo.  
+ 
+5. Alcance general del ERP 
+El alcance funcional inicial del proyecto cubre estas grandes áreas: 
+5.1 Gestión de terceros 
+Incluye el alta y mantenimiento de: 
+• agencias de viajes clientes,  
+• clientes o pasajeros,  
+• proveedores turísticos.  
+Estas entidades son la base relacional del sistema. El ERP debe permitir que una agencia 
+tenga muchos clientes, que un proveedor tenga muchos servicios y que cada operación 
+quede vinculada correctamente.  
+5.2 Gestión de producto turístico 
+Incluye: 
+• tipos de servicio,  
+• servicios concretos,  
+• atributos específicos por tipo,  
+• precios base o precios por temporada/mes donde aplique.  
+El sistema ya parte de una estructura donde existe una tabla general de servicio y tablas 
+especializadas por tipo, como alojamiento, tour, traslado, tren, vuelo y boleto_entrada. 
+Esa base es útil porque permite un modelo flexible y relativamente limpio para servicios 
+heterogéneos.  
+5.3 Gestión comercial 
+Incluye: 
+• creación de cotizaciones,  
+• asociación a cliente/agencia,  
+• armado de itinerario,  
+• cálculo de costos,  
+• aplicación de margen o comisión,  
+• control de estados como activa, descartada o convertida en reserva.  
+Esta es una de las áreas más importantes del sistema porque conecta el producto con la 
+venta.  
+5.4 Gestión operativa de reservas 
+Incluye: 
+• conversión de cotización a reserva,  
+• fijación de costos reales,  
+• captura de número de confirmación,  
+• trazabilidad de la confirmación por servicio,  
+• preparación de documentación de operación.  
+Aquí es donde el ERP deja de ser solo comercial y empieza a tocar operación real.  
+5.5 Gestión de liquidación 
+Incluye: 
+
+• diferencia entre costo cotizado y costo final,  
+• total por persona y por expediente,  
+• utilidad bruta,  
+• valor pagable o atribuible a la agencia,  
+• base para reportes financieros.  
+Esta parte todavía está verde en el documento original, pero ya se identifica como una 
+necesidad clave del negocio.  
+5.6 Reportería y explotación de datos 
+Incluye: 
+• consulta de reservas vendidas,  
+• rentabilidad por periodo,  
+• filtros por agencia, año, mes o servicio,  
+• análisis de servicios vendidos y costos confirmados.  
+La meta aquí es que contabilidad y dirección no dependan de revisar archivo por archivo.  
+ 
+6. Qué no cubre todavía el alcance inicial 
+Aunque la visión final es amplia, hay temas que no deberían considerarse cerrados en 
+la primera etapa: 
+• sincronización offline compleja entre varios PCs,  
+• réplica distribuida local+nube,  
+• VPN propia integrada al ERP,  
+• contabilidad legal completa con asientos, impuestos, diarios y balances oficiales,  
+• conciliación bancaria automática,  
+• integración XML/API con bancos de camas, aerolíneas o channel managers,  
+• facturación electrónica por país,  
+• portal B2B/B2C público,  
+• automatización documental avanzada.  
+Tu documento menciona ideas como trabajo local con copias por PC, sincronización 
+posterior y subida a OneDrive, pero eso debe tratarse como una capa aparte y no como 
+núcleo del MVP, porque añade un nivel de complejidad muy alto a nivel de conflictos, 
+concurrencia y consistencia de datos.  
+ 
+7. Módulos propuestos del ERP 
+Para convertir la idea en una arquitectura clara, el sistema debe organizarse por módulos. 
+7.1 Módulo CRM y terceros 
+Administra: 
+• agencias cliente,  
+• clientes/pasajeros,  
+• contactos,  
+• datos fiscales y comerciales básicos.  
+Este módulo responde a la parte “área de clientes_agentes” y “área de clientes” del 
+documento base.  
+7.2 Módulo proveedores 
+Administra: 
+• proveedores,  
+• contactos del proveedor,  
+• cobertura geográfica,  
+
+• canales de reserva,  
+• tipo de servicio que ofrecen.  
+En tu documento actual esta parte existe, pero todavía está simplificada y luego 
+necesitará descomponerse más.  
+7.3 Módulo catálogo de producto 
+Administra: 
+• tipos de servicio,  
+• servicios turísticos,  
+• atributos por tipo,  
+• localización del servicio,  
+• reglas de presentación del servicio en la cotización.  
+Tu SQL ya tiene una buena semilla aquí con tiposervicio, servicio y tablas hijas 
+especializadas.  
+7.4 Módulo tarifas y contratación 
+Administra: 
+• precios por mes o temporada,  
+• precio base,  
+• variación por ocupación,  
+• moneda base,  
+• reglas comerciales futuras.  
+Tu SQL ya contempla precios mensuales en servicio_precio_mes, hotel_precio_mes, 
+alojamiento_precio_mes y una vista agregada v_alojamiento_precio_mes, lo que indica 
+que esta línea ya empezó a construirse.  
+7.5 Módulo cotizaciones 
+Administra: 
+• creación de cotizaciones,  
+• armado del itinerario,  
+• cálculo de costos,  
+• opcionales,  
+• orden por días,  
+• total por pasajero y total general.  
+El modelo actual con cotizacion y cotizacion_item es la base real de este módulo.  
+7.6 Módulo reservas 
+Administra: 
+• conversión desde cotización,  
+• costos finales,  
+• confirmaciones,  
+• estado operativo de cada servicio,  
+• documentación de reserva.  
+Hoy ese módulo todavía no existe como estructura de base de datos independiente, así 
+que será una de las ampliaciones clave posteriores.  
+7.7 Módulo liquidación 
+Administra: 
+• márgenes,  
+• diferencias entre cotizado y reservado,  
+• utilidad,  
+• valor de comisión/agencia,  
+
+• cierres básicos por expediente.  
+Este módulo será indispensable para que el ERP no termine siendo solo un cotizador 
+glorificado.  
+7.8 Módulo documentos 
+Administra: 
+• generación de Word,  
+• PDF,  
+• confirmaciones,  
+• carpetas de viaje,  
+• formatos comerciales y operativos.  
+Tu documento lo contempla como funcionalidad importante, pero para el MVP debe ir 
+muy contenido.  
+7.9 Módulo reportes y control 
+Administra: 
+• búsquedas globales,  
+• vistas consolidadas,  
+• indicadores por año, agencia, mes, destino o servicio.  
+7.10 Módulo administración 
+Administra: 
+• usuarios,  
+• roles,  
+• auditoría,  
+• parámetros del sistema,  
+• catálogos auxiliares.  
+Este módulo aún no está desarrollado en tu idea base, pero en un ERP serio no puede 
+faltar. 
+ 
+8. Qué hace especial a este ERP frente a un sistema genérico 
+Lo que hace diferente este ERP no es solo que “guarde reservas”, sino que está pensado 
+con lógica real de una mayorista: 
+• trabaja con agencias intermediarias como clientes principales,  
+• distingue entre cliente final y cliente agente,  
+• arma itinerarios por servicios,  
+• permite cotizar con distintos tipos de producto turístico,  
+• contempla opcionales dentro de la cotización,  
+• separa lo cotizado de lo finalmente reservado,  
+• y necesita medir utilidad real por expediente.  
+Eso ya lo aleja de un CRM simple, de un ERP contable genérico o de un software básico 
+de agencia.  
+ 
+9. Definición del MVP 
+El MVP debe ser una primera versión funcional que permita operar el corazón del 
+negocio sin intentar resolver todo de una vez. 
+El MVP recomendado debe cubrir: 
+9.1 Terceros 
+• crear y editar agencias,  
+• crear y editar clientes,  
+
+• crear y editar proveedores.  
+9.2 Producto 
+• crear tipos de servicio,  
+• crear servicios,  
+• guardar atributos por tipo,  
+• guardar precios base/mensuales simples.  
+9.3 Cotización 
+• crear cotización,  
+• agregar servicios,  
+• ordenar servicios,  
+• marcar opcionales,  
+• editar precio manual,  
+• calcular total costo,  
+• calcular total de venta básico.  
+9.4 Reserva 
+• convertir cotización en reserva,  
+• fijar costo final por servicio,  
+• guardar número de confirmación,  
+• guardar fecha y hora de confirmación,  
+• calcular utilidad básica.  
+9.5 Consultas globales 
+• ver todas las cotizaciones,  
+• ver todas las descartadas,  
+• ver todas las reservas,  
+• filtrar por agencia, cliente o fecha.  
+9.6 Documentos básicos 
+• generar un PDF o documento simple de cotización,  
+• generar un documento simple de reserva/confirmación.  
+Ese MVP ya tendría valor real para el negocio. 
+ 
+10. Qué no entra en el MVP 
+Para evitar que el proyecto se vuelva un monstruo desde el día 1, esto debería dejarse 
+fuera del MVP: 
+• contabilidad oficial completa,  
+• cuentas por pagar complejas,  
+• conciliación bancaria,  
+• multiempresa,  
+• portal para clientes/agencias,  
+• integraciones con proveedores vía API,  
+• stop sales automáticos,  
+• releases automáticos,  
+• motor de disponibilidad en tiempo real,  
+• sincronización offline inteligente entre estaciones,  
+• workflow documental avanzado,  
+• reglas contables fiscales por país.  
+No es que no se vayan a hacer. Es que meterlas al inicio sería como intentar abrir un hotel 
+construyendo primero la piscina infinita y dejando la recepción sin techo. 
+
+ 
+11. Fases propuestas del proyecto 
+Fase 1. Núcleo operativo comercial 
+Objetivo: permitir trabajar el día a día comercial y operativo mínimo. 
+Incluye: 
+• agencias,  
+• clientes,  
+• proveedores,  
+• tipos de servicio,  
+• servicios,  
+• precios base,  
+• cotizaciones,  
+• ítems de cotización,  
+• descartadas,  
+• conversión a reserva,  
+• confirmación manual,  
+• liquidación básica.  
+Esta fase pone al sistema a producir. 
+Fase 2. Formalización operativa 
+Objetivo: robustecer la operación y evitar improvisaciones. 
+Incluye: 
+• módulo real de reservas,  
+• estados de reserva,  
+• confirmaciones por servicio,  
+• historial de cambios,  
+• trazabilidad por usuario,  
+• documentos mejorados,  
+• mejores filtros y búsquedas,  
+• catálogos auxiliares mejor estructurados.  
+Fase 3. Contratación y tarifas avanzadas 
+Objetivo: que el ERP piense más como tour operador profesional. 
+Incluye: 
+• temporadas,  
+• vigencias,  
+• releases,  
+• stop sales,  
+• cupos,  
+• reglas por canal,  
+• pricing por ocupación,  
+• multi-moneda mejor resuelta,  
+• comisiones por agencia o acuerdo comercial.  
+Fase 4. Financiero y control 
+Objetivo: convertir el ERP en herramienta gerencial. 
+Incluye: 
+• liquidación avanzada,  
+• cuentas por pagar a proveedores,  
+• cuentas por cobrar,  
+
+• rentabilidad por reserva,  
+• reportes ejecutivos,  
+• cierres mensuales,  
+• bases para conciliación.  
+Fase 5. Integraciones y escalabilidad 
+Objetivo: preparar crecimiento serio. 
+Incluye: 
+• API interna robusta,  
+• conectores XML/API,  
+• portal B2B/B2C,  
+• automatización documental,  
+• sincronización segura multiestación,  
+• nube/híbrido,  
+• seguridad avanzada y auditoría completa.  
+ 
+12. Riesgos principales que este proyecto debe evitar 
+Desde ya hay varios riesgos que debemos controlar. 
+12.1 Confundir cotización con reserva 
+Esto es crítico. Una cotización no puede ser tratada como si ya fuera una compra cerrada. 
+Deben existir estados y entidades separadas. Tu documento ya diferencia ambos 
+mundos, y eso hay que conservarlo sí o sí.  
+12.2 Mezclar precio de venta con costo operativo 
+Si el sistema no separa bien costo, precio al cliente, comisión de agencia y margen, 
+después la contabilidad sale torcida. 
+12.3 Guardar demasiada lógica “a mano” 
+Si todo queda editable sin reglas, el sistema se vuelve frágil. Debe existir flexibilidad, pero 
+con trazabilidad. 
+12.4 Intentar resolver sincronización distribuida desde el inicio 
+Eso no debe condicionar la arquitectura del núcleo. Primero se construye una base sólida 
+centralizada. Luego se piensa la capa offline/híbrida.  
+12.5 Dejar la base de datos solo como catálogo 
+Tu SQL actual es buen inicio, pero todavía representa sobre todo catálogo y cotización. 
+Aún faltan las entidades fuertes del ciclo de reserva, confirmación y liquidación.  
+ 
+13. Estado actual del proyecto 
+Hoy el proyecto ya cuenta con dos activos valiosos: 
+Un documento de visión funcional inicial, donde se describe cómo deberían comportarse 
+áreas como clientes, proveedores, servicios, cotizaciones, reservas y contabilidad.  
+Y una base de datos inicial en MySQL que ya contiene parte importante del catálogo 
+turístico, la estructura de cotización, tablas de precios por mes y tablas especializadas 
+por tipo de servicio.  
+Eso significa que el proyecto no parte de cero. Parte de una semilla válida, pero todavía 
+necesita: 
+• orden funcional,  
+• separación de fases,  
+• fortalecimiento del modelo de datos,  
+• y definición exacta del MVP.  
+
+ 
+14. Conclusión ejecutiva 
+Este ERP está concebido para convertirse en el centro operativo de una mayorista de 
+turismo. Su función principal será conectar producto, clientes, agencias, cotizaciones, 
+reservas y liquidación en un solo flujo coherente. El valor del sistema no está solo  en 
+almacenar información, sino en traducir la lógica real del negocio turístico a una 
+estructura ordenada, trazable y escalable.  
+La prioridad estratégica correcta no es intentar construir todo al mismo tiempo, sino 
+levantar primero un núcleo sólido que permita operar: terceros, servicios, cotizaciones, 
+reservas y liquidación básica. A partir de ahí, el sistema podrá crecer por fases  hacia 
+contratación avanzada, control financiero, integraciones y automatización. 
+En otras palabras: primero construimos una columna vertebral fuerte; después le 
+ponemos músculos, piel y armadura. 
+ 

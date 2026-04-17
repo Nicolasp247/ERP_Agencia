@@ -1,0 +1,301 @@
+1. Objetivo de este documento 
+Este documento describe cómo debe funcionar el ERP de forma integral, siguiendo el 
+flujo real de trabajo de una mayorista de turismo. La idea es explicar el circuito completo 
+del sistema de manera clara, ordenada y conectada, para que después pueda convertirse 
+en especificación funcional, diseño técnico y prompt de construcción para una IA 
+desarrolladora. El punto de partida funcional viene del documento base del proyecto, 
+donde ya se define la necesidad de conectar clientes, agencias, proveedores, servicio s, 
+cotizaciones, reservas y contabilidad en un solo entorno.  
+ 
+2. Visión operativa general 
+El ERP debe funcionar como una cadena continua. No son módulos sueltos. Es un flujo 
+donde una pieza alimenta a la siguiente. 
+La lógica general del sistema será esta: 
+1. se registran agencias, clientes y proveedores;  
+2. se cargan los tipos de servicio y los servicios turísticos disponibles;  
+3. se crea una cotización para un cliente asociado o no a una agencia;  
+4. se arma el itinerario agregando servicios a la cotización;  
+5. se calculan costos y precio de venta;  
+6. la cotización puede quedar activa, descartarse o convertirse en reserva;  
+7. cuando pasa a reserva, se registran confirmaciones y costos finales;  
+8. el sistema calcula la liquidación y la utilidad;  
+9. toda esa información alimenta la vista global y los reportes de control.  
+En otras palabras, el ERP debe parecerse más a una línea férrea que a una caja de 
+herramientas: cada vagón tiene su función, pero todos van conectados. 
+ 
+3. Inicio del circuito: gestión de terceros 
+Todo empieza por los terceros. Si esta base está mal, el resto del ERP queda torcido. 
+3.1 Cliente agente 
+El “cliente_agente” representa la agencia de viajes intermediaria, que es el cliente 
+comercial principal de la mayorista. En esta área se debe poder guardar información 
+general como nombre del agente, nombre de la empresa, teléfono, correo, país, ciudad, 
+dirección, NIT e iniciales diferenciales internas. El documento base aclara que, por ahora, 
+ningún dato es obligatorio, aunque eso más adelante convendrá revisarlo porque en un 
+ERP real al menos algunos campos deberían volverse obligatorios.  
+Operativamente, este registro sirve para: 
+• identificar quién trae la oportunidad de negocio,  
+• agrupar clientes finales bajo esa agencia,  
+• guardar su comisión o condiciones comerciales,  
+• filtrar cotizaciones, reservas y resultados por agencia.  
+3.2 Cliente final 
+El cliente final representa al pasajero o grupo de pasajeros que viaja. Este registro puede 
+estar conectado con un cliente_agente, y un cliente_agente puede tener muchos clientes. 
+El sistema debe guardar nombre, teléfono, correo, país, ciudad e iniciales d iferenciales 
+que permitan conectarlo con la agencia. También debe mostrar el historial de 
+cotizaciones, descartadas y confirmaciones ordenadas por fecha de viaje y por año.  
+Operativamente, esto significa que el ERP debe permitir dos lecturas: 
+• una lectura comercial por agencia,  
+
+• y una lectura operativa por pasajero.  
+3.3 Proveedor 
+El proveedor es quien presta o vende el servicio turístico. Debe poder registrarse con 
+nombre, sitio web, múltiples correos, usuarios de contacto, tipo de servicio ofrecido y 
+localización geográfica. En tu SQL actual ya existe la tabla proveedor, aunque todavía 
+está simplificada y solo guarda nombre, web e iniciales, así que más adelante habrá que 
+ampliarla.  
+ 
+4. Segundo bloque: catálogo operativo del producto turístico 
+Una vez cargados los terceros, el sistema necesita el catálogo de producto. Aquí el ERP 
+deja de hablar de personas y empieza a hablar de lo que realmente se vende. 
+4.1 Tipos de servicio 
+El sistema debe manejar como tipos principales: alojamiento, visitas, excursiones, vuelos, 
+trenes, entradas y traslados. Tu base de datos ya tiene esta clasificación en la tabla 
+tiposervicio, lo cual es una buena base porque permite separar la lógica general de la 
+lógica específica de cada producto.  
+4.2 Servicio 
+El servicio es la unidad concreta vendible. Cada servicio pertenece a un proveedor y a un 
+tipo de servicio. Además, tiene ciudad, país, nombre oficial, link y eventualmente precio. 
+Tu SQL ya sigue esta línea con la tabla servicio, vinculada a tiposervicio, proveedor y 
+ciudad.  
+4.3 Atributos específicos por tipo 
+Aquí aparece una de las partes más importantes del ERP: no todos los servicios se 
+guardan igual. 
+El documento base define que la información de un servicio depende del tipo. Y tu SQL 
+ya refleja eso con tablas especializadas: 
+• alojamiento,  
+• boleto_entrada,  
+• tour,  
+• traslado,  
+• tren,  
+• vuelo.  
+Eso permite que el ERP trate cada servicio de manera especializada sin perder una tabla 
+madre común. 
+4.4 Precios 
+El sistema debe manejar precios por servicio y, en algunos casos, precios por mes o por 
+combinación comercial. Tu SQL ya contempla esto con servicio_precio_mes, 
+hotel_precio_mes, alojamiento_precio_mes y la vista v_alojamiento_precio_mes. Eso 
+encaja muy bien con la lógica de que algunos productos, como traslados o excursiones, 
+puedan tener precio parametrizable, mientras que otros como vuelos y trenes no 
+necesariamente tendrán un precio fijo en catálogo.  
+ 
+5. Tercer bloque: creación de la cotización 
+Aquí empieza el corazón comercial del ERP. 
+5.1 Nacimiento de la cotización 
+La cotización representa una oportunidad de venta activa. Puede estar ligada a un cliente, 
+y por tanto también a una agencia. Debe guardar nombre del cliente, número de 
+
+pasajeros, edades segmentadas, fechas de viaje, destino, categoría del viaje, presupuesto 
+estimado y moneda. En tu SQL actual esto ya está parcialmente modelado en cotizacion, 
+con campos como agente, nombre_pasajero, grupos etarios, total_pasajeros, categorias, 
+fecha_viaje, destino, moneda_id y nota.  
+5.2 Estructura del itinerario 
+La cotización no es solo una cabecera. Debe contener una lista de servicios ordenados, 
+porque en realidad está construyendo el itinerario del viaje. Esa relación muchos a 
+muchos ya se modela en la práctica con cotizacion_item, donde cada línea guarda el 
+servicio, la fecha del servicio, el orden, si es opcional y otros ajustes manuales.  
+5.3 Cómo se agregan servicios 
+Cuando el usuario arma la cotización: 
+• selecciona un servicio existente,  
+• lo asigna a una fecha,  
+• define el orden en el itinerario,  
+• puede marcarlo como opcional,  
+• puede editar el texto visible,  
+• puede modificar el precio manualmente si hace falta.  
+Esto es importante porque el sistema no debe ser rígido: debe proponer información 
+desde la base de datos, pero permitir ajustes comerciales controlados. El propio 
+documento base ya indica que el valor del servicio puede salir por defecto desde la base 
+de datos y luego editarse manualmente.  
+5.4 Reglas de presentación del itinerario 
+El ERP debe generar el texto del itinerario según el tipo de servicio. El documento base 
+ya define formatos concretos para alojamiento, traslado, visita/excursión, boletos, tren y 
+vuelo, además de reglas especiales para cómo mostrar fechas y el caso partic ular del 
+alojamiento con dos líneas. Esa lógica no es decorativa: hace parte del núcleo funcional 
+del cotizador.  
+5.5 Cálculo económico de la cotización 
+A nivel económico, la cotización debe mostrar: 
+• costo de cada servicio,  
+• total de costos,  
+• precio final,  
+• comisión o margen aplicable según agencia,  
+• total por persona o total general.  
+El documento base indica que el costo final debe salir de los valores de los servicios, que 
+los opcionales no se comportan igual visualmente, y que el precio total debe apoyarse 
+en el valor de comisión guardado para el cliente_agente, aunque pueda editarse  
+manualmente por cotización.  
+ 
+6. Estados posibles de la cotización 
+Una cotización no se queda quieta. Debe poder cambiar de estado según lo que pase 
+con la oportunidad. 
+6.1 Cotización activa 
+Es la cotización que sigue viva y editable. 
+6.2 Cotización descartada 
+Si la oportunidad no prospera, el usuario puede enviarla a descartadas. El documento 
+base ya contempla una vista específica para “todas las descartadas”.  
+
+6.3 Cotización convertida en reserva 
+Si la venta avanza, la cotización pasa al área de reservas. El documento base lo plantea 
+como una acción directa desde la vista del cliente o desde la cotización.  
+Aquí hay una decisión arquitectónica importante: aunque hoy se describe como “pasar” 
+una cotización a reservas, lo más sano será que el ERP cree una entidad de reserva propia, 
+separada de la cotización, pero heredando su información base. Eso todavía no es tá en 
+el SQL actual, así que será uno de los siguientes pasos de diseño. La base existente solo 
+cubre cotizacion y cotizacion_item, no reserva como tabla independiente.  
+ 
+7. Cuarto bloque: área de reservas 
+Cuando una cotización se convierte en reserva, el ERP entra en modo operativo. 
+7.1 Qué hereda la reserva 
+La reserva debe nacer con casi toda la información de la cotización: 
+• cliente,  
+• agencia,  
+• pasajeros,  
+• fechas,  
+• servicios,  
+• orden del itinerario,  
+• costos cotizados.  
+7.2 Qué cambia en la reserva 
+La diferencia está en que lo que en cotización era una intención, en reserva ya es una 
+operación real. El documento base indica que aquí los costos introducidos pasan a ser 
+valores fijos y se añaden nuevas columnas por servicio: 
+• costo final,  
+• número de confirmación.  
+7.3 Confirmación por servicio 
+Cada servicio reservado debe poder tener su propio número de confirmación. Además, 
+el sistema debe registrar el día y la hora en que ese número fue introducido. Esa 
+trazabilidad ya está pedida expresamente en el documento base y será clave tanto para 
+control operativo como para auditoría.  
+7.4 Generación documental 
+Desde la reserva el sistema debe poder generar automáticamente Word y PDF, además 
+de acciones como crear confirmación y generar carpeta de viaje. Esto todavía debe 
+considerarse una capa funcional importante, pero controlada, porque el valor del ERP no 
+puede depender únicamente de documentos bonitos; primero debe depender de datos 
+correctos.  
+ 
+8. Quinto bloque: confirmación y congelación comercial 
+Este punto es muy importante y suele ser donde muchos sistemas se enredan. 
+Cuando el usuario oprime el botón de “crear confirmación”, el sistema debe guardar que 
+los valores utilizados en la reserva quedan confirmados como referencia comercial final 
+para ese expediente. El documento base explica que al crear la confirmación se de ben 
+guardar los precios de la columna correspondiente en la última cotización y marcar un 
+espacio que indique si ya se generó confirmación.  
+Traducido a funcionamiento de ERP, esto significa: 
+
+• hay un momento a partir del cual el expediente queda comercialmente 
+consolidado,  
+• el sistema debe saber si ya hubo confirmación,  
+• y debe existir una diferencia entre valores preliminares y valores confirmados.  
+Esa “congelación” es la puerta de entrada a la parte financiera. 
+ 
+9. Sexto bloque: liquidación 
+Debajo de la reserva, el documento base plantea una zona de liquidación. Esta parte es 
+donde el ERP comienza a medir si el negocio dejó plata o se tragó la utilidad como un 
+agujero negro con corbata. 
+La liquidación debe mostrar: 
+• precio total de los servicios por persona,  
+• precio total de los servicios para todos los pasajeros,  
+• precio total cobrado en la confirmación,  
+• costo total real de la reserva,  
+• diferencia entre venta y costo,  
+• ganancia por persona,  
+• ganancia total,  
+• valor correspondiente al cliente_agente, editable pero con cálculo automático.  
+Operativamente, el circuito sería así: 
+1. se arma la cotización,  
+2. se pasa a reserva,  
+3. se registran costos finales y confirmaciones,  
+4. el sistema calcula el margen real,  
+5. se determina cuánto se ganó,  
+6. se puede analizar el resultado por expediente.  
+Aquí el ERP deja de ser solo una herramienta comercial y se convierte en una herramienta 
+de control del negocio. 
+ 
+10. Séptimo bloque: vistas globales de operación 
+Además de trabajar expediente por expediente, el sistema debe dar vistas consolidadas. 
+10.1 Todas las cotizaciones 
+Debe existir una pantalla que muestre todas las cotizaciones activas, ordenadas y con 
+opciones similares a las del área del cliente. También debe permitir crear una nueva 
+cotización. El documento base dice que al crearla debe pedir número de pasajeros y 
+datos de cliente_agente.  
+10.2 Todas las descartadas 
+Debe existir una vista paralela para las cotizaciones descartadas.  
+10.3 Todas las reservas 
+Debe existir una vista global de reservas activas o confirmadas.  
+Estas vistas cumplen dos funciones: 
+• permitir operación rápida,  
+• y evitar que la información quede encerrada dentro de cada cliente.  
+ 
+11. Octavo bloque: contabilidad y análisis del negocio 
+El documento base reconoce que esta parte aún no está completamente definida, pero 
+sí marca una intención clara: el área contable debe leer toda la información proveniente 
+
+de reservas y liquidaciones para construir tablas de costos, precios y ganancias por año, 
+por cliente_agente y por mes. También debe poder analizar los datos por servicios 
+vendidos y por número de confirmación.  
+Eso significa que, aunque el ERP no nazca como software contable legal completo, sí 
+debe nacer como sistema con capacidad de generar: 
+• resultados por periodo,  
+• utilidad por expediente,  
+• utilidad por agencia,  
+• utilidad por servicio,  
+• histórico de ventas.  
+En el estado actual del SQL esa capa todavía no existe formalmente, porque no hay tablas 
+dedicadas a reservas, confirmaciones, liquidaciones ni movimientos contables. Lo que sí 
+existe es la base del catálogo y la cotización, que será la materia prima para construir esa 
+siguiente capa.  
+ 
+12. Papel de la base de datos en el circuito operativo 
+Hoy la base de datos ya resuelve parte importante del comienzo del flujo: 
+• geografía básica: continente, pais, ciudad;  
+• proveedores: proveedor;  
+• clasificación: tiposervicio;  
+• servicios y atributos especializados: servicio, alojamiento, tour, traslado, tren, 
+vuelo, boleto_entrada;  
+• precios: servicio_precio_mes, hotel_precio_mes, alojamiento_precio_mes;  
+• cotizaciones: cotizacion, cotizacion_item.  
+En otras palabras, la base actual ya cubre: 
+• quién vende,  
+• qué se vende,  
+• cómo se cotiza.  
+Pero todavía no cubre completamente: 
+• cómo se reserva,  
+• cómo se confirma,  
+• cómo se liquida,  
+• cómo se analiza financieramente.  
+Eso nos muestra exactamente dónde empieza el siguiente trabajo de arquitectura. 
+ 
+13. Funcionamiento ideal de punta a punta 
+Si juntamos todo, el ERP ideal debe operar así: 
+Una agencia o un cliente solicita un viaje. El usuario del sistema busca o crea la agencia, 
+luego busca o crea el cliente final. Después revisa el catálogo de proveedores y servicios 
+disponibles. Si falta un servicio, puede crearlo, siempre que exista primero el proveedor 
+asociado. Con eso arma una cotización, agregando servicios uno por uno en orden 
+cronológico, ajustando fecha, opcionalidad, descripción y precio cuando sea necesario. 
+El sistema calcula los costos y el precio comercial. Si la propuesta no prospera, se 
+descarta. Si avanza, se convierte en reserva. En la reserva se consolidan los costos finales, 
+se registran confirmaciones por servicio y se generan los documentos operativos. 
+Finalmente, el sistema calcula la liquidación y deja esa información  disponible para 
+análisis global, control financiero y reportes por agencia, año, mes o servicio.  
+
+Ese es el circuito completo. Esa es la autopista central del ERP. 
+ 
+14. Conclusión operativa 
+El ERP debe comportarse como una máquina de transformación del negocio turístico. 
+Toma información dispersa de agencias, pasajeros, proveedores y servicios, la convierte 
+en cotizaciones ordenadas, luego en reservas operativas, después en confirmaciones 
+controladas y finalmente en resultados económicos analizables. Esa es la lógica central 
+del sistema según el documento funcional base y según la estructura inicial de base de 
+datos ya construida.  
+La clave de éxito no estará solo en que cada módulo exista, sino en que el paso de un 
+estado a otro quede perfectamente definido y trazable. Si eso se diseña bien, el ERP 
+tendrá columna vertebral de verdad. Si eso se diseña mal, el sistema terminará siendo un 
+Excel elegante con pretensiones. 
+ 

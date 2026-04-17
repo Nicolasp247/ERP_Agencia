@@ -1,0 +1,235 @@
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/core/db/prisma";
+import type { ServicioFilters, ServicioInput, TipoServicioInput } from "@/modules/servicio/dto/servicio.dto";
+import type { ServicioTipoCodigo } from "@/modules/servicio/types/servicio.types";
+
+export class ServicioRepository {
+  listTipos() {
+    return prisma.tipoServicio.findMany({
+      orderBy: {
+        nombre: "asc"
+      }
+    });
+  }
+
+  findTipoById(id: number) {
+    return prisma.tipoServicio.findUnique({
+      where: { id }
+    });
+  }
+
+  createTipo(data: TipoServicioInput) {
+    return prisma.tipoServicio.create({
+      data: {
+        nombre: data.nombre,
+        codigo: data.codigo,
+        activo: data.activo ?? true
+      }
+    });
+  }
+
+  updateTipo(id: number, data: TipoServicioInput) {
+    return prisma.tipoServicio.update({
+      where: { id },
+      data: {
+        nombre: data.nombre,
+        codigo: data.codigo,
+        activo: data.activo ?? true
+      }
+    });
+  }
+
+  list(filters: ServicioFilters) {
+    return prisma.servicio.findMany({
+      where: {
+        nombreWtravel: filters.search
+          ? {
+              contains: filters.search
+            }
+          : undefined,
+        idTipo: filters.idTipo,
+        idProveedor: filters.idProveedor,
+        idCiudad: filters.idCiudad,
+        activo: filters.activo,
+        ciudad: filters.idPais
+          ? {
+              idPais: filters.idPais
+            }
+          : undefined
+      },
+      include: {
+        tipo: true,
+        proveedor: true,
+        ciudad: {
+          include: {
+            pais: true
+          }
+        },
+        tarifas: {
+          orderBy: [{ anio: "desc" }, { mes: "desc" }],
+          take: 1
+        }
+      },
+      orderBy: {
+        nombreWtravel: "asc"
+      }
+    });
+  }
+
+  findById(id: number) {
+    return prisma.servicio.findUnique({
+      where: { id },
+      include: {
+        tipo: true,
+        proveedor: {
+          select: {
+            id: true,
+            nombreComercial: true
+          }
+        },
+        ciudad: {
+          include: {
+            pais: true
+          }
+        },
+        alojamiento: true,
+        boletoEntrada: true,
+        tour: true,
+        traslado: true,
+        tren: true,
+        vuelo: true,
+        tarifas: {
+          orderBy: [{ anio: "desc" }, { mes: "desc" }]
+        }
+      }
+    });
+  }
+
+  findByNombre(nombreWtravel: string) {
+    return prisma.servicio.findUnique({
+      where: { nombreWtravel }
+    });
+  }
+
+  async create(data: ServicioInput & { createdBy?: number | null }, tipoCodigo: ServicioTipoCodigo) {
+    return prisma.$transaction(async (tx) => {
+      const service = await tx.servicio.create({
+        data: {
+          idTipo: data.idTipo,
+          idProveedor: data.idProveedor,
+          idCiudad: data.idCiudad,
+          nombreWtravel: data.nombreWtravel,
+          tiempoServicio: data.tiempoServicio,
+          privado: data.privado,
+          descripcion: data.descripcion,
+          linkReserva: data.linkReserva,
+          activo: data.activo ?? true,
+          createdBy: data.createdBy ?? null,
+          updatedBy: data.createdBy ?? null
+        }
+      });
+
+      await this.replaceDetail(tx, service.id, tipoCodigo, data);
+      return service;
+    });
+  }
+
+  async update(id: number, data: ServicioInput & { updatedBy?: number | null }, tipoCodigo: ServicioTipoCodigo) {
+    return prisma.$transaction(async (tx) => {
+      await tx.servicio.update({
+        where: { id },
+        data: {
+          idTipo: data.idTipo,
+          idProveedor: data.idProveedor,
+          idCiudad: data.idCiudad,
+          nombreWtravel: data.nombreWtravel,
+          tiempoServicio: data.tiempoServicio,
+          privado: data.privado,
+          descripcion: data.descripcion,
+          linkReserva: data.linkReserva,
+          activo: data.activo ?? true,
+          updatedBy: data.updatedBy ?? null
+        }
+      });
+
+      await this.clearDetails(tx, id);
+      await this.replaceDetail(tx, id, tipoCodigo, data);
+
+      return tx.servicio.findUniqueOrThrow({
+        where: { id }
+      });
+    });
+  }
+
+  private clearDetails(tx: Prisma.TransactionClient, idServicio: number) {
+    return Promise.all([
+      tx.alojamiento.deleteMany({ where: { idServicio } }),
+      tx.boletoEntrada.deleteMany({ where: { idServicio } }),
+      tx.tour.deleteMany({ where: { idServicio } }),
+      tx.traslado.deleteMany({ where: { idServicio } }),
+      tx.tren.deleteMany({ where: { idServicio } }),
+      tx.vuelo.deleteMany({ where: { idServicio } })
+    ]);
+  }
+
+  private async replaceDetail(
+    tx: Prisma.TransactionClient,
+    idServicio: number,
+    tipoCodigo: ServicioTipoCodigo,
+    data: ServicioInput
+  ) {
+    switch (tipoCodigo) {
+      case "ALOJAMIENTO":
+        await tx.alojamiento.create({
+          data: {
+            idServicio,
+            ...data.alojamiento!
+          }
+        });
+        break;
+      case "VISITA":
+      case "EXCURSION":
+        await tx.tour.create({
+          data: {
+            idServicio,
+            ...data.tour!
+          }
+        });
+        break;
+      case "TRASLADO":
+        await tx.traslado.create({
+          data: {
+            idServicio,
+            ...data.traslado!
+          }
+        });
+        break;
+      case "ENTRADA":
+        await tx.boletoEntrada.create({
+          data: {
+            idServicio,
+            ...data.boletoEntrada!
+          }
+        });
+        break;
+      case "TREN":
+        await tx.tren.create({
+          data: {
+            idServicio,
+            ...data.tren!
+          }
+        });
+        break;
+      case "VUELO":
+        await tx.vuelo.create({
+          data: {
+            idServicio,
+            ...data.vuelo!
+          }
+        });
+        break;
+    }
+  }
+}
+
+export const servicioRepository = new ServicioRepository();

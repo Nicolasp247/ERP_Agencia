@@ -1,0 +1,730 @@
+1. Objetivo del documento 
+Este documento describe el diseño funcional del ERP módulo por módulo. Su finalidad 
+es definir, de forma clara y operativa, cómo debe comportarse cada área del sistema 
+desde la perspectiva del usuario y del negocio. 
+Cada módulo se describe con esta lógica: 
+• objetivo del módulo,  
+• información principal que gestiona,  
+• pantallas funcionales,  
+• acciones permitidas,  
+• validaciones,  
+• relaciones con otros módulos,  
+• comportamiento esperado.  
+Este documento no define todavía el diseño visual final ni la arquitectura técnica 
+detallada. Define el comportamiento funcional esperado del ERP. La separación 
+modular y el enfoque por fases ya fueron establecidos como base del proyecto.  
+ 
+2. Módulo CRM y terceros 
+Este módulo agrupa las entidades humanas y comerciales del negocio: agencias, 
+clientes y contactos. Su función es servir como base de todo el circuito posterior. Si 
+aquí nace mal el dato, todo lo demás se contamina. En la visión general ya quedó 
+definido que la gestión de terceros es una de las áreas núcleo del ERP.  
+ 
+2.1 Submódulo: Clientes Agentes 
+2.1.1 Objetivo 
+Permitir crear, consultar, editar, desactivar y relacionar agencias de viajes 
+intermediarias, que serán el cliente comercial principal de la mayorista en gran parte de 
+los casos. El circuito operativo ya dejó claro que el cliente_agente es una pieza central 
+del negocio.  
+2.1.2 Datos principales 
+Cada cliente agente debe poder guardar: 
+• código interno o iniciales,  
+• nombre de la empresa,  
+• nombre del agente/contacto principal,  
+• teléfono,  
+• correo,  
+• país,  
+• ciudad,  
+• dirección,  
+• NIT o identificación fiscal,  
+• comisión base o condición comercial base,  
+• estado activo/inactivo.  
+Esto aterriza la lógica definida en las reglas RN-010 a RN-015.  
+2.1.3 Pantallas funcionales 
+Debe existir: 
+• una lista de clientes agentes,  
+• una pantalla de alta/edición,  
+• una vista detalle del cliente agente.  
+
+Lista de clientes agentes 
+Debe mostrar: 
+• código,  
+• nombre de empresa,  
+• contacto principal,  
+• país/ciudad,  
+• comisión base,  
+• estado,  
+• cantidad de clientes asociados,  
+• cantidad de cotizaciones activas,  
+• cantidad de reservas.  
+Debe incluir filtros por: 
+• nombre,  
+• código,  
+• país,  
+• estado.  
+Debe incluir acciones rápidas: 
+• ver detalle,  
+• editar,  
+• desactivar,  
+• crear nueva cotización para esa agencia,  
+• ver clientes asociados.  
+Pantalla de alta/edición 
+Debe permitir guardar y modificar los datos generales del cliente agente. 
+Vista detalle 
+Debe mostrar: 
+• ficha general,  
+• clientes finales asociados,  
+• cotizaciones activas,  
+• cotizaciones descartadas,  
+• reservas,  
+• indicadores básicos de venta.  
+2.1.4 Acciones permitidas 
+• crear agencia,  
+• editar agencia,  
+• desactivar agencia,  
+• consultar historial,  
+• iniciar cotización desde la agencia.  
+2.1.5 Validaciones 
+• no se puede repetir el código interno,  
+• no se puede guardar una agencia sin nombre o razón social,  
+• no se puede eliminar físicamente si tiene historial,  
+• si se desactiva, debe seguir apareciendo en histórico pero no en búsquedas 
+operativas por defecto.  
+2.1.6 Comportamiento esperado 
+La agencia actúa como eje comercial. Desde ella deben poder verse rápidamente todos 
+los clientes y operaciones relacionadas. El usuario no debe sentir que la agencia es un 
+
+simple registro aislado, sino la puerta de entrada al negocio generado por esa 
+intermediaria. 
+ 
+2.2 Submódulo: Clientes finales 
+2.2.1 Objetivo 
+Permitir gestionar pasajeros o titulares de expediente, asociados opcionalmente a una 
+agencia, con acceso rápido a su historial comercial y operativo. Esto responde 
+directamente a la lógica funcional del área de clientes.  
+2.2.2 Datos principales 
+• nombre completo,  
+• teléfono,  
+• correo,  
+• país,  
+• ciudad,  
+• cliente agente asociado,  
+• estado activo/inactivo,  
+• observaciones internas.  
+2.2.3 Pantallas funcionales 
+Debe existir: 
+• una lista de clientes,  
+• una pantalla de alta/edición,  
+• una vista detalle del cliente.  
+Lista de clientes 
+Debe mostrar: 
+• nombre,  
+• agencia asociada,  
+• país/ciudad,  
+• última cotización,  
+• próxima fecha de viaje,  
+• estado.  
+Debe permitir filtros por: 
+• nombre,  
+• agencia,  
+• país,  
+• estado,  
+• año de viaje.  
+Vista detalle del cliente 
+Debe mostrar: 
+• ficha general,  
+• cotizaciones activas,  
+• cotizaciones descartadas,  
+• reservas,  
+• confirmaciones,  
+• histórico ordenado por fecha de viaje y año.  
+Este orden histórico ya había sido pedido expresamente como regla del sistema.  
+2.2.4 Acciones permitidas 
+• crear cliente,  
+
+• editar cliente,  
+• archivar cliente,  
+• crear cotización,  
+• ver expediente histórico.  
+2.2.5 Validaciones 
+• debe existir al menos nombre del cliente para guardar,  
+• si se asocia a agencia, la agencia debe existir y estar activa,  
+• no puede eliminarse físicamente si tiene cotizaciones o reservas.  
+2.2.6 Comportamiento esperado 
+Desde el perfil del cliente se debe poder acceder al ciclo completo: lo cotizado, lo 
+descartado, lo reservado y lo confirmado. El cliente debe sentirse como un expediente 
+vivo, no como una ficha estática. 
+ 
+3. Módulo Proveedores 
+3.1 Objetivo 
+Gestionar las empresas proveedoras de servicios turísticos y mantener la relación entre 
+proveedor, cobertura geográfica y catálogo de servicios. El funcionamiento operativo y 
+las reglas RN-030 a RN-034 ya dejaron claro que no se puede crear un servicio sin 
+proveedor y que un proveedor puede tener muchos servicios.  
+3.2 Datos principales 
+• nombre comercial,  
+• código interno,  
+• sitio web,  
+• correos de contacto,  
+• usuarios/contactos por correo,  
+• país,  
+• ciudad opcional,  
+• tipos de servicio que ofrece,  
+• observaciones,  
+• estado activo/inactivo.  
+3.3 Pantallas funcionales 
+Debe existir: 
+• una lista de proveedores,  
+• una pantalla de alta/edición,  
+• una vista detalle.  
+Lista de proveedores 
+Debe mostrar: 
+• nombre,  
+• país,  
+• ciudad,  
+• tipos de servicio,  
+• cantidad de servicios activos,  
+• estado.  
+Debe permitir filtros por: 
+• nombre,  
+• país,  
+• tipo de servicio,  
+
+• estado.  
+Vista detalle 
+Debe mostrar: 
+• ficha principal,  
+• servicios asociados,  
+• accesos rápidos para crear nuevo servicio,  
+• históricos operativos futuros.  
+3.4 Acciones permitidas 
+• crear proveedor,  
+• editar proveedor,  
+• desactivar proveedor,  
+• ver servicios asociados,  
+• crear servicio desde proveedor.  
+3.5 Validaciones 
+• no se puede guardar sin nombre,  
+• si se carga ubicación, debe ser una combinación válida,  
+• no se puede eliminar físicamente si tiene servicios asociados.  
+3.6 Comportamiento esperado 
+El módulo debe funcionar como el “origen de suministro” del catálogo. Desde un 
+proveedor el usuario debe poder ver claramente qué vende ese proveedor y dónde 
+opera. 
+ 
+4. Módulo Catálogo de Producto 
+Este módulo administra los tipos de servicio, servicios concretos y sus atributos 
+específicos. Es la despensa del ERP: de aquí sale lo que luego se cotiza. En la visión 
+general y en las reglas ya quedó claro que el ERP necesita una tabla madre común y 
+estructuras hijas por tipo.  
+ 
+4.1 Submódulo: Tipos de servicio 
+4.1.1 Objetivo 
+Gestionar la clasificación base del producto turístico. 
+4.1.2 Datos principales 
+• nombre del tipo,  
+• código interno opcional,  
+• estado activo/inactivo.  
+4.1.3 Pantallas funcionales 
+• lista de tipos,  
+• formulario de alta/edición.  
+4.1.4 Acciones permitidas 
+• crear tipo,  
+• editar tipo,  
+• desactivar tipo.  
+4.1.5 Validaciones 
+• no puede repetirse el nombre,  
+• no puede eliminarse si ya tiene servicios asociados.  
+4.1.6 Comportamiento esperado 
+
+En MVP los tipos deben venir casi cerrados: alojamiento, visita, excursión, traslado, 
+entrada, tren, vuelo.  
+ 
+4.2 Submódulo: Servicios 
+4.2.1 Objetivo 
+Permitir crear, editar, consultar y desactivar servicios turísticos concretos. 
+4.2.2 Datos comunes 
+Todos los servicios deben compartir: 
+• tipo de servicio,  
+• proveedor,  
+• ciudad,  
+• país derivado,  
+• nombre interno,  
+• descripción general,  
+• privado o en grupo cuando aplique,  
+• link de reserva,  
+• duración o tiempo de servicio cuando aplique,  
+• estado activo/inactivo.  
+4.2.3 Datos específicos por tipo 
+Debe existir un bloque dinámico en la pantalla según el tipo elegido. 
+Alojamiento 
+• noches,  
+• habitaciones,  
+• régimen,  
+• categoría hotel,  
+• categoría habitación,  
+• proveedor hotel.  
+Traslado 
+• origen,  
+• destino,  
+• escalas,  
+• vehículo.  
+Visita / Excursión 
+• descripción,  
+• tipo de guía,  
+• idioma,  
+• duración,  
+• privado o en grupo.  
+Boleto / Entrada 
+• nombre o tipo de entrada,  
+• tipo de entrada,  
+• guía o audioguía,  
+• idioma.  
+Tren 
+• origen,  
+• destino,  
+• escalas,  
+
+• clase,  
+• sillas reservadas,  
+• equipaje.  
+Vuelo 
+• origen,  
+• destino,  
+• escalas,  
+• clase,  
+• equipaje.  
+Esto respeta la lógica funcional definida desde el documento base y sostenida en las 
+reglas RN-040 a RN-055.  
+4.2.4 Pantallas funcionales 
+Debe existir: 
+• una lista de servicios,  
+• una pantalla de alta/edición dinámica,  
+• una vista detalle del servicio.  
+Lista de servicios 
+Debe mostrar: 
+• nombre,  
+• tipo,  
+• proveedor,  
+• ciudad,  
+• precio base o indicación de precio no parametrizado,  
+• estado.  
+Debe permitir filtros por: 
+• tipo,  
+• proveedor,  
+• país,  
+• ciudad,  
+• activo/inactivo.  
+Formulario de alta/edición 
+Debe cambiar dinámicamente los campos según el tipo de servicio seleccionado. 
+Vista detalle 
+Debe mostrar: 
+• ficha general,  
+• atributos específicos,  
+• precios registrados,  
+• histórico de uso futuro,  
+• accesos a edición.  
+4.2.5 Acciones permitidas 
+• crear servicio,  
+• editar servicio,  
+• desactivar servicio,  
+• consultar detalle,  
+• gestionar precios.  
+4.2.6 Validaciones 
+• no se puede crear un servicio sin proveedor,  
+
+• no se puede crear un servicio sin tipo,  
+• no se puede crear un servicio sin ubicación,  
+• ciertos campos del bloque específico deben ser obligatorios según el tipo,  
+• si el servicio ya fue usado, no puede eliminarse.  
+4.2.7 Comportamiento esperado 
+La pantalla debe sentirse como un formulario maestro con comportamiento inteligente. 
+El usuario elige el tipo y el sistema “abre el cajón correcto” con los campos necesarios. 
+ 
+4.3 Submódulo: Tarifas y precios base 
+4.3.1 Objetivo 
+Permitir registrar precios sugeridos o base para los servicios, con comportamiento por 
+mes o periodo cuando aplique. 
+4.3.2 Datos principales 
+• servicio,  
+• año,  
+• mes o periodo,  
+• tipo de ocupación cuando aplique,  
+• precio,  
+• moneda base.  
+4.3.3 Pantallas funcionales 
+• lista de tarifas,  
+• formulario de alta/edición,  
+• vista rápida desde servicio.  
+4.3.4 Acciones permitidas 
+• crear tarifa,  
+• editar tarifa,  
+• desactivar vigencia,  
+• consultar tarifas históricas.  
+4.3.5 Validaciones 
+• no se puede crear tarifa sin servicio,  
+• no se debe solapar una tarifa idéntica para el mismo periodo y combinación,  
+• si no existe tarifa, el sistema debe permitir operación manual posterior en 
+cotización.  
+4.3.6 Comportamiento esperado 
+El sistema debe proponer precios desde catálogo, pero nunca bloquear la operación 
+comercial si no existe tarifa cargada. Esto ya estaba fijado por RN-060 a RN-064.  
+ 
+5. Módulo Cotizaciones 
+Este es el corazón comercial del ERP. Aquí el catálogo se transforma en propuesta de 
+viaje. El funcionamiento completo ya dejó claro que la cotización tiene cabecera, 
+detalle, precios, opcionales y estados propios.  
+ 
+5.1 Pantalla: Lista global de cotizaciones 
+Objetivo 
+Mostrar todas las cotizaciones activas del sistema. 
+Datos visibles 
+• número/código de cotización,  
+
+• cliente,  
+• agencia,  
+• fecha de viaje,  
+• destino principal,  
+• total pasajeros,  
+• total venta,  
+• estado,  
+• fecha de creación.  
+Acciones rápidas 
+• ver detalle,  
+• editar,  
+• convertir en reserva,  
+• descartar,  
+• duplicar,  
+• generar documento.  
+Filtros 
+• cliente,  
+• agencia,  
+• fecha de viaje,  
+• año,  
+• destino,  
+• estado.  
+Validaciones 
+• solo deben aparecer aquí las cotizaciones activas,  
+• las descartadas y reservadas deben salir de esta vista o mostrarse con filtro 
+controlado.  
+ 
+5.2 Pantalla: Crear / editar cotización 
+5.2.1 Estructura funcional 
+La pantalla debe dividirse en dos grandes bloques: 
+A. Cabecera de cotización 
+B. Itinerario / ítems de servicio 
+5.2.2 Cabecera de cotización 
+Debe permitir definir: 
+• cliente,  
+• cliente agente,  
+• nombre comercial de la cotización,  
+• total pasajeros,  
+• desglose etario,  
+• fecha principal de viaje,  
+• destino principal,  
+• categoría del viaje,  
+• moneda,  
+• presupuesto estimado,  
+• comisión o margen aplicado,  
+• observaciones generales.  
+5.2.3 Validaciones de cabecera 
+
+• debe existir cliente,  
+• el total de pasajeros debe coincidir con el desglose etario,  
+• la fecha principal debe ser válida,  
+• si hay cliente agente, debe existir y estar activo.  
+5.2.4 Bloque de itinerario 
+Debe mostrar una grilla o tabla editable con: 
+• fecha del servicio,  
+• orden,  
+• servicio,  
+• tipo,  
+• ciudad,  
+• texto visible,  
+• opcional sí/no,  
+• precio sugerido,  
+• precio editable,  
+• observaciones,  
+• acciones de mover arriba/abajo, editar, eliminar.  
+5.2.5 Acciones sobre ítems 
+• agregar servicio existente,  
+• crear servicio rápido desde la cotización,  
+• editar ítem,  
+• marcar opcional,  
+• eliminar ítem,  
+• reordenar.  
+La idea de crear servicio rápido desde cotización ya estaba contemplada desde el 
+documento base, siempre que exista primero el proveedor.  
+5.2.6 Validaciones de ítems 
+• cada ítem debe tener fecha,  
+• cada ítem debe tener orden,  
+• cada ítem debe tener servicio válido,  
+• si el usuario cambia el precio, debe persistirse el valor usado,  
+• el sistema debe distinguir precio sugerido de precio manual.  
+5.2.7 Cálculos en pantalla 
+La pantalla debe calcular en tiempo real: 
+• total costo de incluidos,  
+• total opcionales,  
+• total venta,  
+• total por persona.  
+5.2.8 Acciones principales del expediente 
+• guardar borrador,  
+• guardar y seguir editando,  
+• generar documento,  
+• descartar,  
+• convertir en reserva.  
+5.2.9 Comportamiento esperado 
+
+La pantalla de cotización debe sentirse como una mesa de armado. El usuario toma 
+servicios del catálogo, los acomoda por fecha y orden, ajusta textos y precios, y ve 
+inmediatamente el efecto económico del itinerario. 
+ 
+5.3 Pantalla: Detalle de cotización 
+Objetivo 
+Permitir revisar una cotización ya creada sin entrar necesariamente en modo edición. 
+Debe mostrar 
+• cabecera completa,  
+• itinerario final,  
+• resumen económico,  
+• historial básico,  
+• documentos generados si existen.  
+Acciones 
+• editar,  
+• duplicar,  
+• convertir en reserva,  
+• descartar,  
+• generar PDF/Word.  
+ 
+6. Módulo Reservas 
+Este módulo marca la transición del mundo comercial al mundo operativo. Las reglas 
+RN-120 a RN-144 ya dejaron claro que la reserva debe ser entidad propia, heredar 
+snapshot de la cotización y manejar costos finales, confirmaciones y estados operativos.  
+ 
+6.1 Pantalla: Lista global de reservas 
+Objetivo 
+Mostrar reservas operativas del sistema. 
+Datos visibles 
+• código de reserva,  
+• cliente,  
+• agencia,  
+• fecha de viaje,  
+• estado operativo,  
+• total venta confirmada,  
+• total costo real,  
+• utilidad estimada o real,  
+• fecha de creación.  
+Acciones rápidas 
+• ver detalle,  
+• editar costos finales,  
+• registrar confirmaciones,  
+• confirmar comercialmente,  
+• generar documentos,  
+• cancelar.  
+Filtros 
+• cliente,  
+
+• agencia,  
+• estado,  
+• año,  
+• fecha de viaje.  
+ 
+6.2 Pantalla: Detalle / edición de reserva 
+6.2.1 Objetivo 
+Gestionar el expediente operativo derivado de una cotización. 
+6.2.2 Bloques funcionales 
+La pantalla debe tener cinco bloques: 
+A. Cabecera heredada de la cotización 
+B. Itinerario reservado 
+C. Confirmaciones por servicio 
+D. Confirmación comercial 
+E. Liquidación 
+A. Cabecera heredada 
+Debe mostrar: 
+• cliente,  
+• agencia,  
+• pasajeros,  
+• fechas,  
+• destino,  
+• total cotizado,  
+• estado de la reserva.  
+No debe reescribirse automáticamente si cambia la cotización original. 
+B. Itinerario reservado 
+Cada línea debe mostrar: 
+• fecha,  
+• orden,  
+• servicio,  
+• costo cotizado,  
+• costo final,  
+• número de confirmación,  
+• fecha/hora de confirmación,  
+• estado del ítem.  
+C. Confirmaciones por servicio 
+Debe permitir: 
+• registrar número de confirmación,  
+• editarlo con trazabilidad,  
+• marcar si el servicio fue efectivamente reservado,  
+• visualizar fecha y hora del primer registro.  
+D. Confirmación comercial 
+Debe existir un bloque o botón para: 
+• congelar importes comerciales finales,  
+• guardar snapshot de venta confirmada,  
+• marcar la reserva como confirmada comercialmente.  
+E. Liquidación 
+
+Debe mostrar: 
+• total venta confirmada,  
+• total costo real,  
+• utilidad total,  
+• utilidad por persona,  
+• valor atribuible a la agencia,  
+• diferencia entre cotizado y real.  
+Todo esto responde directamente al funcionamiento completo del ERP y a las reglas de 
+reserva, confirmación y liquidación.  
+6.2.3 Validaciones 
+• no puede existir reserva sin cotización de origen en MVP,  
+• el costo final no reemplaza el costo cotizado,  
+• el número de confirmación debe guardar fecha/hora de primer registro,  
+• la confirmación comercial no debe depender de texto manual suelto,  
+• la reserva no se elimina físicamente.  
+6.2.4 Acciones principales 
+• guardar cambios,  
+• registrar confirmación,  
+• confirmar comercialmente,  
+• generar documento de reserva,  
+• generar confirmación,  
+• cancelar reserva.  
+ 
+7. Módulo Liquidación 
+7.1 Objetivo 
+Convertir la operación reservada en información de resultado económico. 
+7.2 Pantallas funcionales 
+En MVP puede funcionar primero dentro del detalle de reserva y luego crecer como 
+módulo propio. 
+Debe existir: 
+• un bloque de liquidación dentro de reserva,  
+• una futura vista global de liquidaciones.  
+7.3 Datos que debe mostrar 
+• total venta confirmada,  
+• total costo real,  
+• utilidad bruta,  
+• utilidad por pasajero,  
+• valor atribuible a agencia,  
+• diferencia entre cotizado y reservado,  
+• estado de cierre.  
+Esto responde a RN-160 a RN-165.  
+7.4 Acciones permitidas 
+• recalcular,  
+• guardar cierre,  
+• exportar,  
+• consultar histórico.  
+7.5 Validaciones 
+
+• no debe calcularse sobre cotización activa,  
+• debe tomar como base venta confirmada y costo real,  
+• debe conservar snapshot histórico.  
+7.6 Comportamiento esperado 
+La liquidación debe sentirse como el espejo financiero del expediente. No adivina, no 
+estima por intuición, no depende del documento. Recalcula desde datos estructurados. 
+ 
+8. Módulo Documentos 
+8.1 Objetivo 
+Generar documentos comerciales y operativos a partir de información estructurada del 
+sistema. 
+8.2 Documentos del MVP 
+• cotización comercial básica,  
+• documento de reserva,  
+• confirmación básica.  
+La visión general ya dejó claro que la documentación avanzada no debe comerse el 
+MVP.  
+8.3 Pantallas funcionales 
+No necesita módulo aislado complejo en MVP. Debe integrarse como acción desde 
+cotización y reserva. 
+8.4 Acciones permitidas 
+• generar PDF,  
+• generar Word,  
+• regenerar documento,  
+• consultar última versión.  
+8.5 Validaciones 
+• los documentos deben salir de datos del sistema,  
+• deben respetar formato por tipo de servicio,  
+• no deben usarse como fuente primaria del negocio.  
+Esto aterriza RN-180 a RN-184.  
+ 
+9. Módulo Reportes y Control 
+9.1 Objetivo 
+Permitir lectura consolidada del negocio sin depender de revisar expediente por 
+expediente. 
+9.2 Vistas principales del MVP 
+• todas las cotizaciones activas,  
+• todas las descartadas,  
+• todas las reservas,  
+• reporte básico de utilidad por reserva,  
+• filtros por agencia, cliente, año y servicio.  
+Esto está directamente alineado con RN-170 a RN-195.  
+9.3 Pantallas funcionales 
+A. Vista de cotizaciones activas 
+B. Vista de descartadas 
+C. Vista de reservas 
+D. Vista básica de análisis financiero 
+
+9.4 Comportamiento esperado 
+Debe ser un módulo rápido, muy filtrable y orientado a consulta operativa y gerencial. 
+No debe exigir navegar como laberinto para llegar a un dato. 
+ 
+10. Módulo Administración y Seguridad 
+10.1 Objetivo 
+Controlar parámetros del sistema, usuarios, roles y trazabilidad mínima. 
+Aunque aún no esté detallado en profundidad, la visión general ya señaló que un ERP 
+serio no puede vivir sin este módulo.  
+10.2 Funciones mínimas del MVP 
+• gestión de usuarios,  
+• roles básicos,  
+• permisos simples,  
+• parámetros generales,  
+• auditoría mínima.  
+10.3 Pantallas funcionales 
+• lista de usuarios,  
+• alta/edición de usuario,  
+• lista de roles,  
+• parámetros generales.  
+10.4 Validaciones 
+• toda entidad crítica debe registrar creación y modificación,  
+• cambios de estado deben quedar auditados,  
+• importes manuales deben poder distinguirse de los sugeridos.  
+Esto recoge RN-200 a RN-203.  
+ 
+11. Relaciones funcionales entre módulos 
+Este ERP no debe funcionar como islas. Debe comportarse como un mecanismo 
+engranado. 
+La relación funcional correcta es: 
+• Clientes agentes alimentan clientes y condiciones comerciales.  
+• Clientes alimentan cotizaciones.  
+• Proveedores alimentan servicios.  
+• Servicios alimentan cotizaciones.  
+• Cotizaciones alimentan reservas.  
+• Reservas alimentan confirmación comercial.  
+• Confirmación comercial alimenta liquidación.  
+• Liquidación alimenta reportes.  
+• Documentos leen de cotización y reserva, pero no mandan sobre el negocio.  
+Esta cadena respeta completamente la autopista central definida en el documento de 
+funcionamiento y protege la separación entre entidades, que ya había sido declarada 
+como no negociable.  
+ 
+12. Diseño funcional del MVP resumido 
+Si resumimos todo el MVP en lenguaje funcional, el ERP debe permitir esto: 
+El usuario crea una agencia, crea o busca un cliente, crea o consulta proveedores, revisa 
+el catálogo de servicios, arma una cotización con itinerario y precios, la guarda, la 
+
+convierte en reserva si el negocio avanza, registra costos reales y confirmaciones por 
+servicio, congela los valores finales comercialmente, calcula la utilidad y consulta el 
+resultado desde vistas globales. Todo eso debe poder hacerse sin recurrir a Excel como 
+sistema paralelo. Esa lógica está completamente alineada con la visión general, el 
+funcionamiento completo y las reglas de negocio ya aprobadas.  
+ 
+13. Conclusión 
+Este documento convierte la lógica del ERP en comportamiento funcional concreto. Ya 
+no estamos hablando solo de qué módulos existen, sino de cómo deben sentirse, qué 
+pantallas necesitan, qué acciones permiten, qué validan y cómo se conectan entre sí. La 
+visión general nos dio el mapa, el documento de funcionamiento nos dio la ruta y el de 
+reglas nos dio las leyes. Este documento ya pone las paredes, puertas y corredores. 
+ 

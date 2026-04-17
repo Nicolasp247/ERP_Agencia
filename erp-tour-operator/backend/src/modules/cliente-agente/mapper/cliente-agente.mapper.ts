@@ -1,0 +1,84 @@
+import { CotizacionEstado } from "@prisma/client";
+
+export function toClienteAgenteListItem(
+  record: {
+    id: number;
+    codigo: string;
+    razonSocial: string;
+    nombreContacto: string | null;
+    telefono: string | null;
+    email: string | null;
+    comisionBasePct: { toString(): string } | null;
+    activo: boolean;
+    pais: { nombre: string } | null;
+    ciudad: { nombre: string } | null;
+    clientes: { id: number }[];
+    cotizaciones: { estado: CotizacionEstado }[];
+    reservas: { id: number }[];
+  }
+) {
+  return {
+    id: record.id,
+    codigo: record.codigo,
+    razonSocial: record.razonSocial,
+    nombreContacto: record.nombreContacto,
+    telefono: record.telefono,
+    email: record.email,
+    comisionBasePct: record.comisionBasePct?.toString() ?? null,
+    activo: record.activo,
+    pais: record.pais?.nombre ?? null,
+    ciudad: record.ciudad?.nombre ?? null,
+    cantidadClientes: record.clientes.length,
+    cantidadCotizacionesActivas: record.cotizaciones.filter((item) => item.estado === CotizacionEstado.ACTIVA)
+      .length,
+    cantidadReservas: record.reservas.length
+  };
+}
+
+export function toClienteAgenteDetail(
+  record: {
+    id: number;
+    codigo: string;
+    razonSocial: string;
+    nombreContacto: string | null;
+    telefono: string | null;
+    email: string | null;
+    direccion: string | null;
+    nit: string | null;
+    comisionBasePct: { toString(): string } | null;
+    activo: boolean;
+    pais: { id: number; nombre: string } | null;
+    ciudad: { id: number; nombre: string } | null;
+    clientes: Array<{ id: number; nombreCompleto: string; activo: boolean }>;
+    cotizaciones: Array<{
+      id: number;
+      nombreCotizacion: string;
+      estado: string;
+      fechaViajePrincipal: Date;
+    }>;
+    reservas: Array<{
+      id: number;
+      codigoReserva: string;
+      estado: string;
+      fechaViajePrincipal: Date;
+    }>;
+  }
+) {
+  return {
+    id: record.id,
+    codigo: record.codigo,
+    razonSocial: record.razonSocial,
+    nombreContacto: record.nombreContacto,
+    telefono: record.telefono,
+    email: record.email,
+    direccion: record.direccion,
+    nit: record.nit,
+    comisionBasePct: record.comisionBasePct?.toString() ?? null,
+    activo: record.activo,
+    pais: record.pais,
+    ciudad: record.ciudad,
+    clientes: record.clientes,
+    cotizaciones: record.cotizaciones,
+    reservas: record.reservas
+  };
+}
