@@ -1,11 +1,27 @@
-node_modules
-dist
-coverage
+# dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# build outputs
+dist/
+backend/dist/
+frontend/dist/
+
+# coverage
+coverage/
+
+# env files
 .env
 .env.local
 .env.*
 !.env.example
-backend/generated
+
+# generated / local artifacts
+backend/generated/
 backend/prisma/dev.db
-frontend/.vite
+frontend/.vite/
+
+# logs
 *.log
+npm-debug.log*
