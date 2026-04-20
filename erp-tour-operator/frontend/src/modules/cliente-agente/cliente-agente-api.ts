@@ -11,6 +11,7 @@ export const agenteFormSchema = z.object({
   email: z.string().email().optional().nullable().or(z.literal("")),
   direccion: z.string().optional().nullable(),
   nit: z.string().optional().nullable(),
+  idContinente: z.coerce.number().optional().nullable(),
   idPais: z.coerce.number().optional().nullable(),
   idCiudad: z.coerce.number().optional().nullable(),
   comisionBasePct: z.coerce.number().min(0).max(100).optional().nullable(),
@@ -29,10 +30,21 @@ export async function getAgente(id: number) {
   return response.data.data;
 }
 
+function normalizeNullableNumber(value: unknown) {
+  if (value === "" || value === undefined || value === null) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
 export async function saveAgente(values: AgenteFormValues, id?: number) {
   const payload = {
     ...values,
-    email: values.email || null
+    email: values.email || null,
+    idPais: normalizeNullableNumber(values.idPais),
+    idCiudad: normalizeNullableNumber(values.idCiudad)
   };
 
   if (id) {

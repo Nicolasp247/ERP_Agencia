@@ -7,18 +7,22 @@ export type CatalogItem = {
 };
 
 export async function fetchContinentes() {
-  const response = await api.get<ApiResponse<CatalogItem[]>>("/catalogos/continentes");
+  const response = await api.get<ApiResponse<CatalogItem[]>>("/geo/continentes");
   return response.data.data;
 }
 
-export async function fetchPaises() {
-  const response = await api.get<ApiResponse<CatalogItem[]>>("/catalogos/paises");
+export async function fetchPaises(idContinente?: number) {
+  const response = await api.get<ApiResponse<CatalogItem[]>>("/geo/paises", {
+    params: idContinente ? { idContinente } : undefined
+  });
+
   return response.data.data;
 }
 
 export async function fetchCiudades(idPais?: number) {
-  const response = await api.get<ApiResponse<CatalogItem[]>>("/catalogos/ciudades", {
+  const response = await api.get<ApiResponse<CatalogItem[]>>("/geo/ciudades", {
     params: idPais ? { idPais } : undefined
   });
+
   return response.data.data;
 }

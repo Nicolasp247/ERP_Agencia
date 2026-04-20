@@ -47,7 +47,16 @@ export function toClienteAgenteDetail(
     nit: string | null;
     comisionBasePct: { toString(): string } | null;
     activo: boolean;
-    pais: { id: number; nombre: string } | null;
+    pais:
+      | {
+          id: number;
+          nombre: string;
+          continente?: {
+            id: number;
+            nombre: string;
+          } | null;
+        }
+      | null;
     ciudad: { id: number; nombre: string } | null;
     clientes: Array<{ id: number; nombreCompleto: string; activo: boolean }>;
     cotizaciones: Array<{
@@ -75,7 +84,13 @@ export function toClienteAgenteDetail(
     nit: record.nit,
     comisionBasePct: record.comisionBasePct?.toString() ?? null,
     activo: record.activo,
-    pais: record.pais,
+    continente: record.pais?.continente ?? null,
+    pais: record.pais
+      ? {
+          id: record.pais.id,
+          nombre: record.pais.nombre
+        }
+      : null,
     ciudad: record.ciudad,
     clientes: record.clientes,
     cotizaciones: record.cotizaciones,

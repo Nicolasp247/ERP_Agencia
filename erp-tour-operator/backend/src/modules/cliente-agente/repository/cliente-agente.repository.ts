@@ -46,7 +46,11 @@ export class ClienteAgenteRepository {
     return prisma.clienteAgente.findUnique({
       where: { id },
       include: {
-        pais: true,
+        pais: {
+          include: {
+            continente: true
+          }
+        },
         ciudad: true,
         clientes: {
           select: {
@@ -91,9 +95,14 @@ export class ClienteAgenteRepository {
   }
 
   create(data: ClienteAgenteInput & { createdBy?: number | null }) {
+    const { idContinente, ...safeData } = data as ClienteAgenteInput & {
+      idContinente?: number | null;
+      createdBy?: number | null;
+    };
+
     return prisma.clienteAgente.create({
       data: {
-        ...data,
+        ...safeData,
         createdBy: data.createdBy ?? null,
         updatedBy: data.createdBy ?? null
       }
@@ -101,10 +110,15 @@ export class ClienteAgenteRepository {
   }
 
   update(id: number, data: ClienteAgenteInput & { updatedBy?: number | null }) {
+    const { idContinente, ...safeData } = data as ClienteAgenteInput & {
+      idContinente?: number | null;
+      updatedBy?: number | null;
+    };
+
     return prisma.clienteAgente.update({
       where: { id },
       data: {
-        ...data,
+        ...safeData,
         updatedBy: data.updatedBy ?? null
       }
     });
