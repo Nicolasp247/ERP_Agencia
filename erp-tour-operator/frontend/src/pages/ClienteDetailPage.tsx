@@ -4,8 +4,17 @@ import { Link, useParams } from "react-router-dom";
 import { PageSection } from "@/components/PageSection";
 import { getCliente } from "@/modules/cliente/cliente-api";
 
+function formatDate(value?: string | Date | null) {
+  if (!value) {
+    return "N/D";
+  }
+
+  return new Date(value).toLocaleDateString();
+}
+
 export function ClienteDetailPage() {
   const params = useParams();
+
   const query = useQuery({
     queryKey: ["cliente", params.id],
     queryFn: () => getCliente(Number(params.id))
@@ -34,35 +43,77 @@ export function ClienteDetailPage() {
       >
         <div className="grid-3">
           <div>
-            <strong>Agencia</strong>
-            <p>{cliente.clienteAgente?.razonSocial ?? "Directo"}</p>
+            <strong>Nombre completo</strong>
+            <p>{cliente.nombreCompleto ?? "N/D"}</p>
           </div>
-          <div>
-            <strong>Ubicación</strong>
-            <p>
-              {cliente.pais?.nombre ?? "N/D"} / {cliente.ciudad?.nombre ?? "N/D"}
-            </p>
-          </div>
+
           <div>
             <strong>Estado</strong>
             <p>{cliente.activo ? "Activo" : "Inactivo"}</p>
           </div>
+
+          <div>
+            <strong>Agencia asociada</strong>
+            <p>{cliente.clienteAgente?.razonSocial ?? "Directo"}</p>
+          </div>
+
+          <div>
+            <strong>Continente</strong>
+            <p>{cliente.continente?.nombre ?? "N/D"}</p>
+          </div>
+
+          <div>
+            <strong>País</strong>
+            <p>{cliente.pais?.nombre ?? "N/D"}</p>
+          </div>
+
+          <div>
+            <strong>Ciudad</strong>
+            <p>{cliente.ciudad?.nombre ?? "N/D"}</p>
+          </div>
+
+          <div>
+            <strong>Email</strong>
+            <p>{cliente.email ?? "N/D"}</p>
+          </div>
+
+          <div>
+            <strong>Teléfono</strong>
+            <p>{cliente.telefono ?? "N/D"}</p>
+          </div>
+        </div>
+
+        <div style={{ marginTop: "1rem" }}>
+          <strong>Observaciones</strong>
+          <p>{cliente.observaciones ?? "N/D"}</p>
         </div>
       </PageSection>
 
       <PageSection title="Historial">
-        <table>
-          <tbody>
-            {cliente.historial.map((item: any) => (
-              <tr key={`${item.tipo}-${item.id}`}>
-                <td>{item.tipo}</td>
-                <td>{item.referencia}</td>
-                <td>{item.estado}</td>
-                <td>{new Date(item.fechaViajePrincipal).toISOString().slice(0, 10)}</td>
+        {cliente.historial?.length ? (
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Referencia</th>
+                <th>Estado</th>
+                <th>Fecha viaje</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {cliente.historial.map((item: any) => (
+                <tr key={`${item.tipo}-${item.id}`}>
+                  <td>{item.tipo}</td>
+                  <td>{item.referencia}</td>
+                  <td>{item.estado}</td>
+                  <td>{formatDate(item.fechaViajePrincipal)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p>No hay historial registrado.</p>
+        )}
       </PageSection>
     </div>
   );

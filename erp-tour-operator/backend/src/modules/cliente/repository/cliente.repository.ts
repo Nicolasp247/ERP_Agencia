@@ -48,7 +48,11 @@ export class ClienteRepository {
             razonSocial: true
           }
         },
-        pais: true,
+        pais: {
+          include: {
+            continente: true
+          }
+        },
         ciudad: true,
         cotizaciones: {
           select: {
@@ -77,9 +81,14 @@ export class ClienteRepository {
   }
 
   create(data: ClienteInput & { createdBy?: number | null }) {
+    const { idContinente, ...safeData } = data as ClienteInput & {
+      idContinente?: number | null;
+      createdBy?: number | null;
+    };
+
     return prisma.cliente.create({
       data: {
-        ...data,
+        ...safeData,
         createdBy: data.createdBy ?? null,
         updatedBy: data.createdBy ?? null
       }
@@ -87,10 +96,15 @@ export class ClienteRepository {
   }
 
   update(id: number, data: ClienteInput & { updatedBy?: number | null }) {
+    const { idContinente, ...safeData } = data as ClienteInput & {
+      idContinente?: number | null;
+      updatedBy?: number | null;
+    };
+
     return prisma.cliente.update({
       where: { id },
       data: {
-        ...data,
+        ...safeData,
         updatedBy: data.updatedBy ?? null
       }
     });

@@ -8,6 +8,7 @@ export const clienteFormSchema = z.object({
   nombreCompleto: z.string().min(1),
   telefono: z.string().optional().nullable(),
   email: z.string().email().optional().nullable().or(z.literal("")),
+  idContinente: z.coerce.number().optional().nullable(),
   idPais: z.coerce.number().optional().nullable(),
   idCiudad: z.coerce.number().optional().nullable(),
   observaciones: z.string().optional().nullable(),
@@ -26,10 +27,26 @@ export async function getCliente(id: number) {
   return response.data.data;
 }
 
+/**
+ * Convierte valores vacíos del formulario en null.
+ * Esto evita que se mande "" o 0 por accidente cuando no se eligió nada.
+ */
+function normalizeNullableNumber(value: unknown) {
+  if (value === "" || value === undefined || value === null) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
 export async function saveCliente(values: ClienteFormValues, id?: number) {
   const payload = {
     ...values,
-    email: values.email || null
+    email: values.email || null,
+    idClienteAgente: normalizeNullableNumber(values.idClienteAgente),
+    idPais: normalizeNullableNumber(values.idPais),
+    idCiudad: normalizeNullableNumber(values.idCiudad)
   };
 
   if (id) {

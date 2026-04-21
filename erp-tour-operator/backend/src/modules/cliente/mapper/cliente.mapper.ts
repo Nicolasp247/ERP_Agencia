@@ -33,7 +33,16 @@ export function toClienteDetail(
     activo: boolean;
     observaciones: string | null;
     clienteAgente: { id: number; razonSocial: string } | null;
-    pais: { id: number; nombre: string } | null;
+    pais:
+      | {
+          id: number;
+          nombre: string;
+          continente?: {
+            id: number;
+            nombre: string;
+          } | null;
+        }
+      | null;
     ciudad: { id: number; nombre: string } | null;
     cotizaciones: Array<{
       id: number;
@@ -74,7 +83,13 @@ export function toClienteDetail(
     activo: record.activo,
     observaciones: record.observaciones,
     clienteAgente: record.clienteAgente,
-    pais: record.pais,
+    continente: record.pais?.continente ?? null,
+    pais: record.pais
+      ? {
+          id: record.pais.id,
+          nombre: record.pais.nombre
+        }
+      : null,
     ciudad: record.ciudad,
     cotizaciones: record.cotizaciones,
     reservas: record.reservas,
