@@ -37,16 +37,23 @@ export function ProveedorDetailPage() {
             <strong>Código</strong>
             <p>{proveedor.codigo ?? "N/D"}</p>
           </div>
+
           <div>
             <strong>Ubicación</strong>
             <p>
               {proveedor.pais?.nombre ?? "N/D"} / {proveedor.ciudad?.nombre ?? "N/D"}
             </p>
           </div>
+
           <div>
             <strong>Web</strong>
             <p>{proveedor.sitioWeb ?? "N/D"}</p>
           </div>
+        </div>
+
+        <div style={{ marginTop: "1rem" }}>
+          <strong>Observaciones</strong>
+          <p>{proveedor.observaciones ?? "N/D"}</p>
         </div>
       </PageSection>
 
