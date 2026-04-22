@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 
 import { ok } from "@/core/utils/api-response";
 import { servicioService } from "@/modules/servicio/service/servicio.service";
+import type { ServicioFilters } from "../dto/servicio.dto";
 
 export class ServicioController {
   listTipos = async (_req: Request, res: Response) => {
@@ -20,7 +21,11 @@ export class ServicioController {
   };
 
   list = async (req: Request, res: Response) => {
-    const data = await servicioService.list(req.query);
+    const filters =
+      ((req as Request & { validatedQuery?: ServicioFilters }).validatedQuery as ServicioFilters) ??
+      (req.query as unknown as ServicioFilters);
+
+    const data = await servicioService.list(filters);
     res.json(ok(data));
   };
 
@@ -36,6 +41,16 @@ export class ServicioController {
 
   update = async (req: Request, res: Response) => {
     const data = await servicioService.update(Number(req.params.id), req.body, req.user?.id);
+    res.json(ok(data));
+  };
+
+  listIdiomas = async (_req: Request, res: Response) => {
+    const data = await servicioService.listIdiomas();
+    res.json(ok(data));
+  };
+
+  listTiposGuia = async (_req: Request, res: Response) => {
+    const data = await servicioService.listTiposGuia();
     res.json(ok(data));
   };
 }

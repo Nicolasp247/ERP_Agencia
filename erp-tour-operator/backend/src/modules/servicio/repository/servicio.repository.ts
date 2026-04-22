@@ -51,28 +51,44 @@ export class ServicioRepository {
         idProveedor: filters.idProveedor,
         idCiudad: filters.idCiudad,
         activo: filters.activo,
-        ciudad: filters.idPais
-          ? {
-              idPais: filters.idPais
-            }
-          : undefined
+        ciudad:
+          filters.idPais || filters.idContinente
+            ? {
+                idPais: filters.idPais,
+                pais: filters.idContinente
+                  ? {
+                      idContinente: filters.idContinente
+                    }
+                  : undefined
+              }
+            : undefined
       },
       include: {
         tipo: true,
         proveedor: true,
-        ciudad: {
-          include: {
-            pais: true
-          }
-        },
+        ciudad: true,
         tarifas: {
-          orderBy: [{ anio: "desc" }, { mes: "desc" }],
-          take: 1
+          take: 1,
+          orderBy: [{ anio: "desc" }, { mes: "desc" }]
         }
       },
       orderBy: {
         nombreWtravel: "asc"
       }
+    });
+  }
+  
+  listIdiomas() {
+    return prisma.idioma.findMany({
+      where: { activo: true },
+      orderBy: { nombre: "asc" }
+    });
+  }
+
+  listTiposGuia() {
+    return prisma.tipoGuia.findMany({
+      where: { activo: true },
+      orderBy: { nombre: "asc" }
     });
   }
 
@@ -94,17 +110,22 @@ export class ServicioRepository {
         },
         alojamiento: true,
         boletoEntrada: true,
-        tour: true,
+        tour: {
+          include: {
+            tipoGuia: true,
+            idioma: true
+          }
+        },
         traslado: true,
         tren: true,
         vuelo: true,
         tarifas: {
           orderBy: [{ anio: "desc" }, { mes: "desc" }]
-        }
+        },
       }
     });
   }
-
+  
   findByNombre(nombreWtravel: string) {
     return prisma.servicio.findUnique({
       where: { nombreWtravel }

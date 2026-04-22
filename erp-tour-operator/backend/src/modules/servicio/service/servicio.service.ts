@@ -37,6 +37,14 @@ export class ServicioService {
     return toServicioDetail(record);
   }
 
+    async listIdiomas() {
+    return servicioRepository.listIdiomas();
+  }
+
+  async listTiposGuia() {
+    return servicioRepository.listTiposGuia();
+  }
+
   private async validateMasterData(input: ServicioInput) {
     const [tipo, proveedor, ciudad] = await Promise.all([
       servicioRepository.findTipoById(input.idTipo),

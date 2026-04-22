@@ -23,6 +23,8 @@ servicioRouter.put(
   asyncHandler(servicioController.updateTipo)
 );
 servicioRouter.get("/", validateQuery(servicioFilterSchema), asyncHandler(servicioController.list));
+servicioRouter.get("/idiomas", servicioController.listIdiomas);
+servicioRouter.get("/tipos-guia", servicioController.listTiposGuia);
 servicioRouter.get("/:id", validateParams(servicioIdParamSchema), asyncHandler(servicioController.getById));
 servicioRouter.post("/", validateBody(servicioSchema), asyncHandler(servicioController.create));
 servicioRouter.put(

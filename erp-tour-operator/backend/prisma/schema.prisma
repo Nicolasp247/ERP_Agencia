@@ -79,11 +79,6 @@ enum TipoEntrada {
   OTRA
 }
 
-enum TipoGuiaTour {
-  GUIA
-  AUDIOGUIA
-}
-
 model Continente {
   id                    Int          @id @default(autoincrement())
   nombre                String       @db.VarChar(100)
@@ -134,6 +129,28 @@ model TipoServicio {
   servicios    Servicio[]
 
   @@map("tiposervicio")
+}
+
+model Idioma {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique @db.VarChar(50)
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tours     Tour[]
+
+  @@map("idioma")
+}
+
+model TipoGuia {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique @db.VarChar(50)
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tours     Tour[]
+
+  @@map("tipo_guia")
 }
 
 model ClienteAgente {
@@ -297,12 +314,16 @@ model BoletoEntrada {
 }
 
 model Tour {
-  id             Int           @id @default(autoincrement())
-  idServicio     Int           @unique(map: "uq_tour_servicio") @map("id_servicio")
-  tipoGuia       TipoGuiaTour  @map("tipo_guia")
-  idioma         String        @db.VarChar(50)
-  servicio       Servicio      @relation(fields: [idServicio], references: [id])
+  id           Int       @id @default(autoincrement())
+  idServicio    Int       @unique(map: "uq_tour_servicio") @map("id_servicio")
+  idTipoGuia    Int       @map("id_tipo_guia")
+  idIdioma      Int       @map("id_idioma")
+  servicio      Servicio  @relation(fields: [idServicio], references: [id])
+  tipoGuia      TipoGuia  @relation(fields: [idTipoGuia], references: [id])
+  idioma        Idioma    @relation(fields: [idIdioma], references: [id])
 
+  @@index([idTipoGuia], map: "idx_tour_tipo_guia")
+  @@index([idIdioma], map: "idx_tour_idioma")
   @@map("tour")
 }
 

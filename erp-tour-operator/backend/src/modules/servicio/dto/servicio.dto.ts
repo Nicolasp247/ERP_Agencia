@@ -39,8 +39,8 @@ const boletoEntradaSchema = z.object({
 });
 
 const tourSchema = z.object({
-  tipoGuia: z.enum(["GUIA", "AUDIOGUIA"]),
-  idioma: z.string().min(1).max(50)
+  idTipoGuia: z.coerce.number().int().positive(),
+  idIdioma: z.coerce.number().int().positive()
 });
 
 const trasladoSchema = z.object({
@@ -95,6 +95,7 @@ export const servicioFilterSchema = z.object({
   search: z.string().optional(),
   idTipo: z.coerce.number().int().positive().optional(),
   idProveedor: z.coerce.number().int().positive().optional(),
+  idContinente: z.coerce.number().int().positive().optional(),
   idPais: z.coerce.number().int().positive().optional(),
   idCiudad: z.coerce.number().int().positive().optional(),
   activo: z

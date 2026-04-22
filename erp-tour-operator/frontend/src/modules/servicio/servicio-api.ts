@@ -32,8 +32,8 @@ export const servicioFormSchema = z.object({
     .optional(),
   tour: z
     .object({
-      tipoGuia: z.enum(["GUIA", "AUDIOGUIA"]),
-      idioma: z.string().min(1)
+      idTipoGuia: z.coerce.number().int().positive(),
+      idIdioma: z.coerce.number().int().positive()
     })
     .optional(),
   traslado: z
@@ -74,8 +74,17 @@ export async function listTiposServicio() {
   return response.data.data;
 }
 
-export async function listServicios() {
-  const response = await api.get<ApiResponse<Array<Record<string, unknown>>>>("/servicio");
+export type ServicioListFilters = {
+  idContinente?: number;
+  idPais?: number;
+  idCiudad?: number;
+  idTipo?: number;
+};
+
+export async function listServicios(filters?: ServicioListFilters) {
+  const response = await api.get<ApiResponse<Array<Record<string, unknown>>>>("/servicio", {
+    params: filters
+  });
   return response.data.data;
 }
 
@@ -96,5 +105,15 @@ export async function saveServicio(values: ServicioFormValues, id?: number) {
   }
 
   const response = await api.post<ApiResponse<Record<string, unknown>>>("/servicio", payload);
+  return response.data.data;
+}
+
+export async function listIdiomas() {
+  const response = await api.get<ApiResponse<Array<{ id: number; nombre: string }>>>("/servicio/idiomas");
+  return response.data.data;
+}
+
+export async function listTiposGuia() {
+  const response = await api.get<ApiResponse<Array<{ id: number; nombre: string }>>>("/servicio/tipos-guia");
   return response.data.data;
 }

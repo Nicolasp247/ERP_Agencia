@@ -73,13 +73,24 @@ export function toServicioDetail(
     proveedor: record.proveedor,
     ciudad: record.ciudad,
     pais: record.ciudad.pais,
-    detalleTipo:
-      record.alojamiento ??
-      record.boletoEntrada ??
-      record.tour ??
-      record.traslado ??
-      record.tren ??
-      record.vuelo,
+    detalleTipo: record.alojamiento
+      ? record.alojamiento
+      : record.boletoEntrada
+      ? record.boletoEntrada
+      : record.tour
+      ? {
+          id: (record.tour as any).id,
+          idServicio: (record.tour as any).idServicio,
+          idTipoGuia: (record.tour as any).idTipoGuia,
+          idIdioma: (record.tour as any).idIdioma,
+          tipoGuiaNombre: (record.tour as any).tipoGuia?.nombre ?? null,
+          idiomaNombre: (record.tour as any).idioma?.nombre ?? null
+        }
+      : record.traslado
+      ? record.traslado
+      : record.tren
+      ? record.tren
+      : record.vuelo,
     tarifas: record.tarifas.map((item) => ({
       ...item,
       precioUsd: item.precioUsd?.toString() ?? null
