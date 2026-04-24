@@ -53,6 +53,15 @@ export class ServicioController {
     const data = await servicioService.listTiposGuia();
     res.json(ok(data));
   };
+
+  listPuntosTraslado = async (req: Request, res: Response) => {
+    const query = (req as Request & { validatedQuery?: { idCiudad: number } }).validatedQuery;
+    const idCiudad = query?.idCiudad ?? Number(req.query.idCiudad);
+
+    const data = await servicioService.listPuntosTraslado(idCiudad);
+    res.json(ok(data));
+  };
+
 }
 
 export const servicioController = new ServicioController();

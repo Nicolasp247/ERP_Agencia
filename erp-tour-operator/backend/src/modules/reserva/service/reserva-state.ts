@@ -50,12 +50,17 @@ export function resolveSnapshotIdioma(
   item: {
     idiomaOverride: string | null;
     servicio: {
-      tour: { idioma: string } | null;
+      tour: { idioma: { nombre: string } | null } | null;
       boletoEntrada: { idioma: string | null } | null;
     };
   }
 ) {
-  return item.idiomaOverride ?? item.servicio.tour?.idioma ?? item.servicio.boletoEntrada?.idioma ?? null;
+  return (
+  item.idiomaOverride ??
+  item.servicio.tour?.idioma?.nombre ??
+  item.servicio.boletoEntrada?.idioma ??
+  null
+);
 }
 
 export function resolveSnapshotClase(

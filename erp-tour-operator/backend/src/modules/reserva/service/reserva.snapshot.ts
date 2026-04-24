@@ -20,7 +20,7 @@ type CotizacionItemForSnapshot = {
   precioMonedaCodigo: string;
   servicio: {
     nombreWtravel: string;
-    tour: { idioma: string } | null;
+    tour: { idioma: { nombre: string } | null } | null;
     boletoEntrada: { idioma: string | null } | null;
     tren: { clase: string } | null;
     vuelo: { clase: string } | null;

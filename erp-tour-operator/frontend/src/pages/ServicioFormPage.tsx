@@ -2,19 +2,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-import { fetchCiudades } from "@/core/catalog-api";
-import { PageSection } from "@/components/PageSection";
+import { fetchCiudades, fetchContinentes, fetchPaises } from "@/core/catalog-api";
 import { listProveedores } from "@/modules/proveedor/proveedor-api";
 import {
   getServicio,
   listIdiomas,
+  listPuntosTraslado,
   listTiposGuia,
   listTiposServicio,
   saveServicio,
   servicioFormSchema
 } from "@/modules/servicio/servicio-api";
+import { ServicioFormView } from "@/pages/servicio/components/ServicioFormView";
+import { NUEVO_PUNTO_OPTION } from "@/modules/servicio/servicio-api";
 
 export function ServicioFormPage() {
   const navigate = useNavigate();
@@ -31,9 +33,9 @@ export function ServicioFormPage() {
     queryFn: listProveedores
   });
 
-  const ciudadesQuery = useQuery({
-    queryKey: ["ciudades"],
-    queryFn: () => fetchCiudades()
+  const continentesQuery = useQuery({
+    queryKey: ["continentes"],
+    queryFn: fetchContinentes
   });
 
   const idiomasQuery = useQuery({
@@ -57,18 +59,46 @@ export function ServicioFormPage() {
     defaultValues: {
       nombreWtravel: "",
       privado: false,
-      activo: true
+      activo: true,
+      idContinente: null,
+      idPais: null
     }
   });
 
   const tipoSeleccionado = Number(form.watch("idTipo") || 0);
   const tipoActual = (tiposQuery.data ?? []).find((item) => item.id === tipoSeleccionado);
 
+  const idContinente = form.watch("idContinente");
+  const idPais = form.watch("idPais");
+  const idCiudad = form.watch("idCiudad");
+
   const nombreWtravel = form.watch("nombreWtravel");
   const tiempoServicio = form.watch("tiempoServicio");
   const privado = form.watch("privado");
   const tourIdTipoGuia = form.watch("tour.idTipoGuia");
   const tourIdIdioma = form.watch("tour.idIdioma");
+  const trasladoIdOrigen = form.watch("traslado.idOrigen");
+  const trasladoIdDestino = form.watch("traslado.idDestino");
+  const trasladoNuevoOrigen = form.watch("traslado.nuevoOrigen");
+  const trasladoNuevoDestino = form.watch("traslado.nuevoDestino");
+
+  const paisesQuery = useQuery({
+    queryKey: ["paises", idContinente],
+    queryFn: () => fetchPaises(idContinente ? Number(idContinente) : undefined),
+    enabled: Boolean(idContinente)
+  });
+
+  const ciudadesQuery = useQuery({
+    queryKey: ["ciudades", idPais],
+    queryFn: () => fetchCiudades(idPais ? Number(idPais) : undefined),
+    enabled: Boolean(idPais)
+  });
+
+  const puntosTrasladoQuery = useQuery({
+    queryKey: ["puntos-traslado", idCiudad],
+    queryFn: () => listPuntosTraslado(Number(idCiudad)),
+    enabled: Boolean(idCiudad) && tipoActual?.codigo === "TRASLADO"
+  });
 
   const tipoGuiaSeleccionado = (tiposGuiaQuery.data ?? []).find(
     (item) => item.id === Number(tourIdTipoGuia)
@@ -76,6 +106,14 @@ export function ServicioFormPage() {
 
   const idiomaSeleccionado = (idiomasQuery.data ?? []).find(
     (item) => item.id === Number(tourIdIdioma)
+  );
+
+  const origenSeleccionado = (puntosTrasladoQuery.data ?? []).find(
+    (item) => item.id === Number(trasladoIdOrigen)
+  );
+
+  const destinoSeleccionado = (puntosTrasladoQuery.data ?? []).find(
+    (item) => item.id === Number(trasladoIdDestino)
   );
 
   useEffect(() => {
@@ -86,6 +124,8 @@ export function ServicioFormPage() {
       form.reset({
         idTipo: servicio.tipo.id,
         idProveedor: servicio.proveedor.id,
+        idContinente: servicio.ciudad?.pais?.continente?.id ?? null,
+        idPais: servicio.ciudad?.pais?.id ?? null,
         idCiudad: servicio.ciudad.id,
         nombreWtravel: servicio.nombreWtravel,
         tiempoServicio: servicio.tiempoServicio ?? "",
@@ -102,46 +142,68 @@ export function ServicioFormPage() {
                 idIdioma: detalle.idIdioma
               }
             : undefined,
-        traslado: "vehiculo" in detalle ? detalle : undefined,
+        traslado:
+          "idOrigen" in detalle && "idDestino" in detalle
+            ? {
+                idOrigen: detalle.idOrigen,
+                idDestino: detalle.idDestino,
+                nuevoOrigen: null,
+                nuevoDestino: null,
+                escalas: detalle.escalas ?? 0,
+                vehiculo: detalle.vehiculo ?? ""
+              }
+            : undefined,
         tren: "sillasReservadas" in detalle ? detalle : undefined,
         vuelo: "equipaje" in detalle && !("sillasReservadas" in detalle) ? detalle : undefined
       });
     }
   }, [form, servicioQuery.data]);
 
+  useEffect(() => {
+    form.setValue("idPais", null);
+    form.setValue("idCiudad", null);
+
+    if (tipoActual?.codigo === "TRASLADO") {
+      form.setValue("traslado.idOrigen", null);
+      form.setValue("traslado.idDestino", null);
+    }
+  }, [idContinente]);
+
+  useEffect(() => {
+    form.setValue("idCiudad", null);
+
+    if (tipoActual?.codigo === "TRASLADO") {
+      form.setValue("traslado.idOrigen", null);
+      form.setValue("traslado.idDestino", null);
+    }
+  }, [idPais]);
+
+  useEffect(() => {
+    if (tipoActual?.codigo === "TRASLADO") {
+      form.setValue("traslado.idOrigen", null);
+      form.setValue("traslado.idDestino", null);
+    }
+  }, [idCiudad]);
+
   const mutation = useMutation({
-    mutationFn: (values: any) => saveServicio(values, editingId),
+    mutationFn: (values: any) => {
+      const payload = { ...values };
+
+      if (tipoActual?.codigo === "TRASLADO") {
+        payload.tiempoServicio = null;
+      }
+
+      return saveServicio(payload, editingId);
+    },
     onSuccess: (data: any) => navigate(`/servicios/${data.id}`)
   });
 
   function formatTipoGuiaNombre(nombre?: string | null) {
-    if (!nombre) {
-      return "";
-    }
-
-    if (nombre === "GUIA") {
-      return "Guía";
-    }
-
-    if (nombre === "AUDIOGUIA") {
-      return "Audioguía";
-    }
-
-    return nombre;
+    return nombre || "";
   }
 
   function formatIdiomaNombre(nombre?: string | null) {
-    if (!nombre) {
-      return "";
-    }
-
-    const normalizado = nombre.toLowerCase();
-
-    if (normalizado === "espanol" || normalizado === "español") {
-      return "español";
-    }
-
-    return normalizado;
+    return nombre ? nombre.toLowerCase() : "";
   }
 
   function buildServicioPreview() {
@@ -172,6 +234,20 @@ export function ServicioFormPage() {
       return partes.join(", ");
     }
 
+    if (tipoCodigo === "TRASLADO") {
+      const origen =
+        trasladoNuevoOrigen?.trim() ||
+        origenSeleccionado?.nombre ||
+        "origen";
+
+      const destino =
+        trasladoNuevoDestino?.trim() ||
+        destinoSeleccionado?.nombre ||
+        "destino";
+
+      return `Traslado${privado ? " privado" : ""} ${origen} - ${destino}`;
+    }
+
     const partesGenericas = [nombre];
 
     if (tiempo) {
@@ -182,187 +258,26 @@ export function ServicioFormPage() {
   }
 
   return (
-    <PageSection
-      action={
-        <Link className="link-button" to="/servicios">
-          Volver
-        </Link>
-      }
-      title={editingId ? "Editar servicio" : "Nuevo servicio"}
-    >
-      <form className="stack" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
-        <div className="grid-2">
-          <label>
-            Tipo
-            <select {...form.register("idTipo")}>
-              <option value="">Selecciona</option>
-              {(tiposQuery.data ?? []).map((tipo) => (
-                <option key={tipo.id} value={tipo.id}>
-                  {tipo.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Proveedor
-            <select {...form.register("idProveedor")}>
-              <option value="">Selecciona</option>
-              {((proveedoresQuery.data ?? []) as Array<any>).map((proveedor) => (
-                <option key={proveedor.id} value={proveedor.id}>
-                  {proveedor.nombreComercial}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Ciudad
-            <select {...form.register("idCiudad")}>
-              <option value="">Selecciona</option>
-              {(ciudadesQuery.data ?? []).map((ciudad) => (
-                <option key={ciudad.id} value={ciudad.id}>
-                  {ciudad.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Nombre interno
-            <input {...form.register("nombreWtravel")} />
-          </label>
-
-          <label>
-            Tiempo de servicio
-            <input {...form.register("tiempoServicio")} />
-          </label>
-
-          <label>
-            Link de reserva
-            <input {...form.register("linkReserva")} />
-          </label>
-        </div>
-
-        {(tipoActual?.codigo === "VISITA" || tipoActual?.codigo === "EXCURSION") ? (
-          <>
-            <div className="grid-2">
-              <label>
-                Tipo guía
-                <select {...form.register("tour.idTipoGuia")}>
-                  <option value="">Selecciona</option>
-                  {(tiposGuiaQuery.data ?? []).map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {formatTipoGuiaNombre(item.nombre)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                Idioma
-                <select {...form.register("tour.idIdioma")}>
-                  <option value="">Selecciona</option>
-                  {(idiomasQuery.data ?? []).map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.nombre}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div
-              style={{
-                marginTop: "0.35rem",
-                marginBottom: "0.8rem",
-                border: "1px solid #d8d2c2",
-                borderRadius: "12px",
-                padding: "0.9rem 1rem",
-                background: "#f8f6ef"
-              }}
-            >
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr auto",
-                  alignItems: "center",
-                  gap: "1rem"
-                }}
-              >
-                <div>
-                  <strong>Servicio privado</strong>
-                  <p style={{ margin: "0.25rem 0 0", fontSize: "0.92rem", opacity: 0.8 }}>
-                    Márcalo si esta visita o excursión se cotiza de forma exclusiva. Si no está
-                    marcado, se mostrará como servicio en grupo.
-                  </p>
-                </div>
-
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.65rem",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap"
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    {...form.register("privado")}
-                    style={{
-                      width: "18px",
-                      height: "18px",
-                      cursor: "pointer"
-                    }}
-                  />
-                  <span>{privado ? "Privado" : "En grupo"}</span>
-                </label>
-              </div>
-            </div>
-          </>
-        ) : null}
-
-        <label>
-          Descripción
-          <textarea {...form.register("descripcion")} rows={3} />
-        </label>
-
-        <div style={{ marginTop: "0.5rem", marginBottom: "0.75rem" }}>
-          <strong>Así se verá en cotizaciones:</strong>
-          <p style={{ marginTop: "0.35rem", fontWeight: 700 }}>{buildServicioPreview()}</p>
-        </div>
-
-        {tipoActual?.codigo === "ALOJAMIENTO" ? (
-          <div className="grid-2">
-            <label>
-              Noches
-              <input {...form.register("alojamiento.noches")} type="number" />
-            </label>
-            <label>
-              Habitaciones
-              <input {...form.register("alojamiento.habitaciones")} type="number" />
-            </label>
-          </div>
-        ) : null}
-
-        {tipoActual?.codigo === "TRASLADO" ? (
-          <div className="grid-2">
-            <label>
-              Origen
-              <input {...form.register("traslado.origen")} />
-            </label>
-            <label>
-              Destino
-              <input {...form.register("traslado.destino")} />
-            </label>
-          </div>
-        ) : null}
-
-        <button className="primary-button" type="submit">
-          Guardar
-        </button>
-      </form>
-    </PageSection>
+    <ServicioFormView
+      form={form}
+      editingId={editingId}
+      tiposQuery={tiposQuery}
+      proveedoresQuery={proveedoresQuery}
+      continentesQuery={continentesQuery}
+      paisesQuery={paisesQuery}
+      ciudadesQuery={ciudadesQuery}
+      idiomasQuery={idiomasQuery}
+      tiposGuiaQuery={tiposGuiaQuery}
+      puntosTrasladoQuery={puntosTrasladoQuery}
+      tipoActual={tipoActual}
+      privado={privado}
+      idContinente={idContinente}
+      idPais={idPais}
+      idCiudad={idCiudad}
+      trasladoIdOrigen={trasladoIdOrigen}
+      trasladoIdDestino={trasladoIdDestino}
+      preview={buildServicioPreview()}
+      onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+    />
   );
 }

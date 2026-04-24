@@ -85,6 +85,24 @@ export class ServicioService {
         `Faltan campos obligatorios del bloque específico para ${tipoCodigo}`
       );
     }
+
+    if (tipoCodigo === "TRASLADO" && input.traslado) {
+      const origenTexto = input.traslado.nuevoOrigen?.trim().toLowerCase() ?? "";
+      const destinoTexto = input.traslado.nuevoDestino?.trim().toLowerCase() ?? "";
+
+      if (
+        (input.traslado.idOrigen &&
+          input.traslado.idDestino &&
+          input.traslado.idOrigen === input.traslado.idDestino) ||
+        (origenTexto && destinoTexto && origenTexto === destinoTexto)
+      ) {
+        throw new AppError(
+          400,
+          "TRASLADO_ORIGEN_DESTINO_IGUALES",
+          "El origen y el destino no pueden ser iguales"
+        );
+      }
+    }
   }
 
   async create(input: ServicioInput, userId?: number) {
@@ -114,6 +132,10 @@ export class ServicioService {
     });
 
     return this.getById(record.id);
+  }
+
+  async listPuntosTraslado(idCiudad: number) {
+    return servicioRepository.listPuntosTraslado(idCiudad);
   }
 
   async update(id: number, input: ServicioInput, userId?: number) {

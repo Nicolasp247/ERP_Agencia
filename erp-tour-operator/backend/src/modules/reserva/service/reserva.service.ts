@@ -40,7 +40,11 @@ export class ReservaService {
           include: {
             servicio: {
               include: {
-                tour: true,
+                tour: {
+                  include: {
+                    idioma: true
+                  }
+                },
                 boletoEntrada: true,
                 tren: true,
                 vuelo: true

@@ -114,9 +114,27 @@ model Ciudad {
   servicios          Servicio[]
   hoteles            Hotel[]
   tarifasAlojamiento AlojamientoPrecioMes[]
+  puntosTraslado PuntoTraslado[]
 
   @@index([idPais], map: "id_pais")
   @@map("ciudad")
+}
+
+model PuntoTraslado {
+  id        Int      @id @default(autoincrement())
+  idCiudad  Int      @map("id_ciudad")
+  nombre    String   @db.VarChar(150)
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  ciudad                Ciudad    @relation(fields: [idCiudad], references: [id])
+  trasladosComoOrigen   Traslado[] @relation("TrasladoOrigen")
+  trasladosComoDestino  Traslado[] @relation("TrasladoDestino")
+
+  @@index([idCiudad], map: "idx_punto_traslado_ciudad")
+  @@unique([idCiudad, nombre], map: "uq_punto_traslado_ciudad_nombre")
+  @@map("punto_traslado")
 }
 
 model TipoServicio {
@@ -328,14 +346,19 @@ model Tour {
 }
 
 model Traslado {
-  id             Int       @id @default(autoincrement())
-  idServicio     Int       @unique(map: "uq_traslado_servicio") @map("id_servicio")
-  origen         String    @db.VarChar(100)
-  destino        String    @db.VarChar(100)
-  escalas        Int       @default(0)
-  vehiculo       String?   @db.VarChar(50)
-  servicio       Servicio  @relation(fields: [idServicio], references: [id])
+  id         Int            @id @default(autoincrement())
+  idServicio Int            @unique(map: "uq_traslado_servicio") @map("id_servicio")
+  idOrigen   Int            @map("id_origen")
+  idDestino  Int            @map("id_destino")
+  escalas    Int            @default(0)
+  vehiculo   String?        @db.VarChar(100)
 
+  servicio   Servicio       @relation(fields: [idServicio], references: [id])
+  origen     PuntoTraslado  @relation("TrasladoOrigen", fields: [idOrigen], references: [id])
+  destino    PuntoTraslado  @relation("TrasladoDestino", fields: [idDestino], references: [id])
+
+  @@index([idOrigen], map: "idx_traslado_origen")
+  @@index([idDestino], map: "idx_traslado_destino")
   @@map("traslado")
 }
 

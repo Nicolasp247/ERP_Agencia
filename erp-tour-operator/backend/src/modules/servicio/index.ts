@@ -10,10 +10,12 @@ import {
   servicioSchema,
   tipoServicioSchema
 } from "@/modules/servicio/validator/servicio.validator";
+import { puntoTrasladoFilterSchema } from "@/modules/servicio/dto/servicio.dto";
 
 export const servicioRouter = Router();
 
 servicioRouter.use(authenticate);
+
 servicioRouter.get("/tipos", asyncHandler(servicioController.listTipos));
 servicioRouter.post("/tipos", validateBody(tipoServicioSchema), asyncHandler(servicioController.createTipo));
 servicioRouter.put(
@@ -22,9 +24,16 @@ servicioRouter.put(
   validateBody(tipoServicioSchema),
   asyncHandler(servicioController.updateTipo)
 );
+
 servicioRouter.get("/", validateQuery(servicioFilterSchema), asyncHandler(servicioController.list));
-servicioRouter.get("/idiomas", servicioController.listIdiomas);
-servicioRouter.get("/tipos-guia", servicioController.listTiposGuia);
+servicioRouter.get("/idiomas", asyncHandler(servicioController.listIdiomas));
+servicioRouter.get("/tipos-guia", asyncHandler(servicioController.listTiposGuia));
+servicioRouter.get(
+  "/puntos-traslado",
+  validateQuery(puntoTrasladoFilterSchema),
+  asyncHandler(servicioController.listPuntosTraslado)
+);
+
 servicioRouter.get("/:id", validateParams(servicioIdParamSchema), asyncHandler(servicioController.getById));
 servicioRouter.post("/", validateBody(servicioSchema), asyncHandler(servicioController.create));
 servicioRouter.put(

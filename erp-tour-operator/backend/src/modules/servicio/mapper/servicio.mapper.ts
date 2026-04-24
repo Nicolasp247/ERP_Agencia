@@ -44,14 +44,25 @@ export function toServicioDetail(
     activo: boolean;
     tipo: { id: number; nombre: string; codigo: string | null };
     proveedor: { id: number; nombreComercial: string };
-    ciudad: { id: number; nombre: string; pais: { id: number; nombre: string } | null };
+    ciudad: {
+      id: number;
+      nombre: string;
+      pais: {
+        id: number;
+        nombre: string;
+        continente?: {
+          id: number;
+          nombre: string;
+        } | null;
+      } | null;
+    };
     alojamiento: unknown;
     boletoEntrada: unknown;
     tour: unknown;
     traslado: unknown;
     tren: unknown;
     vuelo: unknown;
-    tarifas: Array<{
+    tarifas?: Array<{
       anio: number;
       mes: number;
       tipoHabitacion: string;
@@ -87,11 +98,22 @@ export function toServicioDetail(
           idiomaNombre: (record.tour as any).idioma?.nombre ?? null
         }
       : record.traslado
-      ? record.traslado
+      ? {
+          id: (record.traslado as any).id,
+          idServicio: (record.traslado as any).idServicio,
+          idOrigen: (record.traslado as any).idOrigen ?? null,
+          idDestino: (record.traslado as any).idDestino ?? null,
+          origen: (record.traslado as any).origen ?? null,
+          destino: (record.traslado as any).destino ?? null,
+          origenNombre: (record.traslado as any).origen?.nombre ?? null,
+          destinoNombre: (record.traslado as any).destino?.nombre ?? null,
+          escalas: (record.traslado as any).escalas ?? 0,
+          vehiculo: (record.traslado as any).vehiculo ?? null
+        }
       : record.tren
       ? record.tren
       : record.vuelo,
-    tarifas: record.tarifas.map((item) => ({
+    tarifas: (record.tarifas ?? []).map((item) => ({
       ...item,
       precioUsd: item.precioUsd?.toString() ?? null
     }))

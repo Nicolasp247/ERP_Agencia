@@ -39,6 +39,18 @@ export class ServicioRepository {
     });
   }
 
+  listPuntosTraslado(idCiudad: number) {
+    return prisma.puntoTraslado.findMany({
+      where: {
+        idCiudad,
+        activo: true
+      },
+      orderBy: {
+        nombre: "asc"
+      }
+    });
+  }
+
   list(filters: ServicioFilters) {
     return prisma.servicio.findMany({
       where: {
@@ -66,7 +78,11 @@ export class ServicioRepository {
       include: {
         tipo: true,
         proveedor: true,
-        ciudad: true,
+        ciudad: {
+          include: {
+            pais: true
+          }
+        },
         tarifas: {
           take: 1,
           orderBy: [{ anio: "desc" }, { mes: "desc" }]
@@ -105,7 +121,11 @@ export class ServicioRepository {
         },
         ciudad: {
           include: {
-            pais: true
+            pais: {
+              include: {
+                continente: true
+              }
+            }
           }
         },
         alojamiento: true,
@@ -116,12 +136,17 @@ export class ServicioRepository {
             idioma: true
           }
         },
-        traslado: true,
+        traslado: {
+          include: {
+            origen: true,
+            destino: true
+          }
+        },
         tren: true,
         vuelo: true,
         tarifas: {
           orderBy: [{ anio: "desc" }, { mes: "desc" }]
-        },
+        }
       }
     });
   }
@@ -182,6 +207,33 @@ export class ServicioRepository {
     });
   }
 
+  async findOrCreatePuntoTraslado(
+    tx: Prisma.TransactionClient,
+    idCiudad: number,
+    nombre: string
+  ) {
+    const limpio = nombre.trim();
+
+    const existente = await tx.puntoTraslado.findFirst({
+      where: {
+        idCiudad,
+        nombre: limpio
+      }
+    });
+
+    if (existente) {
+      return existente;
+    }
+
+    return tx.puntoTraslado.create({
+      data: {
+        idCiudad,
+        nombre: limpio,
+        activo: true
+      }
+    });
+  }
+
   private clearDetails(tx: Prisma.TransactionClient, idServicio: number) {
     return Promise.all([
       tx.alojamiento.deleteMany({ where: { idServicio } }),
@@ -217,14 +269,36 @@ export class ServicioRepository {
           }
         });
         break;
-      case "TRASLADO":
+      case "TRASLADO": {
+        const traslado = data.traslado!;
+        let idOrigen = traslado.idOrigen ?? null;
+        let idDestino = traslado.idDestino ?? null;
+
+        if (!idOrigen && traslado.nuevoOrigen?.trim()) {
+          const puntoOrigen = await this.findOrCreatePuntoTraslado(tx, data.idCiudad, traslado.nuevoOrigen);
+          idOrigen = puntoOrigen.id;
+        }
+
+        if (!idDestino && traslado.nuevoDestino?.trim()) {
+          const puntoDestino = await this.findOrCreatePuntoTraslado(tx, data.idCiudad, traslado.nuevoDestino);
+          idDestino = puntoDestino.id;
+        }
+
+        if (!idOrigen || !idDestino) {
+          throw new Error("No fue posible resolver origen y destino del traslado");
+        }
+
         await tx.traslado.create({
           data: {
             idServicio,
-            ...data.traslado!
+            idOrigen,
+            idDestino,
+            escalas: traslado.escalas ?? 0,
+            vehiculo: traslado.vehiculo ?? null
           }
         });
         break;
+      }
       case "ENTRADA":
         await tx.boletoEntrada.create({
           data: {

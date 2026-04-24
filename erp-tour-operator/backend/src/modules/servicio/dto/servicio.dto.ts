@@ -43,11 +43,34 @@ const tourSchema = z.object({
   idIdioma: z.coerce.number().int().positive()
 });
 
-const trasladoSchema = z.object({
-  origen: z.string().min(1).max(100),
-  destino: z.string().min(1).max(100),
-  escalas: z.coerce.number().int().min(0).default(0),
-  vehiculo: z.string().max(50).optional().nullable()
+const trasladoSchema = z
+  .object({
+    idOrigen: z.coerce.number().int().positive().optional().nullable(),
+    idDestino: z.coerce.number().int().positive().optional().nullable(),
+    nuevoOrigen: z.string().max(150).optional().nullable(),
+    nuevoDestino: z.string().max(150).optional().nullable(),
+    escalas: z.coerce.number().int().min(0).default(0),
+    vehiculo: z.string().max(100).optional().nullable()
+  })
+  .refine((data) => Boolean(data.idOrigen || data.nuevoOrigen?.trim()), {
+    message: "Debes seleccionar o crear un origen",
+    path: ["idOrigen"]
+  })
+  .refine((data) => Boolean(data.idDestino || data.nuevoDestino?.trim()), {
+    message: "Debes seleccionar o crear un destino",
+    path: ["idDestino"]
+  })
+  .refine((data) => {
+    const origenKey = data.idOrigen
+      ? `id:${data.idOrigen}`
+      : `txt:${(data.nuevoOrigen ?? "").trim().toLowerCase()}`;
+    const destinoKey = data.idDestino
+      ? `id:${data.idDestino}`
+      : `txt:${(data.nuevoDestino ?? "").trim().toLowerCase()}`;
+    return origenKey !== destinoKey;
+  }, {
+    message: "El origen y el destino no pueden ser iguales",
+    path: ["idDestino"]
 });
 
 const trenSchema = z.object({
@@ -107,3 +130,8 @@ export const servicioFilterSchema = z.object({
 export type TipoServicioInput = z.infer<typeof tipoServicioSchema>;
 export type ServicioInput = z.infer<typeof servicioSchema>;
 export type ServicioFilters = z.infer<typeof servicioFilterSchema>;
+export const puntoTrasladoFilterSchema = z.object({
+  idCiudad: z.coerce.number().int().positive()
+});
+
+export type PuntoTrasladoFilters = z.infer<typeof puntoTrasladoFilterSchema>;

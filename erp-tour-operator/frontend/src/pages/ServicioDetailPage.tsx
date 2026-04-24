@@ -4,6 +4,43 @@ import { Link, useParams } from "react-router-dom";
 import { PageSection } from "@/components/PageSection";
 import { getServicio } from "@/modules/servicio/servicio-api";
 
+function lowerFirst(text: string | null | undefined) {
+  if (!text) return "";
+  return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
+function getPuntoNombre(value: any) {
+  if (!value) return "N/D";
+  if (typeof value === "string") return value;
+  return value.nombre ?? "N/D";
+}
+
+function buildCotizacionPreview(servicio: any) {
+  const tipoCodigo = servicio?.tipo?.codigo ?? "";
+  const detalle = servicio?.detalleTipo ?? {};
+
+  if (tipoCodigo === "VISITA" || tipoCodigo === "EXCURSION") {
+    const partes = [
+      servicio?.nombreWtravel,
+      servicio?.tiempoServicio,
+      servicio?.privado ? "privado" : "en grupo",
+      detalle?.tipoGuiaNombre ? lowerFirst(detalle.tipoGuiaNombre) : null,
+      detalle?.idiomaNombre ? `en ${lowerFirst(detalle.idiomaNombre)}` : null
+    ].filter(Boolean);
+
+    return partes.join(", ");
+  }
+
+  if (tipoCodigo === "TRASLADO") {
+    const origen = getPuntoNombre(detalle?.origenNombre ?? detalle?.origen);
+    const destino = getPuntoNombre(detalle?.destinoNombre ?? detalle?.destino);
+
+    return `Traslado ${servicio?.privado ? "privado " : ""}${lowerFirst(origen)} - ${lowerFirst(destino)}`.trim();
+  }
+
+  return servicio?.nombreWtravel ?? "N/D";
+}
+
 export function ServicioDetailPage() {
   const params = useParams();
 
@@ -18,45 +55,28 @@ export function ServicioDetailPage() {
     return <PageSection title="Servicio">Cargando...</PageSection>;
   }
 
+  const tipoCodigo = servicio.tipo?.codigo ?? "";
   const detalle = servicio.detalleTipo ?? {};
-  const esTour = servicio.tipo?.codigo === "VISITA" || servicio.tipo?.codigo === "EXCURSION";
 
-  const modoServicio = servicio.privado ? "Privado" : "En grupo";
+  const esTour = tipoCodigo === "VISITA" || tipoCodigo === "EXCURSION";
+  const esTraslado = tipoCodigo === "TRASLADO";
 
-  function buildServicioPreview() {
-    const nombre = servicio.nombreWtravel?.trim() || "Nombre del servicio";
-    const tiempo = servicio.tiempoServicio?.trim();
+  const preview = buildCotizacionPreview(servicio);
 
-    if (esTour) {
-      const partes = [nombre];
+  const continente =
+    servicio?.ciudad?.pais?.continente?.nombre ??
+    servicio?.continente?.nombre ??
+    "N/D";
 
-      if (tiempo) {
-        partes.push(tiempo);
-      }
+  const pais =
+    servicio?.pais?.nombre ??
+    servicio?.ciudad?.pais?.nombre ??
+    "N/D";
 
-      partes.push(servicio.privado ? "privado" : "en grupo");
+  const modalidad = servicio?.privado ? "Privado" : "En grupo";
 
-      if (detalle.tipoGuiaNombre && detalle.idiomaNombre) {
-        partes.push(
-          `${String(detalle.tipoGuiaNombre).toLowerCase()} en ${String(detalle.idiomaNombre).toLowerCase()}`
-        );
-      } else if (detalle.tipoGuiaNombre) {
-        partes.push(String(detalle.tipoGuiaNombre).toLowerCase());
-      } else if (detalle.idiomaNombre) {
-        partes.push(`en ${String(detalle.idiomaNombre).toLowerCase()}`);
-      }
-
-      return partes.join(", ");
-    }
-
-    const partesGenericas = [nombre];
-
-    if (tiempo) {
-      partesGenericas.push(tiempo);
-    }
-
-    return partesGenericas.join(", ");
-  }
+  const origenNombre = getPuntoNombre(detalle?.origenNombre ?? detalle?.origen);
+  const destinoNombre = getPuntoNombre(detalle?.destinoNombre ?? detalle?.destino);
 
   return (
     <div className="stack">
@@ -73,67 +93,93 @@ export function ServicioDetailPage() {
         }
         title={servicio.nombreWtravel}
       >
-        <div className="grid-3">
-          <div>
-            <strong>Nombre interno</strong>
-            <p>{servicio.nombreWtravel ?? "N/D"}</p>
+        <div className="stack">
+          <div className="grid-3">
+            <div>
+              <strong>Nombre interno</strong>
+              <p>{servicio.nombreWtravel}</p>
+            </div>
+            <div>
+              <strong>Tipo</strong>
+              <p>{servicio.tipo?.nombre ?? "N/D"}</p>
+            </div>
+            <div>
+              <strong>Proveedor</strong>
+              <p>{servicio.proveedor?.nombreComercial ?? "N/D"}</p>
+            </div>
           </div>
 
-          <div>
-            <strong>Tipo</strong>
-            <p>{servicio.tipo?.nombre ?? "N/D"}</p>
+          <div className="grid-3">
+            <div>
+              <strong>Continente</strong>
+              <p>{continente}</p>
+            </div>
+            <div>
+              <strong>País</strong>
+              <p>{pais}</p>
+            </div>
+            <div>
+              <strong>Ciudad</strong>
+              <p>{servicio.ciudad?.nombre ?? "N/D"}</p>
+            </div>
           </div>
 
-          <div>
-            <strong>Proveedor</strong>
-            <p>{servicio.proveedor?.nombreComercial ?? "N/D"}</p>
+          <div className="grid-3">
+            <div>
+              <strong>Modalidad</strong>
+              <p>{modalidad}</p>
+            </div>
+            <div>
+              <strong>Activo</strong>
+              <p>{servicio.activo ? "Sí" : "No"}</p>
+            </div>
+            <div />
           </div>
 
-          <div>
-            <strong>Ciudad</strong>
-            <p>{servicio.ciudad?.nombre ?? "N/D"}</p>
-          </div>
-
-          <div>
-            <strong>Tiempo de servicio</strong>
-            <p>{servicio.tiempoServicio ?? "N/D"}</p>
-          </div>
-
-          <div>
-            <strong>Modalidad</strong>
-            <p>{modoServicio}</p>
-          </div>
-
-          {esTour ? (
-            <>
+          {esTour && (
+            <div className="grid-3">
               <div>
                 <strong>Tipo guía</strong>
-                <p>{detalle.tipoGuiaNombre ?? "N/D"}</p>
+                <p>{detalle?.tipoGuiaNombre ?? "N/D"}</p>
               </div>
-
               <div>
                 <strong>Idioma</strong>
-                <p>{detalle.idiomaNombre ?? "N/D"}</p>
+                <p>{detalle?.idiomaNombre ?? "N/D"}</p>
               </div>
-
               <div />
-            </>
-          ) : null}
-        </div>
+            </div>
+          )}
 
-        <div style={{ marginTop: "1rem" }}>
-          <strong>Link de reserva</strong>
-          <p>{servicio.linkReserva ?? "N/D"}</p>
-        </div>
+          {esTraslado && (
+            <div className="grid-3">
+              <div>
+                <strong>Origen</strong>
+                <p>{origenNombre}</p>
+              </div>
+              <div>
+                <strong>Destino</strong>
+                <p>{destinoNombre}</p>
+              </div>
+              <div />
+            </div>
+          )}
 
-        <div style={{ marginTop: "1rem" }}>
-          <strong>Descripción</strong>
-          <p>{servicio.descripcion ?? "N/D"}</p>
-        </div>
+          <div>
+            <strong>Link de reserva</strong>
+            <p>{servicio.linkReserva ?? "N/D"}</p>
+          </div>
 
-        <div style={{ marginTop: "1rem" }}>
-          <strong>Así se verá en cotizaciones:</strong>
-          <p style={{ marginTop: "0.35rem", fontWeight: 700 }}>{buildServicioPreview()}</p>
+          <div>
+            <strong>Descripción</strong>
+            <p>{servicio.descripcion ?? "N/D"}</p>
+          </div>
+
+          <div>
+            <strong>Así se verá en cotizaciones:</strong>
+            <p>
+              <strong>{preview}</strong>
+            </p>
+          </div>
         </div>
       </PageSection>
 
@@ -144,17 +190,19 @@ export function ServicioDetailPage() {
               <tr>
                 <th>Año</th>
                 <th>Mes</th>
+                <th>Tipo</th>
                 <th>Precio</th>
                 <th>Moneda</th>
               </tr>
             </thead>
             <tbody>
-              {servicio.tarifas.map((tarifa: any, index: number) => (
-                <tr key={`${tarifa.anio}-${tarifa.mes}-${index}`}>
-                  <td>{tarifa.anio ?? "N/D"}</td>
-                  <td>{tarifa.mes ?? "N/D"}</td>
-                  <td>{tarifa.precioUsd ?? tarifa.precio_usd ?? "N/D"}</td>
-                  <td>{tarifa.monedaCodigo ?? tarifa.moneda_codigo ?? "N/D"}</td>
+              {servicio.tarifas.map((tarifa: any) => (
+                <tr key={`${tarifa.anio}-${tarifa.mes}-${tarifa.tipoHabitacion}`}>
+                  <td>{tarifa.anio}</td>
+                  <td>{tarifa.mes}</td>
+                  <td>{tarifa.tipoHabitacion}</td>
+                  <td>{tarifa.precioUsd ?? "N/D"}</td>
+                  <td>{tarifa.monedaCodigo ?? "N/D"}</td>
                 </tr>
               ))}
             </tbody>
