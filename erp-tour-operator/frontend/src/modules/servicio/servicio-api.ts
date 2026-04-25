@@ -24,14 +24,6 @@ export const servicioFormSchema = z.object({
       desayuno: z.boolean().default(true)
     })
     .optional(),
-  boletoEntrada: z
-    .object({
-      boletoEntrada: z.string().min(1),
-      tipoEntrada: z.enum(["ESTANDAR", "PRIORITARIA", "OTRA"]).default("ESTANDAR"),
-      audioguia: z.boolean().default(false),
-      idioma: optionalText
-    })
-    .optional(),
   tour: z
     .object({
       idTipoGuia: z.coerce.number().int().positive(),

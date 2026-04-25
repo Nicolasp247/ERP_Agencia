@@ -73,12 +73,6 @@ enum CategoriaHabitacion {
   OTRO
 }
 
-enum TipoEntrada {
-  ESTANDAR
-  PRIORITARIA
-  OTRA
-}
-
 model Continente {
   id                    Int          @id @default(autoincrement())
   nombre                String       @db.VarChar(100)
@@ -285,7 +279,6 @@ model Servicio {
   proveedor          Proveedor            @relation(fields: [idProveedor], references: [id])
   ciudad             Ciudad               @relation(fields: [idCiudad], references: [id])
   alojamiento        Alojamiento?
-  boletoEntrada      BoletoEntrada?
   tour               Tour?
   traslado           Traslado?
   tren               Tren?
@@ -316,19 +309,6 @@ model Alojamiento {
   servicio           Servicio              @relation(fields: [idServicio], references: [id])
 
   @@map("alojamiento")
-}
-
-model BoletoEntrada {
-  idServicio         Int          @id @map("id_servicio")
-  boletoEntrada      String       @map("boleto_entrada") @db.VarChar(150)
-  tipoEntrada        TipoEntrada  @default(ESTANDAR) @map("tipo_entrada")
-  tipoEntradaOtro    String?      @map("tipo_entrada_otro") @db.VarChar(80)
-  audioguia          Boolean      @default(false)
-  tipoGuia           String?      @map("tipo_guia") @db.VarChar(50)
-  idioma             String?      @db.VarChar(40)
-  servicio           Servicio     @relation(fields: [idServicio], references: [id])
-
-  @@map("boleto_entrada")
 }
 
 model Tour {

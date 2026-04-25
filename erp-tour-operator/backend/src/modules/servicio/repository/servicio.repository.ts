@@ -4,6 +4,10 @@ import type { ServicioFilters, ServicioInput, TipoServicioInput } from "@/module
 import type { ServicioTipoCodigo } from "@/modules/servicio/types/servicio.types";
 
 export class ServicioRepository {
+  private normalizarNombrePuntoTraslado(nombre: string) {
+    return nombre.trim().replace(/\s+/g, " ").toLowerCase();
+  }
+  
   listTipos() {
     return prisma.tipoServicio.findMany({
       orderBy: {
@@ -129,7 +133,6 @@ export class ServicioRepository {
           }
         },
         alojamiento: true,
-        boletoEntrada: true,
         tour: {
           include: {
             tipoGuia: true,
@@ -213,15 +216,30 @@ export class ServicioRepository {
     nombre: string
   ) {
     const limpio = nombre.trim();
+    const nombreNormalizado = this.normalizarNombrePuntoTraslado(limpio);
 
-    const existente = await tx.puntoTraslado.findFirst({
+    const puntosCiudad = await tx.puntoTraslado.findMany({
       where: {
-        idCiudad,
-        nombre: limpio
+        idCiudad
       }
     });
 
+    const existente = puntosCiudad.find((punto) => {
+      return this.normalizarNombrePuntoTraslado(punto.nombre) === nombreNormalizado;
+    });
+
     if (existente) {
+      if (!existente.activo) {
+        return tx.puntoTraslado.update({
+          where: {
+            id: existente.id
+          },
+          data: {
+            activo: true
+          }
+        });
+      }
+
       return existente;
     }
 
@@ -237,7 +255,6 @@ export class ServicioRepository {
   private clearDetails(tx: Prisma.TransactionClient, idServicio: number) {
     return Promise.all([
       tx.alojamiento.deleteMany({ where: { idServicio } }),
-      tx.boletoEntrada.deleteMany({ where: { idServicio } }),
       tx.tour.deleteMany({ where: { idServicio } }),
       tx.traslado.deleteMany({ where: { idServicio } }),
       tx.tren.deleteMany({ where: { idServicio } }),
@@ -262,8 +279,9 @@ export class ServicioRepository {
         break;
       case "VISITA":
       case "EXCURSION":
+      case "ENTRADA":
         await tx.tour.create({
-          data: {
+            data: {
             idServicio,
             ...data.tour!
           }
@@ -299,14 +317,7 @@ export class ServicioRepository {
         });
         break;
       }
-      case "ENTRADA":
-        await tx.boletoEntrada.create({
-          data: {
-            idServicio,
-            ...data.boletoEntrada!
-          }
-        });
-        break;
+
       case "TREN":
         await tx.tren.create({
           data: {

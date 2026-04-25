@@ -29,15 +29,6 @@ const alojamientoSchema = z.object({
   proveedorHotel: z.string().max(10).optional().nullable()
 });
 
-const boletoEntradaSchema = z.object({
-  boletoEntrada: z.string().min(1).max(150),
-  tipoEntrada: z.enum(["ESTANDAR", "PRIORITARIA", "OTRA"]).default("ESTANDAR"),
-  tipoEntradaOtro: z.string().max(80).optional().nullable(),
-  audioguia: z.boolean().default(false),
-  tipoGuia: z.string().max(50).optional().nullable(),
-  idioma: z.string().max(40).optional().nullable()
-});
-
 const tourSchema = z.object({
   idTipoGuia: z.coerce.number().int().positive(),
   idIdioma: z.coerce.number().int().positive()
@@ -107,7 +98,6 @@ export const servicioSchema = z.object({
   linkReserva: z.string().url().optional().nullable(),
   activo: z.boolean().optional(),
   alojamiento: alojamientoSchema.optional(),
-  boletoEntrada: boletoEntradaSchema.optional(),
   tour: tourSchema.optional(),
   traslado: trasladoSchema.optional(),
   tren: trenSchema.optional(),

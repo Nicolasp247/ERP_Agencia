@@ -73,11 +73,11 @@ export class ServicioService {
       VISITA: input.tour,
       EXCURSION: input.tour,
       TRASLADO: input.traslado,
-      ENTRADA: input.boletoEntrada,
+      ENTRADA: input.tour,
       TREN: input.tren,
       VUELO: input.vuelo
     };
-
+    
     if (!detailMap[tipoCodigo]) {
       throw new AppError(
         400,

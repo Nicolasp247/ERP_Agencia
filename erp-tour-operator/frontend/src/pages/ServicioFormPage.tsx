@@ -15,8 +15,28 @@ import {
   saveServicio,
   servicioFormSchema
 } from "@/modules/servicio/servicio-api";
+import { buildServicioCotizacionPreview } from "@/modules/servicio/servicio-preview";
 import { ServicioFormView } from "@/pages/servicio/components/ServicioFormView";
-import { NUEVO_PUNTO_OPTION } from "@/modules/servicio/servicio-api";
+
+function getServicioMutationErrorMessage(error: unknown, editingId?: number) {
+  const apiError = error as any;
+
+  const status = apiError?.response?.status;
+  const code = apiError?.response?.data?.code;
+  const backendMessage = apiError?.response?.data?.message;
+
+  if (status === 409 || code === "SERVICIO_DUPLICATE") {
+    return editingId
+      ? "Ya existe otro servicio con ese nombre interno. Cambia el nombre o revisa el servicio existente."
+      : "Ya existe un servicio con ese nombre interno. Revisa si ya está creado o cambia el nombre.";
+  }
+
+  if (backendMessage) {
+    return backendMessage;
+  }
+
+  return "No se pudo guardar el servicio. Revisa los datos e inténtalo nuevamente.";
+}
 
 export function ServicioFormPage() {
   const navigate = useNavigate();
@@ -58,6 +78,7 @@ export function ServicioFormPage() {
     resolver: zodResolver(servicioFormSchema),
     defaultValues: {
       nombreWtravel: "",
+      tiempoServicio: "",
       privado: false,
       activo: true,
       idContinente: null,
@@ -75,8 +96,10 @@ export function ServicioFormPage() {
   const nombreWtravel = form.watch("nombreWtravel");
   const tiempoServicio = form.watch("tiempoServicio");
   const privado = form.watch("privado");
+
   const tourIdTipoGuia = form.watch("tour.idTipoGuia");
   const tourIdIdioma = form.watch("tour.idIdioma");
+
   const trasladoIdOrigen = form.watch("traslado.idOrigen");
   const trasladoIdDestino = form.watch("traslado.idDestino");
   const trasladoNuevoOrigen = form.watch("traslado.nuevoOrigen");
@@ -133,8 +156,9 @@ export function ServicioFormPage() {
         descripcion: servicio.descripcion ?? "",
         linkReserva: servicio.linkReserva ?? "",
         activo: servicio.activo,
+
         alojamiento: "noches" in detalle ? detalle : undefined,
-        boletoEntrada: "boletoEntrada" in detalle ? detalle : undefined,
+
         tour:
           "idTipoGuia" in detalle && "idIdioma" in detalle
             ? {
@@ -142,6 +166,7 @@ export function ServicioFormPage() {
                 idIdioma: detalle.idIdioma
               }
             : undefined,
+
         traslado:
           "idOrigen" in detalle && "idDestino" in detalle
             ? {
@@ -153,7 +178,9 @@ export function ServicioFormPage() {
                 vehiculo: detalle.vehiculo ?? ""
               }
             : undefined,
+
         tren: "sillasReservadas" in detalle ? detalle : undefined,
+
         vuelo: "equipaje" in detalle && !("sillasReservadas" in detalle) ? detalle : undefined
       });
     }
@@ -167,7 +194,7 @@ export function ServicioFormPage() {
       form.setValue("traslado.idOrigen", null);
       form.setValue("traslado.idDestino", null);
     }
-  }, [idContinente]);
+  }, [idContinente, form, tipoActual?.codigo]);
 
   useEffect(() => {
     form.setValue("idCiudad", null);
@@ -176,21 +203,26 @@ export function ServicioFormPage() {
       form.setValue("traslado.idOrigen", null);
       form.setValue("traslado.idDestino", null);
     }
-  }, [idPais]);
+  }, [idPais, form, tipoActual?.codigo]);
 
   useEffect(() => {
     if (tipoActual?.codigo === "TRASLADO") {
       form.setValue("traslado.idOrigen", null);
       form.setValue("traslado.idDestino", null);
     }
-  }, [idCiudad]);
+  }, [idCiudad, form, tipoActual?.codigo]);
 
   const mutation = useMutation({
     mutationFn: (values: any) => {
       const payload = { ...values };
 
-      if (tipoActual?.codigo === "TRASLADO") {
+      if (tipoActual?.codigo === "TRASLADO" || tipoActual?.codigo === "ENTRADA") {
         payload.tiempoServicio = null;
+      }
+
+      if (tipoActual?.codigo === "ENTRADA") {
+        payload.privado = false;
+        delete payload.boletoEntrada;
       }
 
       return saveServicio(payload, editingId);
@@ -198,64 +230,24 @@ export function ServicioFormPage() {
     onSuccess: (data: any) => navigate(`/servicios/${data.id}`)
   });
 
-  function formatTipoGuiaNombre(nombre?: string | null) {
-    return nombre || "";
-  }
+  const origenPreview = trasladoNuevoOrigen?.trim() || origenSeleccionado?.nombre || null;
 
-  function formatIdiomaNombre(nombre?: string | null) {
-    return nombre ? nombre.toLowerCase() : "";
-  }
+  const destinoPreview = trasladoNuevoDestino?.trim() || destinoSeleccionado?.nombre || null;
 
-  function buildServicioPreview() {
-    const nombre = nombreWtravel?.trim() || "Nombre del servicio";
-    const tiempo = tiempoServicio?.trim();
-    const tipoCodigo = tipoActual?.codigo;
+  const preview = buildServicioCotizacionPreview({
+    tipoCodigo: tipoActual?.codigo,
+    nombreWtravel,
+    tiempoServicio,
+    privado,
+    tipoGuiaNombre: tipoGuiaSeleccionado?.nombre,
+    idiomaNombre: idiomaSeleccionado?.nombre,
+    origenNombre: origenPreview,
+    destinoNombre: destinoPreview
+  });
 
-    if (tipoCodigo === "VISITA" || tipoCodigo === "EXCURSION") {
-      const partes = [nombre];
-
-      if (tiempo) {
-        partes.push(tiempo);
-      }
-
-      partes.push(privado ? "privado" : "en grupo");
-
-      const tipoGuiaTexto = formatTipoGuiaNombre(tipoGuiaSeleccionado?.nombre).toLowerCase();
-      const idiomaTexto = formatIdiomaNombre(idiomaSeleccionado?.nombre);
-
-      if (tipoGuiaTexto && idiomaTexto) {
-        partes.push(`${tipoGuiaTexto} en ${idiomaTexto}`);
-      } else if (tipoGuiaTexto) {
-        partes.push(tipoGuiaTexto);
-      } else if (idiomaTexto) {
-        partes.push(`en ${idiomaTexto}`);
-      }
-
-      return partes.join(", ");
-    }
-
-    if (tipoCodigo === "TRASLADO") {
-      const origen =
-        trasladoNuevoOrigen?.trim() ||
-        origenSeleccionado?.nombre ||
-        "origen";
-
-      const destino =
-        trasladoNuevoDestino?.trim() ||
-        destinoSeleccionado?.nombre ||
-        "destino";
-
-      return `Traslado${privado ? " privado" : ""} ${origen} - ${destino}`;
-    }
-
-    const partesGenericas = [nombre];
-
-    if (tiempo) {
-      partesGenericas.push(tiempo);
-    }
-
-    return partesGenericas.join(", ");
-  }
+  const errorMessage = mutation.isError
+    ? getServicioMutationErrorMessage(mutation.error, editingId)
+    : null;
 
   return (
     <ServicioFormView
@@ -276,7 +268,8 @@ export function ServicioFormPage() {
       idCiudad={idCiudad}
       trasladoIdOrigen={trasladoIdOrigen}
       trasladoIdDestino={trasladoIdDestino}
-      preview={buildServicioPreview()}
+      preview={preview}
+      errorMessage={errorMessage}
       onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
     />
   );

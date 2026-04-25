@@ -3,42 +3,12 @@ import { Link, useParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
 import { getServicio } from "@/modules/servicio/servicio-api";
-
-function lowerFirst(text: string | null | undefined) {
-  if (!text) return "";
-  return text.charAt(0).toLowerCase() + text.slice(1);
-}
+import { buildServicioCotizacionPreview } from "@/modules/servicio/servicio-preview";
 
 function getPuntoNombre(value: any) {
   if (!value) return "N/D";
   if (typeof value === "string") return value;
   return value.nombre ?? "N/D";
-}
-
-function buildCotizacionPreview(servicio: any) {
-  const tipoCodigo = servicio?.tipo?.codigo ?? "";
-  const detalle = servicio?.detalleTipo ?? {};
-
-  if (tipoCodigo === "VISITA" || tipoCodigo === "EXCURSION") {
-    const partes = [
-      servicio?.nombreWtravel,
-      servicio?.tiempoServicio,
-      servicio?.privado ? "privado" : "en grupo",
-      detalle?.tipoGuiaNombre ? lowerFirst(detalle.tipoGuiaNombre) : null,
-      detalle?.idiomaNombre ? `en ${lowerFirst(detalle.idiomaNombre)}` : null
-    ].filter(Boolean);
-
-    return partes.join(", ");
-  }
-
-  if (tipoCodigo === "TRASLADO") {
-    const origen = getPuntoNombre(detalle?.origenNombre ?? detalle?.origen);
-    const destino = getPuntoNombre(detalle?.destinoNombre ?? detalle?.destino);
-
-    return `Traslado ${servicio?.privado ? "privado " : ""}${lowerFirst(origen)} - ${lowerFirst(destino)}`.trim();
-  }
-
-  return servicio?.nombreWtravel ?? "N/D";
 }
 
 export function ServicioDetailPage() {
@@ -58,10 +28,10 @@ export function ServicioDetailPage() {
   const tipoCodigo = servicio.tipo?.codigo ?? "";
   const detalle = servicio.detalleTipo ?? {};
 
+  const esEntrada = tipoCodigo === "ENTRADA";
   const esTour = tipoCodigo === "VISITA" || tipoCodigo === "EXCURSION";
+  const esTourOEntrada = esTour || esEntrada;
   const esTraslado = tipoCodigo === "TRASLADO";
-
-  const preview = buildCotizacionPreview(servicio);
 
   const continente =
     servicio?.ciudad?.pais?.continente?.nombre ??
@@ -77,6 +47,17 @@ export function ServicioDetailPage() {
 
   const origenNombre = getPuntoNombre(detalle?.origenNombre ?? detalle?.origen);
   const destinoNombre = getPuntoNombre(detalle?.destinoNombre ?? detalle?.destino);
+
+  const preview = buildServicioCotizacionPreview({
+    tipoCodigo,
+    nombreWtravel: servicio.nombreWtravel,
+    tiempoServicio: servicio.tiempoServicio,
+    privado: servicio.privado,
+    tipoGuiaNombre: detalle?.tipoGuiaNombre,
+    idiomaNombre: detalle?.idiomaNombre,
+    origenNombre,
+    destinoNombre
+  });
 
   return (
     <div className="stack">
@@ -99,10 +80,12 @@ export function ServicioDetailPage() {
               <strong>Nombre interno</strong>
               <p>{servicio.nombreWtravel}</p>
             </div>
+
             <div>
               <strong>Tipo</strong>
               <p>{servicio.tipo?.nombre ?? "N/D"}</p>
             </div>
+
             <div>
               <strong>Proveedor</strong>
               <p>{servicio.proveedor?.nombreComercial ?? "N/D"}</p>
@@ -114,27 +97,48 @@ export function ServicioDetailPage() {
               <strong>Continente</strong>
               <p>{continente}</p>
             </div>
+
             <div>
               <strong>País</strong>
               <p>{pais}</p>
             </div>
+
             <div>
               <strong>Ciudad</strong>
               <p>{servicio.ciudad?.nombre ?? "N/D"}</p>
             </div>
           </div>
 
-          <div className="grid-3">
-            <div>
-              <strong>Modalidad</strong>
-              <p>{modalidad}</p>
+          {esEntrada ? (
+            <div className="grid-3">
+              <div>
+                <strong>Tipo guía</strong>
+                <p>{detalle?.tipoGuiaNombre ?? "N/D"}</p>
+              </div>
+
+              <div>
+                <strong>Idioma</strong>
+                <p>{detalle?.idiomaNombre ?? "N/D"}</p>
+              </div>
+
+              <div>
+                <strong>Activo</strong>
+                <p>{servicio.activo ? "Sí" : "No"}</p>
+              </div>
             </div>
-            <div>
-              <strong>Activo</strong>
-              <p>{servicio.activo ? "Sí" : "No"}</p>
+          ) : (
+            <div className="grid-3">
+              <div>
+                <strong>Modalidad</strong>
+                <p>{modalidad}</p>
+              </div>
+
+              <div>
+                <strong>Activo</strong>
+                <p>{servicio.activo ? "Sí" : "No"}</p>
+              </div>
             </div>
-            <div />
-          </div>
+          )}
 
           {esTour && (
             <div className="grid-3">
@@ -142,11 +146,11 @@ export function ServicioDetailPage() {
                 <strong>Tipo guía</strong>
                 <p>{detalle?.tipoGuiaNombre ?? "N/D"}</p>
               </div>
+
               <div>
                 <strong>Idioma</strong>
                 <p>{detalle?.idiomaNombre ?? "N/D"}</p>
               </div>
-              <div />
             </div>
           )}
 
@@ -156,11 +160,11 @@ export function ServicioDetailPage() {
                 <strong>Origen</strong>
                 <p>{origenNombre}</p>
               </div>
+
               <div>
                 <strong>Destino</strong>
                 <p>{destinoNombre}</p>
               </div>
-              <div />
             </div>
           )}
 
@@ -195,6 +199,7 @@ export function ServicioDetailPage() {
                 <th>Moneda</th>
               </tr>
             </thead>
+
             <tbody>
               {servicio.tarifas.map((tarifa: any) => (
                 <tr key={`${tarifa.anio}-${tarifa.mes}-${tarifa.tipoHabitacion}`}>

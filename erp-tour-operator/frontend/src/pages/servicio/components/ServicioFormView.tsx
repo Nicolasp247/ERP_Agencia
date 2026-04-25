@@ -25,6 +25,7 @@ type Props = {
   trasladoIdOrigen: number | null | undefined;
   trasladoIdDestino: number | null | undefined;
   preview: string;
+  errorMessage?: string | null;
   onSubmit: (e?: React.BaseSyntheticEvent) => void;
 };
 
@@ -47,6 +48,7 @@ export function ServicioFormView({
   trasladoIdOrigen,
   trasladoIdDestino,
   preview,
+  errorMessage,
   onSubmit
 }: Props) {
   return (
@@ -125,7 +127,7 @@ export function ServicioFormView({
             <input {...form.register("nombreWtravel")} />
           </label>
 
-          {tipoActual?.codigo !== "TRASLADO" ? (
+          {tipoActual?.codigo !== "TRASLADO" && tipoActual?.codigo !== "ENTRADA" ? (
             <label>
               Tiempo de servicio
               <input {...form.register("tiempoServicio")} />
@@ -140,12 +142,15 @@ export function ServicioFormView({
           </label>
         </div>
 
-        {(tipoActual?.codigo === "VISITA" || tipoActual?.codigo === "EXCURSION") && (
+        {(tipoActual?.codigo === "VISITA" ||
+          tipoActual?.codigo === "EXCURSION" ||
+          tipoActual?.codigo === "ENTRADA") && (
           <ServicioTourFields
             form={form}
             tiposGuiaQuery={tiposGuiaQuery}
             idiomasQuery={idiomasQuery}
             privado={privado}
+            mostrarPrivado={tipoActual?.codigo !== "ENTRADA"}
           />
         )}
 
@@ -166,6 +171,12 @@ export function ServicioFormView({
         </label>
 
         <ServicioPreview preview={preview} />
+
+        {errorMessage ? (
+          <div className="servicio-form-alert" role="alert">
+            {errorMessage}
+          </div>
+        ) : null}
 
         {tipoActual?.codigo === "ALOJAMIENTO" ? (
           <div className="grid-2">

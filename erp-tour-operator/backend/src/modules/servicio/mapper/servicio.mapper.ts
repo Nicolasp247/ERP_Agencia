@@ -57,7 +57,6 @@ export function toServicioDetail(
       } | null;
     };
     alojamiento: unknown;
-    boletoEntrada: unknown;
     tour: unknown;
     traslado: unknown;
     tren: unknown;
@@ -86,8 +85,6 @@ export function toServicioDetail(
     pais: record.ciudad.pais,
     detalleTipo: record.alojamiento
       ? record.alojamiento
-      : record.boletoEntrada
-      ? record.boletoEntrada
       : record.tour
       ? {
           id: (record.tour as any).id,
