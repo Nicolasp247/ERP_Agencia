@@ -105,6 +105,12 @@ export function ServicioFormPage() {
   const trasladoNuevoOrigen = form.watch("traslado.nuevoOrigen");
   const trasladoNuevoDestino = form.watch("traslado.nuevoDestino");
 
+  const vueloOrigen = form.watch("vuelo.origen");
+  const vueloDestino = form.watch("vuelo.destino");
+  const vueloEscalas = form.watch("vuelo.escalas");
+  const vueloClase = form.watch("vuelo.clase");
+  const vueloEquipaje = form.watch("vuelo.equipaje");
+
   const paisesQuery = useQuery({
     queryKey: ["paises", idContinente],
     queryFn: () => fetchPaises(idContinente ? Number(idContinente) : undefined),
@@ -115,6 +121,12 @@ export function ServicioFormPage() {
     queryKey: ["ciudades", idPais],
     queryFn: () => fetchCiudades(idPais ? Number(idPais) : undefined),
     enabled: Boolean(idPais)
+  });
+
+  const ciudadesDestinoVueloQuery = useQuery({
+    queryKey: ["ciudades-destino-vuelo"],
+    queryFn: () => fetchCiudades(),
+    enabled: tipoActual?.codigo === "VUELO"
   });
 
   const puntosTrasladoQuery = useQuery({
@@ -137,6 +149,10 @@ export function ServicioFormPage() {
 
   const destinoSeleccionado = (puntosTrasladoQuery.data ?? []).find(
     (item) => item.id === Number(trasladoIdDestino)
+  );
+
+  const ciudadOrigenSeleccionada = (ciudadesQuery.data ?? []).find(
+    (item: any) => item.id === Number(idCiudad)
   );
 
   useEffect(() => {
@@ -212,18 +228,27 @@ export function ServicioFormPage() {
     }
   }, [idCiudad, form, tipoActual?.codigo]);
 
+  useEffect(() => {
+    if (tipoActual?.codigo === "VUELO") {
+      form.setValue("vuelo.origen", ciudadOrigenSeleccionada?.nombre ?? "");
+    }
+  }, [tipoActual?.codigo, ciudadOrigenSeleccionada?.nombre, form]);
+
   const mutation = useMutation({
     mutationFn: (values: any) => {
       const payload = { ...values };
 
-      if (tipoActual?.codigo === "TRASLADO" || tipoActual?.codigo === "ENTRADA") {
-        payload.tiempoServicio = null;
-      }
+    if (
+      tipoActual?.codigo === "TRASLADO" ||
+      tipoActual?.codigo === "ENTRADA" ||
+      tipoActual?.codigo === "VUELO"
+    ) {
+      payload.tiempoServicio = null;
+    }
 
-      if (tipoActual?.codigo === "ENTRADA") {
-        payload.privado = false;
-        delete payload.boletoEntrada;
-      }
+    if (tipoActual?.codigo === "ENTRADA" || tipoActual?.codigo === "VUELO") {
+      payload.privado = false;
+    }
 
       return saveServicio(payload, editingId);
     },
@@ -242,7 +267,12 @@ export function ServicioFormPage() {
     tipoGuiaNombre: tipoGuiaSeleccionado?.nombre,
     idiomaNombre: idiomaSeleccionado?.nombre,
     origenNombre: origenPreview,
-    destinoNombre: destinoPreview
+    destinoNombre: destinoPreview,
+    vueloOrigen,
+    vueloDestino,
+    vueloEscalas,
+    vueloClase,
+    vueloEquipaje
   });
 
   const errorMessage = mutation.isError
@@ -250,27 +280,28 @@ export function ServicioFormPage() {
     : null;
 
   return (
-    <ServicioFormView
-      form={form}
-      editingId={editingId}
-      tiposQuery={tiposQuery}
-      proveedoresQuery={proveedoresQuery}
-      continentesQuery={continentesQuery}
-      paisesQuery={paisesQuery}
-      ciudadesQuery={ciudadesQuery}
-      idiomasQuery={idiomasQuery}
-      tiposGuiaQuery={tiposGuiaQuery}
-      puntosTrasladoQuery={puntosTrasladoQuery}
-      tipoActual={tipoActual}
-      privado={privado}
-      idContinente={idContinente}
-      idPais={idPais}
-      idCiudad={idCiudad}
-      trasladoIdOrigen={trasladoIdOrigen}
-      trasladoIdDestino={trasladoIdDestino}
-      preview={preview}
-      errorMessage={errorMessage}
-      onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
-    />
+  <ServicioFormView
+    form={form}
+    editingId={editingId}
+    tiposQuery={tiposQuery}
+    proveedoresQuery={proveedoresQuery}
+    continentesQuery={continentesQuery}
+    paisesQuery={paisesQuery}
+    ciudadesQuery={ciudadesQuery}
+    ciudadesDestinoVueloQuery={ciudadesDestinoVueloQuery}
+    idiomasQuery={idiomasQuery}
+    tiposGuiaQuery={tiposGuiaQuery}
+    puntosTrasladoQuery={puntosTrasladoQuery}
+    tipoActual={tipoActual}
+    privado={privado}
+    idContinente={idContinente}
+    idPais={idPais}
+    idCiudad={idCiudad}
+    trasladoIdOrigen={trasladoIdOrigen}
+    trasladoIdDestino={trasladoIdDestino}
+    preview={preview}
+    errorMessage={errorMessage}
+    onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+  />
   );
 }

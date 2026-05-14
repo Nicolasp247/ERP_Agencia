@@ -4,6 +4,7 @@ import { PageSection } from "@/components/PageSection";
 import { ServicioPreview } from "@/pages/servicio/components/ServicioPreview";
 import { ServicioTourFields } from "@/pages/servicio/components/ServicioTourFields";
 import { ServicioTrasladoFields } from "@/pages/servicio/components/ServicioTrasladoFields";
+import { ServicioVueloFields } from "@/pages/servicio/components/ServicioVueloFields";
 import "@/pages/servicio/styles/servicio-form.css";
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
   continentesQuery: any;
   paisesQuery: any;
   ciudadesQuery: any;
+  ciudadesDestinoVueloQuery: any;
   idiomasQuery: any;
   tiposGuiaQuery: any;
   puntosTrasladoQuery: any;
@@ -37,6 +39,7 @@ export function ServicioFormView({
   continentesQuery,
   paisesQuery,
   ciudadesQuery,
+  ciudadesDestinoVueloQuery,
   idiomasQuery,
   tiposGuiaQuery,
   puntosTrasladoQuery,
@@ -127,7 +130,9 @@ export function ServicioFormView({
             <input {...form.register("nombreWtravel")} />
           </label>
 
-          {tipoActual?.codigo !== "TRASLADO" && tipoActual?.codigo !== "ENTRADA" ? (
+          {tipoActual?.codigo !== "TRASLADO" &&
+          tipoActual?.codigo !== "ENTRADA" &&
+          tipoActual?.codigo !== "VUELO" ? (
             <label>
               Tiempo de servicio
               <input {...form.register("tiempoServicio")} />
@@ -162,6 +167,13 @@ export function ServicioFormView({
             puntosTrasladoQuery={puntosTrasladoQuery}
             trasladoIdOrigen={trasladoIdOrigen}
             trasladoIdDestino={trasladoIdDestino}
+          />
+       )}
+
+        {tipoActual?.codigo === "VUELO" && (
+          <ServicioVueloFields
+            form={form}
+            ciudadesDestinoVueloQuery={ciudadesDestinoVueloQuery}
           />
         )}
 

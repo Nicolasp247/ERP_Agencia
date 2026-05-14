@@ -32,6 +32,7 @@ export function ServicioDetailPage() {
   const esTour = tipoCodigo === "VISITA" || tipoCodigo === "EXCURSION";
   const esTourOEntrada = esTour || esEntrada;
   const esTraslado = tipoCodigo === "TRASLADO";
+  const esVuelo = tipoCodigo === "VUELO";
 
   const continente =
     servicio?.ciudad?.pais?.continente?.nombre ??
@@ -56,7 +57,12 @@ export function ServicioDetailPage() {
     tipoGuiaNombre: detalle?.tipoGuiaNombre,
     idiomaNombre: detalle?.idiomaNombre,
     origenNombre,
-    destinoNombre
+    destinoNombre,
+    vueloOrigen: detalle?.origen,
+    vueloDestino: detalle?.destino,
+    vueloEscalas: detalle?.escalas,
+    vueloClase: detalle?.clase,
+    vueloEquipaje: detalle?.equipaje
   });
 
   return (
@@ -126,6 +132,13 @@ export function ServicioDetailPage() {
                 <p>{servicio.activo ? "Sí" : "No"}</p>
               </div>
             </div>
+          ) : esVuelo ? (
+            <div className="grid-3">
+              <div>
+                <strong>Activo</strong>
+                <p>{servicio.activo ? "Sí" : "No"}</p>
+              </div>
+            </div>
           ) : (
             <div className="grid-3">
               <div>
@@ -166,6 +179,39 @@ export function ServicioDetailPage() {
                 <p>{destinoNombre}</p>
               </div>
             </div>
+          )}
+
+          {esVuelo && (
+            <>
+              <div className="grid-3">
+                <div>
+                  <strong>Origen</strong>
+                  <p>{detalle?.origen ?? "N/D"}</p>
+                </div>
+
+                <div>
+                  <strong>Destino</strong>
+                  <p>{detalle?.destino ?? "N/D"}</p>
+                </div>
+
+                <div>
+                  <strong>Escalas</strong>
+                  <p>{Number(detalle?.escalas ?? 0) === 0 ? "Directo" : detalle?.escalas}</p>
+                </div>
+              </div>
+
+              <div className="grid-3">
+                <div>
+                  <strong>Clase</strong>
+                  <p>{detalle?.clase ?? "N/D"}</p>
+                </div>
+
+                <div>
+                  <strong>Equipaje</strong>
+                  <p>{detalle?.equipaje ?? "N/D"}</p>
+                </div>
+              </div>
+            </>
           )}
 
           <div>

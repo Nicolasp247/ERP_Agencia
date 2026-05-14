@@ -10,26 +10,29 @@ export type ServicioCotizacionPreviewInput = {
   origenNombre?: string | null;
   destinoNombre?: string | null;
 
-  tipoEntrada?: string | null;
-  tipoEntradaOtro?: string | null;
+  vueloOrigen?: string | null;
+  vueloDestino?: string | null;
+  vueloEscalas?: number | string | null;
+  vueloClase?: string | null;
+  vueloEquipaje?: string | null;
 };
 
 function limpiarTexto(value?: string | null) {
   return value?.trim() || "";
 }
 
-function getTipoEntradaTexto(tipoEntrada?: string | null, tipoEntradaOtro?: string | null) {
-  const tipo = limpiarTexto(tipoEntrada).toUpperCase();
+function getTextoEscalas(value?: number | string | null) {
+  const escalas = Number(value ?? 0);
 
-  if (tipo === "PRIORITARIA") {
-    return "Entrada prioritaria";
+  if (!Number.isFinite(escalas) || escalas <= 0) {
+    return "directo";
   }
 
-  if (tipo === "OTRA") {
-    return limpiarTexto(tipoEntradaOtro) || "Entrada";
+  if (escalas === 1) {
+    return "con 1 escala";
   }
 
-  return "Entrada general";
+  return `con ${escalas} escalas`;
 }
 
 export function buildServicioCotizacionPreview(data: ServicioCotizacionPreviewInput) {
@@ -82,6 +85,26 @@ export function buildServicioCotizacionPreview(data: ServicioCotizacionPreviewIn
     const destino = limpiarTexto(data.destinoNombre) || "destino";
 
     return `Traslado${data.privado ? " privado" : ""} ${origen} - ${destino}`;
+  }
+
+  if (tipoCodigo === "VUELO") {
+    const origen = limpiarTexto(data.vueloOrigen) || "origen";
+    const destino = limpiarTexto(data.vueloDestino) || "destino";
+    const textoEscalas = getTextoEscalas(data.vueloEscalas);
+    const clase = limpiarTexto(data.vueloClase);
+    const equipaje = limpiarTexto(data.vueloEquipaje);
+
+    const partes = [`Vuelo ${textoEscalas} ${origen} - ${destino}`];
+
+    if (clase) {
+      partes.push(clase);
+    }
+
+    if (equipaje) {
+      partes.push(equipaje);
+    }
+
+    return partes.join(", ");
   }
 
   const partesGenericas = [nombre];
