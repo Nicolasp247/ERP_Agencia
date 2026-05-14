@@ -111,6 +111,12 @@ export function ServicioFormPage() {
   const vueloClase = form.watch("vuelo.clase");
   const vueloEquipaje = form.watch("vuelo.equipaje");
 
+  const trenOrigen = form.watch("tren.origen");
+  const trenDestino = form.watch("tren.destino");
+  const trenEscalas = form.watch("tren.escalas");
+  const trenClase = form.watch("tren.clase");
+  const trenSillasReservadas = form.watch("tren.sillasReservadas");
+
   const paisesQuery = useQuery({
     queryKey: ["paises", idContinente],
     queryFn: () => fetchPaises(idContinente ? Number(idContinente) : undefined),
@@ -123,10 +129,10 @@ export function ServicioFormPage() {
     enabled: Boolean(idPais)
   });
 
-  const ciudadesDestinoVueloQuery = useQuery({
-    queryKey: ["ciudades-destino-vuelo"],
+  const ciudadesDestinoTransporteQuery = useQuery({
+    queryKey: ["ciudades-destino-transporte"],
     queryFn: () => fetchCiudades(),
-    enabled: tipoActual?.codigo === "VUELO"
+    enabled: tipoActual?.codigo === "VUELO" || tipoActual?.codigo === "TREN"
   });
 
   const puntosTrasladoQuery = useQuery({
@@ -234,27 +240,45 @@ export function ServicioFormPage() {
     }
   }, [tipoActual?.codigo, ciudadOrigenSeleccionada?.nombre, form]);
 
+  useEffect(() => {
+    if (tipoActual?.codigo === "TREN") {
+      form.setValue("tren.origen", ciudadOrigenSeleccionada?.nombre ?? "");
+    }
+  }, [tipoActual?.codigo, ciudadOrigenSeleccionada?.nombre, form]);
+
   const mutation = useMutation({
     mutationFn: (values: any) => {
       const payload = { ...values };
 
-    if (
-      tipoActual?.codigo === "TRASLADO" ||
-      tipoActual?.codigo === "ENTRADA" ||
-      tipoActual?.codigo === "VUELO"
-    ) {
-      payload.tiempoServicio = null;
-    }
+      if (
+        tipoActual?.codigo === "TRASLADO" ||
+        tipoActual?.codigo === "ENTRADA" ||
+        tipoActual?.codigo === "VUELO" ||
+        tipoActual?.codigo === "TREN"
+      ) {
+        payload.tiempoServicio = null;
+      }
 
-    if (tipoActual?.codigo === "ENTRADA" || tipoActual?.codigo === "VUELO") {
-      payload.privado = false;
-    }
+      if (
+        tipoActual?.codigo === "ENTRADA" ||
+        tipoActual?.codigo === "VUELO" ||
+        tipoActual?.codigo === "TREN"
+      ) {
+        payload.privado = false;
+      }
+
+      if (tipoActual?.codigo === "TREN") {
+        payload.tren = {
+          ...payload.tren,
+          sillasReservadas: Boolean(payload.tren?.sillasReservadas),
+          equipaje: null
+        };
+      }
 
       return saveServicio(payload, editingId);
     },
     onSuccess: (data: any) => navigate(`/servicios/${data.id}`)
   });
-
   const origenPreview = trasladoNuevoOrigen?.trim() || origenSeleccionado?.nombre || null;
 
   const destinoPreview = trasladoNuevoDestino?.trim() || destinoSeleccionado?.nombre || null;
@@ -272,7 +296,12 @@ export function ServicioFormPage() {
     vueloDestino,
     vueloEscalas,
     vueloClase,
-    vueloEquipaje
+    vueloEquipaje,
+    trenOrigen,
+    trenDestino,
+    trenEscalas,
+    trenClase,
+    trenSillasReservadas
   });
 
   const errorMessage = mutation.isError
@@ -288,7 +317,7 @@ export function ServicioFormPage() {
     continentesQuery={continentesQuery}
     paisesQuery={paisesQuery}
     ciudadesQuery={ciudadesQuery}
-    ciudadesDestinoVueloQuery={ciudadesDestinoVueloQuery}
+    ciudadesDestinoTransporteQuery={ciudadesDestinoTransporteQuery}
     idiomasQuery={idiomasQuery}
     tiposGuiaQuery={tiposGuiaQuery}
     puntosTrasladoQuery={puntosTrasladoQuery}

@@ -15,6 +15,12 @@ export type ServicioCotizacionPreviewInput = {
   vueloEscalas?: number | string | null;
   vueloClase?: string | null;
   vueloEquipaje?: string | null;
+
+  trenOrigen?: string | null;
+  trenDestino?: string | null;
+  trenEscalas?: number | string | null;
+  trenClase?: string | null;
+  trenSillasReservadas?: boolean | null;
 };
 
 function limpiarTexto(value?: string | null) {
@@ -33,6 +39,20 @@ function getTextoEscalas(value?: number | string | null) {
   }
 
   return `con ${escalas} escalas`;
+}
+
+function getTextoConexionesTren(value?: number | string | null) {
+  const conexiones = Number(value ?? 0);
+
+  if (!Number.isFinite(conexiones) || conexiones <= 0) {
+    return "directo";
+  }
+
+  if (conexiones === 1) {
+    return "con 1 conexión";
+  }
+
+  return `con ${conexiones} conexiones`;
 }
 
 export function buildServicioCotizacionPreview(data: ServicioCotizacionPreviewInput) {
@@ -102,6 +122,25 @@ export function buildServicioCotizacionPreview(data: ServicioCotizacionPreviewIn
 
     if (equipaje) {
       partes.push(equipaje);
+    }
+
+    return partes.join(", ");
+  }
+
+  if (tipoCodigo === "TREN") {
+    const origen = limpiarTexto(data.trenOrigen) || "origen";
+    const destino = limpiarTexto(data.trenDestino) || "destino";
+    const textoConexiones = getTextoConexionesTren(data.trenEscalas);
+    const clase = limpiarTexto(data.trenClase);
+
+    const partes = [`Tren ${textoConexiones} ${origen} - ${destino}`];
+
+    if (clase) {
+      partes.push(clase);
+    }
+
+    if (data.trenSillasReservadas) {
+      partes.push("sillas reservadas");
     }
 
     return partes.join(", ");

@@ -33,6 +33,7 @@ export function ServicioDetailPage() {
   const esTourOEntrada = esTour || esEntrada;
   const esTraslado = tipoCodigo === "TRASLADO";
   const esVuelo = tipoCodigo === "VUELO";
+  const esTren = tipoCodigo === "TREN";
 
   const continente =
     servicio?.ciudad?.pais?.continente?.nombre ??
@@ -49,21 +50,26 @@ export function ServicioDetailPage() {
   const origenNombre = getPuntoNombre(detalle?.origenNombre ?? detalle?.origen);
   const destinoNombre = getPuntoNombre(detalle?.destinoNombre ?? detalle?.destino);
 
-  const preview = buildServicioCotizacionPreview({
-    tipoCodigo,
-    nombreWtravel: servicio.nombreWtravel,
-    tiempoServicio: servicio.tiempoServicio,
-    privado: servicio.privado,
-    tipoGuiaNombre: detalle?.tipoGuiaNombre,
-    idiomaNombre: detalle?.idiomaNombre,
-    origenNombre,
-    destinoNombre,
-    vueloOrigen: detalle?.origen,
-    vueloDestino: detalle?.destino,
-    vueloEscalas: detalle?.escalas,
-    vueloClase: detalle?.clase,
-    vueloEquipaje: detalle?.equipaje
-  });
+const preview = buildServicioCotizacionPreview({
+  tipoCodigo,
+  nombreWtravel: servicio.nombreWtravel,
+  tiempoServicio: servicio.tiempoServicio,
+  privado: servicio.privado,
+  tipoGuiaNombre: detalle?.tipoGuiaNombre,
+  idiomaNombre: detalle?.idiomaNombre,
+  origenNombre,
+  destinoNombre,
+  vueloOrigen: detalle?.origen,
+  vueloDestino: detalle?.destino,
+  vueloEscalas: detalle?.escalas,
+  vueloClase: detalle?.clase,
+  vueloEquipaje: detalle?.equipaje,
+  trenOrigen: detalle?.origen,
+  trenDestino: detalle?.destino,
+  trenEscalas: detalle?.escalas,
+  trenClase: detalle?.clase,
+  trenSillasReservadas: detalle?.sillasReservadas
+});
 
   return (
     <div className="stack">
@@ -132,7 +138,7 @@ export function ServicioDetailPage() {
                 <p>{servicio.activo ? "Sí" : "No"}</p>
               </div>
             </div>
-          ) : esVuelo ? (
+          ) : esVuelo || esTren ? (
             <div className="grid-3">
               <div>
                 <strong>Activo</strong>
@@ -213,6 +219,45 @@ export function ServicioDetailPage() {
               </div>
             </>
           )}
+
+          {esTren && (
+          <>
+            <div className="grid-3">
+              <div>
+                <strong>Origen</strong>
+                <p>{detalle?.origen ?? "N/D"}</p>
+              </div>
+
+              <div>
+                <strong>Destino</strong>
+                <p>{detalle?.destino ?? "N/D"}</p>
+              </div>
+
+              <div>
+                <strong>Conexiones</strong>
+                <p>
+                  {Number(detalle?.escalas ?? 0) === 0
+                    ? "Directo"
+                    : Number(detalle?.escalas) === 1
+                    ? "1 conexión"
+                    : `${detalle?.escalas} conexiones`}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid-3">
+              <div>
+                <strong>Clase</strong>
+                <p>{detalle?.clase ?? "N/D"}</p>
+              </div>
+
+              <div>
+                <strong>Sillas reservadas</strong>
+                <p>{detalle?.sillasReservadas ? "Sí" : "No"}</p>
+              </div>
+            </div>
+          </>
+        )}
 
           <div>
             <strong>Link de reserva</strong>

@@ -5,6 +5,7 @@ import { ServicioPreview } from "@/pages/servicio/components/ServicioPreview";
 import { ServicioTourFields } from "@/pages/servicio/components/ServicioTourFields";
 import { ServicioTrasladoFields } from "@/pages/servicio/components/ServicioTrasladoFields";
 import { ServicioVueloFields } from "@/pages/servicio/components/ServicioVueloFields";
+import { ServicioTrenFields } from "@/pages/servicio/components/ServicioTrenFields";
 import "@/pages/servicio/styles/servicio-form.css";
 
 type Props = {
@@ -15,7 +16,7 @@ type Props = {
   continentesQuery: any;
   paisesQuery: any;
   ciudadesQuery: any;
-  ciudadesDestinoVueloQuery: any;
+  ciudadesDestinoTransporteQuery: any;
   idiomasQuery: any;
   tiposGuiaQuery: any;
   puntosTrasladoQuery: any;
@@ -39,7 +40,7 @@ export function ServicioFormView({
   continentesQuery,
   paisesQuery,
   ciudadesQuery,
-  ciudadesDestinoVueloQuery,
+  ciudadesDestinoTransporteQuery,
   idiomasQuery,
   tiposGuiaQuery,
   puntosTrasladoQuery,
@@ -132,7 +133,8 @@ export function ServicioFormView({
 
           {tipoActual?.codigo !== "TRASLADO" &&
           tipoActual?.codigo !== "ENTRADA" &&
-          tipoActual?.codigo !== "VUELO" ? (
+          tipoActual?.codigo !== "VUELO" &&
+          tipoActual?.codigo !== "TREN" ? (
             <label>
               Tiempo de servicio
               <input {...form.register("tiempoServicio")} />
@@ -168,12 +170,19 @@ export function ServicioFormView({
             trasladoIdOrigen={trasladoIdOrigen}
             trasladoIdDestino={trasladoIdDestino}
           />
-       )}
+        )}
 
         {tipoActual?.codigo === "VUELO" && (
           <ServicioVueloFields
             form={form}
-            ciudadesDestinoVueloQuery={ciudadesDestinoVueloQuery}
+            ciudadesDestinoVueloQuery={ciudadesDestinoTransporteQuery}
+          />
+        )}
+
+        {tipoActual?.codigo === "TREN" && (
+          <ServicioTrenFields
+            form={form}
+            ciudadesDestinoTransporteQuery={ciudadesDestinoTransporteQuery}
           />
         )}
 
