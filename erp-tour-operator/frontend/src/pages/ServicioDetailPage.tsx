@@ -34,6 +34,7 @@ export function ServicioDetailPage() {
   const esTraslado = tipoCodigo === "TRASLADO";
   const esVuelo = tipoCodigo === "VUELO";
   const esTren = tipoCodigo === "TREN";
+  const esOtro = tipoCodigo === "OTRO";
 
   const continente =
     servicio?.ciudad?.pais?.continente?.nombre ??
@@ -138,7 +139,7 @@ const preview = buildServicioCotizacionPreview({
                 <p>{servicio.activo ? "Sí" : "No"}</p>
               </div>
             </div>
-          ) : esVuelo || esTren ? (
+          ) : esVuelo || esTren || esOtro ? (
             <div className="grid-3">
               <div>
                 <strong>Activo</strong>

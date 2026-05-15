@@ -134,7 +134,8 @@ export function ServicioFormView({
           {tipoActual?.codigo !== "TRASLADO" &&
           tipoActual?.codigo !== "ENTRADA" &&
           tipoActual?.codigo !== "VUELO" &&
-          tipoActual?.codigo !== "TREN" ? (
+          tipoActual?.codigo !== "TREN" &&
+          tipoActual?.codigo !== "OTRO" ? (
             <label>
               Tiempo de servicio
               <input {...form.register("tiempoServicio")} />

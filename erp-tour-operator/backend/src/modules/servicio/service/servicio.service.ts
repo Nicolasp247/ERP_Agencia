@@ -68,7 +68,11 @@ export class ServicioService {
   }
 
   private validateDetail(tipoCodigo: ServicioTipoCodigo, input: ServicioInput) {
-    const detailMap: Record<ServicioTipoCodigo, unknown> = {
+    if (tipoCodigo === "OTRO") {
+      return;
+    }
+
+    const detailMap: Record<Exclude<ServicioTipoCodigo, "OTRO">, unknown> = {
       ALOJAMIENTO: input.alojamiento,
       VISITA: input.tour,
       EXCURSION: input.tour,
@@ -77,8 +81,8 @@ export class ServicioService {
       TREN: input.tren,
       VUELO: input.vuelo
     };
-    
-    if (!detailMap[tipoCodigo]) {
+
+    if (!detailMap[tipoCodigo as Exclude<ServicioTipoCodigo, "OTRO">]) {
       throw new AppError(
         400,
         "DETALLE_TIPO_REQUERIDO",

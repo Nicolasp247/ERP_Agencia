@@ -5,4 +5,5 @@ export type ServicioTipoCodigo =
   | "TRASLADO"
   | "ENTRADA"
   | "TREN"
-  | "VUELO";
+  | "VUELO"
+  | "OTRO";

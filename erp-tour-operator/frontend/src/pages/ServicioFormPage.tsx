@@ -254,7 +254,8 @@ export function ServicioFormPage() {
         tipoActual?.codigo === "TRASLADO" ||
         tipoActual?.codigo === "ENTRADA" ||
         tipoActual?.codigo === "VUELO" ||
-        tipoActual?.codigo === "TREN"
+        tipoActual?.codigo === "TREN" ||
+        tipoActual?.codigo === "OTRO"
       ) {
         payload.tiempoServicio = null;
       }
@@ -262,7 +263,8 @@ export function ServicioFormPage() {
       if (
         tipoActual?.codigo === "ENTRADA" ||
         tipoActual?.codigo === "VUELO" ||
-        tipoActual?.codigo === "TREN"
+        tipoActual?.codigo === "TREN" ||
+        tipoActual?.codigo === "OTRO"
       ) {
         payload.privado = false;
       }
@@ -273,6 +275,14 @@ export function ServicioFormPage() {
           sillasReservadas: Boolean(payload.tren?.sillasReservadas),
           equipaje: null
         };
+      }
+
+      if (tipoActual?.codigo === "OTRO") {
+        delete payload.alojamiento;
+        delete payload.tour;
+        delete payload.traslado;
+        delete payload.tren;
+        delete payload.vuelo;
       }
 
       return saveServicio(payload, editingId);

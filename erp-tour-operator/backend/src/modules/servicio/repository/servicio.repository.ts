@@ -334,6 +334,9 @@ export class ServicioRepository {
           }
         });
         break;
+      
+      case "OTRO":
+        break;
     }
   }
 }

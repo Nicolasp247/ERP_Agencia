@@ -146,6 +146,10 @@ export function buildServicioCotizacionPreview(data: ServicioCotizacionPreviewIn
     return partes.join(", ");
   }
 
+  if (tipoCodigo === "OTRO") {
+    return nombre;
+  }
+
   const partesGenericas = [nombre];
 
   if (tiempo) {
