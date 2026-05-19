@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/styles.css */
+
 :root {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: #172026;
@@ -249,6 +251,112 @@ td {
   font-weight: 700;
 }
 
+.table-subtext {
+  margin: 0.2rem 0 0;
+  color: #68747c;
+  font-size: 0.82rem;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-chip-neutral {
+  background: #f0eadb;
+  color: #163037;
+}
+
+.status-chip-active {
+  background: #e6f5ea;
+  color: #24613a;
+}
+
+.status-chip-inactive {
+  background: #f8e7e3;
+  color: #8a2f1f;
+}
+
+.service-status-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid #d8d2c2;
+  border-radius: 16px;
+  padding: 1rem;
+  background: #f8f6ef;
+}
+
+.service-status-card p {
+  margin: 0.25rem 0 0;
+}
+
+.service-status-toggle {
+  display: flex;
+  align-items: center;
+  width: auto;
+  gap: 0.65rem;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.service-status-toggle input {
+  width: 18px;
+  height: 18px;
+}
+
+.services-filter-panel {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.services-search-field {
+  max-width: 100%;
+}
+
+.services-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.services-filter-grid-secondary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+}
+
+.services-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: end;
+}
+
+.services-list-summary {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+  color: #68747c;
+  font-size: 0.9rem;
+}
+
+.services-empty-state {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px dashed #d8d2c2;
+  border-radius: 16px;
+  background: #f8f6ef;
+  color: #68747c;
+  text-align: center;
+}
+
 @media (max-width: 960px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -264,5 +372,18 @@ td {
   .grid-3,
   .grid-4 {
     grid-template-columns: 1fr;
+  }
+
+  .services-filter-grid,
+  .services-filter-grid-secondary {
+    grid-template-columns: 1fr;
+  }
+
+  .services-filter-actions {
+    justify-content: stretch;
+  }
+
+  .services-filter-actions .link-button {
+    width: 100%;
   }
 }

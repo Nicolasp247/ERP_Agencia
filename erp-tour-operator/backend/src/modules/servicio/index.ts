@@ -1,3 +1,6 @@
+/* erp-tour-operator/backend/src/modules/servicio/index.ts */
+
+
 import { Router } from "express";
 
 import { authenticate } from "@/core/middleware/authenticate";
@@ -33,7 +36,7 @@ servicioRouter.get(
   validateQuery(puntoTrasladoFilterSchema),
   asyncHandler(servicioController.listPuntosTraslado)
 );
-
+servicioRouter.patch("/:id/estado", servicioController.updateEstado);
 servicioRouter.get("/:id", validateParams(servicioIdParamSchema), asyncHandler(servicioController.getById));
 servicioRouter.post("/", validateBody(servicioSchema), asyncHandler(servicioController.create));
 servicioRouter.put(

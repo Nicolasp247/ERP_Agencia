@@ -87,6 +87,20 @@ export class ServicioRepository {
             pais: true
           }
         },
+        tour: {
+          include: {
+            tipoGuia: true,
+            idioma: true
+          }
+        },
+        traslado: {
+          include: {
+            origen: true,
+            destino: true
+          }
+        },
+        tren: true,
+        vuelo: true,
         tarifas: {
           take: 1,
           orderBy: [{ anio: "desc" }, { mes: "desc" }]
@@ -207,6 +221,16 @@ export class ServicioRepository {
       return tx.servicio.findUniqueOrThrow({
         where: { id }
       });
+    });
+  }
+
+  async updateEstado(id: number, activo: boolean, updatedBy?: number | null) {
+    return prisma.servicio.update({
+      where: { id },
+      data: {
+        activo,
+        updatedBy: updatedBy ?? null
+      }
     });
   }
 

@@ -178,6 +178,27 @@ export class ServicioService {
 
     return this.getById(updated.id);
   }
+
+  async updateEstado(id: number, activo: boolean, userId?: number) {
+    const current = await servicioRepository.findById(id);
+
+    if (!current) {
+      throw new AppError(404, "SERVICIO_NOT_FOUND", "Servicio no encontrado");
+    }
+
+    const updated = await servicioRepository.updateEstado(id, activo, userId ?? null);
+
+    await auditoriaService.record({
+      entidad: "servicio",
+      entidadId: updated.id,
+      accion: activo ? "ACTIVADO" : "DESACTIVADO",
+      valorAnterior: current,
+      valorNuevo: updated,
+      idUsuario: userId ?? null
+    });
+
+    return this.getById(updated.id);
+  }
 }
 
 export const servicioService = new ServicioService();

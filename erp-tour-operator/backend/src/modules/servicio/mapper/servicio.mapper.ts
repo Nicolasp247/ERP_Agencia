@@ -11,25 +11,63 @@ export function toServicioListItem(
   record: {
     id: number;
     nombreWtravel: string;
+    tiempoServicio?: string | null;
+    privado?: boolean;
     activo: boolean;
-    tipo: { nombre: string };
+    tipo: { nombre: string; codigo?: string | null };
     proveedor: { nombreComercial: string };
     ciudad: { nombre: string; pais: { nombre: string } | null };
+    tour?: any;
+    traslado?: any;
+    tren?: any;
+    vuelo?: any;
     tarifas: Array<{ precioUsd: { toString(): string } | null; monedaCodigo: string }>;
   }
 ) {
   const tarifa = record.tarifas[0];
 
+  const detalleTipo = record.tour
+    ? {
+        id: record.tour.id,
+        idServicio: record.tour.idServicio,
+        idTipoGuia: record.tour.idTipoGuia,
+        idIdioma: record.tour.idIdioma,
+        tipoGuiaNombre: record.tour.tipoGuia?.nombre ?? null,
+        idiomaNombre: record.tour.idioma?.nombre ?? null
+      }
+    : record.traslado
+    ? {
+        id: record.traslado.id,
+        idServicio: record.traslado.idServicio,
+        idOrigen: record.traslado.idOrigen ?? null,
+        idDestino: record.traslado.idDestino ?? null,
+        origen: record.traslado.origen ?? null,
+        destino: record.traslado.destino ?? null,
+        origenNombre: record.traslado.origen?.nombre ?? null,
+        destinoNombre: record.traslado.destino?.nombre ?? null,
+        escalas: record.traslado.escalas ?? 0,
+        vehiculo: record.traslado.vehiculo ?? null
+      }
+    : record.tren
+    ? record.tren
+    : record.vuelo
+    ? record.vuelo
+    : null;
+
   return {
     id: record.id,
     nombreWtravel: record.nombreWtravel,
+    tiempoServicio: record.tiempoServicio ?? null,
+    privado: record.privado ?? false,
     tipo: record.tipo.nombre,
+    tipoCodigo: record.tipo.codigo ?? null,
     proveedor: record.proveedor.nombreComercial,
     ciudad: record.ciudad.nombre,
     pais: record.ciudad.pais?.nombre ?? null,
     precioBase: tarifa?.precioUsd?.toString() ?? null,
     monedaCodigo: tarifa?.monedaCodigo ?? null,
-    activo: record.activo
+    activo: record.activo,
+    detalleTipo
   };
 }
 

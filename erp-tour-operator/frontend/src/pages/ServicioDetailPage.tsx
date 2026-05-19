@@ -1,8 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+/* erp-tour-operator/frontend/src/pages/ServicioDetailPage.tsx */
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
-import { getServicio } from "@/modules/servicio/servicio-api";
+import { getServicio, updateServicioEstado } from "@/modules/servicio/servicio-api";
 import { buildServicioCotizacionPreview } from "@/modules/servicio/servicio-preview";
 
 function getPuntoNombre(value: any) {
@@ -13,10 +15,21 @@ function getPuntoNombre(value: any) {
 
 export function ServicioDetailPage() {
   const params = useParams();
+  const queryClient = useQueryClient();
+  const servicioId = Number(params.id);
 
   const query = useQuery({
     queryKey: ["servicio", params.id],
-    queryFn: () => getServicio(Number(params.id))
+    queryFn: () => getServicio(servicioId),
+    enabled: Number.isFinite(servicioId)
+  });
+
+  const estadoMutation = useMutation({
+    mutationFn: (activo: boolean) => updateServicioEstado(servicioId, activo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["servicio", params.id] });
+      queryClient.invalidateQueries({ queryKey: ["servicios"] });
+    }
   });
 
   const servicio = query.data as any;
@@ -30,7 +43,6 @@ export function ServicioDetailPage() {
 
   const esEntrada = tipoCodigo === "ENTRADA";
   const esTour = tipoCodigo === "VISITA" || tipoCodigo === "EXCURSION";
-  const esTourOEntrada = esTour || esEntrada;
   const esTraslado = tipoCodigo === "TRASLADO";
   const esVuelo = tipoCodigo === "VUELO";
   const esTren = tipoCodigo === "TREN";
@@ -51,26 +63,26 @@ export function ServicioDetailPage() {
   const origenNombre = getPuntoNombre(detalle?.origenNombre ?? detalle?.origen);
   const destinoNombre = getPuntoNombre(detalle?.destinoNombre ?? detalle?.destino);
 
-const preview = buildServicioCotizacionPreview({
-  tipoCodigo,
-  nombreWtravel: servicio.nombreWtravel,
-  tiempoServicio: servicio.tiempoServicio,
-  privado: servicio.privado,
-  tipoGuiaNombre: detalle?.tipoGuiaNombre,
-  idiomaNombre: detalle?.idiomaNombre,
-  origenNombre,
-  destinoNombre,
-  vueloOrigen: detalle?.origen,
-  vueloDestino: detalle?.destino,
-  vueloEscalas: detalle?.escalas,
-  vueloClase: detalle?.clase,
-  vueloEquipaje: detalle?.equipaje,
-  trenOrigen: detalle?.origen,
-  trenDestino: detalle?.destino,
-  trenEscalas: detalle?.escalas,
-  trenClase: detalle?.clase,
-  trenSillasReservadas: detalle?.sillasReservadas
-});
+  const preview = buildServicioCotizacionPreview({
+    tipoCodigo,
+    nombreWtravel: servicio.nombreWtravel,
+    tiempoServicio: servicio.tiempoServicio,
+    privado: servicio.privado,
+    tipoGuiaNombre: detalle?.tipoGuiaNombre,
+    idiomaNombre: detalle?.idiomaNombre,
+    origenNombre,
+    destinoNombre,
+    vueloOrigen: detalle?.origen,
+    vueloDestino: detalle?.destino,
+    vueloEscalas: detalle?.escalas,
+    vueloClase: detalle?.clase,
+    vueloEquipaje: detalle?.equipaje,
+    trenOrigen: detalle?.origen,
+    trenDestino: detalle?.destino,
+    trenEscalas: detalle?.escalas,
+    trenClase: detalle?.clase,
+    trenSillasReservadas: detalle?.sillasReservadas
+  });
 
   return (
     <div className="stack">
@@ -203,7 +215,13 @@ const preview = buildServicioCotizacionPreview({
 
                 <div>
                   <strong>Escalas</strong>
-                  <p>{Number(detalle?.escalas ?? 0) === 0 ? "Directo" : detalle?.escalas}</p>
+                  <p>
+                    {Number(detalle?.escalas ?? 0) === 0
+                      ? "Directo"
+                      : Number(detalle?.escalas) === 1
+                      ? "1 escala"
+                      : `${detalle?.escalas} escalas`}
+                  </p>
                 </div>
               </div>
 
@@ -222,43 +240,43 @@ const preview = buildServicioCotizacionPreview({
           )}
 
           {esTren && (
-          <>
-            <div className="grid-3">
-              <div>
-                <strong>Origen</strong>
-                <p>{detalle?.origen ?? "N/D"}</p>
+            <>
+              <div className="grid-3">
+                <div>
+                  <strong>Origen</strong>
+                  <p>{detalle?.origen ?? "N/D"}</p>
+                </div>
+
+                <div>
+                  <strong>Destino</strong>
+                  <p>{detalle?.destino ?? "N/D"}</p>
+                </div>
+
+                <div>
+                  <strong>Conexiones</strong>
+                  <p>
+                    {Number(detalle?.escalas ?? 0) === 0
+                      ? "Directo"
+                      : Number(detalle?.escalas) === 1
+                      ? "1 conexión"
+                      : `${detalle?.escalas} conexiones`}
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <strong>Destino</strong>
-                <p>{detalle?.destino ?? "N/D"}</p>
-              </div>
+              <div className="grid-3">
+                <div>
+                  <strong>Clase</strong>
+                  <p>{detalle?.clase ?? "N/D"}</p>
+                </div>
 
-              <div>
-                <strong>Conexiones</strong>
-                <p>
-                  {Number(detalle?.escalas ?? 0) === 0
-                    ? "Directo"
-                    : Number(detalle?.escalas) === 1
-                    ? "1 conexión"
-                    : `${detalle?.escalas} conexiones`}
-                </p>
+                <div>
+                  <strong>Sillas reservadas</strong>
+                  <p>{detalle?.sillasReservadas ? "Sí" : "No"}</p>
+                </div>
               </div>
-            </div>
-
-            <div className="grid-3">
-              <div>
-                <strong>Clase</strong>
-                <p>{detalle?.clase ?? "N/D"}</p>
-              </div>
-
-              <div>
-                <strong>Sillas reservadas</strong>
-                <p>{detalle?.sillasReservadas ? "Sí" : "No"}</p>
-              </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
 
           <div>
             <strong>Link de reserva</strong>
@@ -275,6 +293,25 @@ const preview = buildServicioCotizacionPreview({
             <p>
               <strong>{preview}</strong>
             </p>
+          </div>
+
+          <div className="service-status-card">
+            <div>
+              <strong>Estado del servicio</strong>
+              <p className="muted">
+                Activa o desactiva este servicio sin borrar su información ni sus tarifas.
+              </p>
+            </div>
+
+            <label className="service-status-toggle">
+              <input
+                type="checkbox"
+                checked={Boolean(servicio.activo)}
+                disabled={estadoMutation.isPending}
+                onChange={(event) => estadoMutation.mutate(event.target.checked)}
+              />
+              <span>{servicio.activo ? "Servicio activo" : "Servicio inactivo"}</span>
+            </label>
           </div>
         </div>
       </PageSection>

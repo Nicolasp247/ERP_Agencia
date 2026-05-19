@@ -124,6 +124,15 @@ export async function saveServicio(values: ServicioFormValues, id?: number) {
   return response.data.data;
 }
 
+export async function updateServicioEstado(id: number, activo: boolean) {
+  const response = await api.patch<ApiResponse<Record<string, unknown>>>(
+    `/servicio/${id}/estado`,
+    { activo }
+  );
+
+  return response.data.data;
+}
+
 export async function listIdiomas() {
   const response = await api.get<ApiResponse<Array<{ id: number; nombre: string }>>>("/servicio/idiomas");
   return response.data.data;

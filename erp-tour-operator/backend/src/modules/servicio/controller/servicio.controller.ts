@@ -44,6 +44,16 @@ export class ServicioController {
     res.json(ok(data));
   };
 
+  updateEstado = async (req: Request, res: Response) => {
+    const data = await servicioService.updateEstado(
+      Number(req.params.id),
+      Boolean(req.body.activo),
+      req.user?.id
+    );
+
+    res.json(ok(data));
+  };
+
   listIdiomas = async (_req: Request, res: Response) => {
     const data = await servicioService.listIdiomas();
     res.json(ok(data));

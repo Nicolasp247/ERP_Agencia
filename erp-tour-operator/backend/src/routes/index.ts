@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/routes/index.ts */
+
 import { Router } from "express";
 
 import { auditoriaRouter } from "@/modules/auditoria";

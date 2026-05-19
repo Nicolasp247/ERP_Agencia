@@ -103,8 +103,9 @@ export function buildServicioCotizacionPreview(data: ServicioCotizacionPreviewIn
   if (tipoCodigo === "TRASLADO") {
     const origen = limpiarTexto(data.origenNombre) || "origen";
     const destino = limpiarTexto(data.destinoNombre) || "destino";
+    const tipoTransporte = data.privado ? "individual" : "compartido";
 
-    return `Traslado${data.privado ? " privado" : ""} ${origen} - ${destino}`;
+    return `Transporte ${tipoTransporte} ${origen} a ${destino}`;
   }
 
   if (tipoCodigo === "VUELO") {

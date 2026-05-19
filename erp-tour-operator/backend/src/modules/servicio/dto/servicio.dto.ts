@@ -104,6 +104,10 @@ export const servicioSchema = z.object({
   vuelo: vueloSchema.optional()
 });
 
+export const servicioEstadoSchema = z.object({
+  activo: z.boolean()
+});
+
 export const servicioFilterSchema = z.object({
   search: z.string().optional(),
   idTipo: z.coerce.number().int().positive().optional(),
@@ -116,12 +120,13 @@ export const servicioFilterSchema = z.object({
     .transform((value) => value === "true")
     .optional()
 });
-
+  
 export type TipoServicioInput = z.infer<typeof tipoServicioSchema>;
 export type ServicioInput = z.infer<typeof servicioSchema>;
 export type ServicioFilters = z.infer<typeof servicioFilterSchema>;
 export const puntoTrasladoFilterSchema = z.object({
   idCiudad: z.coerce.number().int().positive()
 });
+export type ServicioEstadoInput = z.infer<typeof servicioEstadoSchema>;
 
 export type PuntoTrasladoFilters = z.infer<typeof puntoTrasladoFilterSchema>;
