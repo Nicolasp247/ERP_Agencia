@@ -6,11 +6,19 @@ import { Link, useParams } from "react-router-dom";
 import { PageSection } from "@/components/PageSection";
 import { getServicio, updateServicioEstado } from "@/modules/servicio/servicio-api";
 import { buildServicioCotizacionPreview } from "@/modules/servicio/servicio-preview";
+import { formatDateRangeShortEs, formatDateShortEs } from "@/utils/date-format";
 
 function getPuntoNombre(value: any) {
   if (!value) return "N/D";
   if (typeof value === "string") return value;
   return value.nombre ?? "N/D";
+}
+
+function formatLabel(value?: string | null) {
+  return String(value ?? "N/D")
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/^\w/, (letter) => letter.toUpperCase());
 }
 
 export function ServicioDetailPage() {
@@ -321,22 +329,36 @@ export function ServicioDetailPage() {
           <table>
             <thead>
               <tr>
-                <th>Año</th>
-                <th>Mes</th>
+                <th>Vigencia</th>
                 <th>Tipo</th>
-                <th>Precio</th>
-                <th>Moneda</th>
+                <th>Unidad</th>
+                <th>Precio neto</th>
+                <th>Revisión</th>
+                <th>Estado</th>
               </tr>
             </thead>
 
             <tbody>
               {servicio.tarifas.map((tarifa: any) => (
-                <tr key={`${tarifa.anio}-${tarifa.mes}-${tarifa.tipoHabitacion}`}>
-                  <td>{tarifa.anio}</td>
-                  <td>{tarifa.mes}</td>
-                  <td>{tarifa.tipoHabitacion}</td>
-                  <td>{tarifa.precioUsd ?? "N/D"}</td>
-                  <td>{tarifa.monedaCodigo ?? "N/D"}</td>
+                <tr key={tarifa.id}>
+                  <td>{formatDateRangeShortEs(tarifa.fechaDesde, tarifa.fechaHasta)}</td>
+                  <td>{formatLabel(tarifa.tipoTarifa)}</td>
+                  <td>{formatLabel(tarifa.unidadPrecio)}</td>
+                  <td>
+                    {tarifa.precioNeto ?? "N/D"} {tarifa.monedaCodigo ?? ""}
+                  </td>
+                  <td>{formatDateShortEs(tarifa.fechaRevision)}</td>
+                  <td>
+                    <span
+                      className={
+                        tarifa.activo
+                          ? "status-chip status-chip-active"
+                          : "status-chip status-chip-inactive"
+                      }
+                    >
+                      {tarifa.activo ? "Activa" : "Inactiva"}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -1,23 +1,40 @@
-export function toTarifaListItem(
-  record: {
-    idServicio: number;
-    anio: number;
-    mes: number;
-    tipoHabitacion: string;
-    precioUsd: { toString(): string } | null;
-    monedaCodigo: string;
-    activo: boolean;
-    servicio: { nombreWtravel: string };
+function formatDateOnly(value: Date | string | null | undefined) {
+  if (!value) return null;
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
   }
-) {
+
+  return date.toISOString().slice(0, 10);
+}
+
+export function toTarifaListItem(record: any) {
   return {
+    id: record.id,
     idServicio: record.idServicio,
-    servicio: record.servicio.nombreWtravel,
-    anio: record.anio,
-    mes: record.mes,
-    tipoHabitacion: record.tipoHabitacion,
-    precioUsd: record.precioUsd?.toString() ?? null,
+
+    servicio: record.servicio?.nombreWtravel ?? "N/D",
+    tipoServicio: record.servicio?.tipo?.nombre ?? "N/D",
+    tipoServicioCodigo: record.servicio?.tipo?.codigo ?? null,
+    proveedor: record.servicio?.proveedor?.nombreComercial ?? "N/D",
+    ciudad: record.servicio?.ciudad?.nombre ?? "N/D",
+
+    fechaDesde: formatDateOnly(record.fechaDesde),
+    fechaHasta: formatDateOnly(record.fechaHasta),
+
+    tipoTarifa: record.tipoTarifa,
+    unidadPrecio: record.unidadPrecio,
+
+    precioNeto: record.precioNeto?.toString?.() ?? String(record.precioNeto ?? ""),
     monedaCodigo: record.monedaCodigo,
-    activo: record.activo
+
+    activo: record.activo,
+    observaciones: record.observaciones ?? null,
+    fechaRevision: formatDateOnly(record.fechaRevision),
+
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt
   };
 }

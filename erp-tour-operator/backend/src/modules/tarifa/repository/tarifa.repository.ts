@@ -1,54 +1,157 @@
 import { prisma } from "@/core/db/prisma";
-import type { TarifaFilters, TarifaInput } from "@/modules/tarifa/dto/tarifa.dto";
+import type { TarifaInput } from "@/modules/tarifa/dto/tarifa.dto";
+
+function toDateOnly(value: Date | string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  return new Date(`${value}T00:00:00.000Z`);
+}
 
 export class TarifaRepository {
-  list(filters: TarifaFilters) {
-    return prisma.servicioPrecioMes.findMany({
-      where: {
-        idServicio: filters.idServicio,
-        anio: filters.anio,
-        mes: filters.mes
-      },
+  list() {
+    return prisma.servicioTarifa.findMany({
       include: {
         servicio: {
-          select: {
-            nombreWtravel: true
+          include: {
+            tipo: true,
+            proveedor: {
+              select: {
+                id: true,
+                nombreComercial: true
+              }
+            },
+            ciudad: true
           }
         }
       },
-      orderBy: [{ anio: "desc" }, { mes: "desc" }, { idServicio: "asc" }]
+      orderBy: [
+        {
+          fechaDesde: "desc"
+        },
+        {
+          fechaHasta: "desc"
+        },
+        {
+          id: "desc"
+        }
+      ]
     });
   }
 
-  findByKey(input: TarifaInput) {
-    return prisma.servicioPrecioMes.findUnique({
+  findById(id: number) {
+    return prisma.servicioTarifa.findUnique({
       where: {
-        idServicio_anio_mes_tipoHabitacion: {
-          idServicio: input.idServicio,
-          anio: input.anio,
-          mes: input.mes,
-          tipoHabitacion: input.tipoHabitacion
+        id
+      },
+      include: {
+        servicio: {
+          include: {
+            tipo: true,
+            proveedor: {
+              select: {
+                id: true,
+                nombreComercial: true
+              }
+            },
+            ciudad: true
+          }
         }
       }
     });
   }
 
-  upsert(input: TarifaInput) {
-    return prisma.servicioPrecioMes.upsert({
+  findServicioById(idServicio: number) {
+    return prisma.servicio.findUnique({
       where: {
-        idServicio_anio_mes_tipoHabitacion: {
-          idServicio: input.idServicio,
-          anio: input.anio,
-          mes: input.mes,
-          tipoHabitacion: input.tipoHabitacion
+        id: idServicio
+      },
+      include: {
+        tipo: true
+      }
+    });
+  }
+
+  create(data: TarifaInput & { createdBy?: number | null }) {
+    return prisma.servicioTarifa.create({
+      data: {
+        idServicio: data.idServicio,
+
+        fechaDesde: toDateOnly(data.fechaDesde)!,
+        fechaHasta: toDateOnly(data.fechaHasta)!,
+
+        tipoTarifa: data.tipoTarifa,
+        unidadPrecio: data.unidadPrecio,
+
+        precioNeto: data.precioNeto,
+        monedaCodigo: data.monedaCodigo,
+
+        activo: data.activo ?? true,
+        observaciones: data.observaciones ?? null,
+        fechaRevision: toDateOnly(data.fechaRevision),
+
+        createdBy: data.createdBy ?? null,
+        updatedBy: data.createdBy ?? null
+      },
+      include: {
+        servicio: {
+          include: {
+            tipo: true,
+            proveedor: {
+              select: {
+                id: true,
+                nombreComercial: true
+              }
+            },
+            ciudad: true
+          }
         }
+      }
+    });
+  }
+
+  update(id: number, data: TarifaInput & { updatedBy?: number | null }) {
+    return prisma.servicioTarifa.update({
+      where: {
+        id
       },
-      update: {
-        precioUsd: input.precioUsd,
-        monedaCodigo: input.monedaCodigo,
-        activo: input.activo
+      data: {
+        idServicio: data.idServicio,
+
+        fechaDesde: toDateOnly(data.fechaDesde)!,
+        fechaHasta: toDateOnly(data.fechaHasta)!,
+
+        tipoTarifa: data.tipoTarifa,
+        unidadPrecio: data.unidadPrecio,
+
+        precioNeto: data.precioNeto,
+        monedaCodigo: data.monedaCodigo,
+
+        activo: data.activo ?? true,
+        observaciones: data.observaciones ?? null,
+        fechaRevision: toDateOnly(data.fechaRevision),
+
+        updatedBy: data.updatedBy ?? null
       },
-      create: input
+      include: {
+        servicio: {
+          include: {
+            tipo: true,
+            proveedor: {
+              select: {
+                id: true,
+                nombreComercial: true
+              }
+            },
+            ciudad: true
+          }
+        }
+      }
     });
   }
 }

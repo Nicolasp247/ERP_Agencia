@@ -322,7 +322,7 @@ export function ServiciosListPage() {
             <th>Tipo</th>
             <th>Proveedor</th>
             <th>Ciudad</th>
-            <th>Precio base</th>
+            <th>Tarifa base</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>
@@ -347,7 +347,7 @@ export function ServiciosListPage() {
 
               <td>
                 {servicio.precioBase
-                  ? `${servicio.precioBase} ${servicio.monedaCodigo ?? ""}`
+                  ? `Desde ${servicio.precioBase} ${servicio.monedaCodigo ?? ""}`
                   : "Sin tarifa"}
               </td>
 

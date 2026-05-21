@@ -4,14 +4,19 @@ import { ok } from "@/core/utils/api-response";
 import { tarifaService } from "@/modules/tarifa/service/tarifa.service";
 
 export class TarifaController {
-  list = async (req: Request, res: Response) => {
-    const data = await tarifaService.list(req.query);
+  list = async (_req: Request, res: Response) => {
+    const data = await tarifaService.list();
     res.json(ok(data));
   };
 
-  upsert = async (req: Request, res: Response) => {
-    const data = await tarifaService.upsert(req.body, req.user?.id);
+  create = async (req: Request, res: Response) => {
+    const data = await tarifaService.create(req.body, req.user?.id);
     res.status(201).json(ok(data));
+  };
+
+  update = async (req: Request, res: Response) => {
+    const data = await tarifaService.update(Number(req.params.id), req.body, req.user?.id);
+    res.json(ok(data));
   };
 }
 

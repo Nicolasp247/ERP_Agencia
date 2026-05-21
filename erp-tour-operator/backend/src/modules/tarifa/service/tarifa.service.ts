@@ -1,61 +1,66 @@
-import { prisma } from "@/core/db/prisma";
 import { AppError } from "@/core/errors/app-error";
-import { auditoriaService } from "@/modules/auditoria/service/auditoria.service";
-import type { TarifaFilters, TarifaInput } from "@/modules/tarifa/dto/tarifa.dto";
+import type { TarifaInput } from "@/modules/tarifa/dto/tarifa.dto";
 import { toTarifaListItem } from "@/modules/tarifa/mapper/tarifa.mapper";
 import { tarifaRepository } from "@/modules/tarifa/repository/tarifa.repository";
 
+const TIPOS_SIN_TARIFA_BASE = ["VUELO", "TREN", "OTRO"];
+
 export class TarifaService {
-  async list(filters: TarifaFilters) {
-    const records = await tarifaRepository.list(filters);
+  async list() {
+    const records = await tarifaRepository.list();
     return records.map(toTarifaListItem);
   }
 
-  async upsert(input: TarifaInput, userId?: number) {
-    const servicio = await prisma.servicio.findUnique({
-      where: { id: input.idServicio }
-    });
+  private async validateServicioTarifable(idServicio: number) {
+    const servicio = await tarifaRepository.findServicioById(idServicio);
 
     if (!servicio) {
-      throw new AppError(400, "SERVICIO_INVALIDO", "No se puede crear tarifa sin servicio");
+      throw new AppError(400, "SERVICIO_INVALIDO", "El servicio seleccionado no existe");
     }
 
-    const previous = await tarifaRepository.findByKey(input);
-    const record = await tarifaRepository.upsert(input);
+    if (!servicio.activo) {
+      throw new AppError(400, "SERVICIO_INACTIVO", "No se pueden crear tarifas para un servicio inactivo");
+    }
 
-    await auditoriaService.record({
-      entidad: "servicio_precio_mes",
-      entidadId: record.idServicio,
-      accion: previous ? "ACTUALIZADA" : "CREADA",
-      valorAnterior: previous,
-      valorNuevo: record,
-      idUsuario: userId ?? null
-    });
+    const tipoCodigo = servicio.tipo?.codigo;
 
-    return toTarifaListItem({
-      ...record,
-      servicio: {
-        nombreWtravel: servicio.nombreWtravel
-      }
-    });
+    if (tipoCodigo && TIPOS_SIN_TARIFA_BASE.includes(tipoCodigo)) {
+      throw new AppError(
+        400,
+        "SERVICIO_NO_TARIFABLE",
+        "Este tipo de servicio no usa tarifa base. El precio se define manualmente en la cotización."
+      );
+    }
+
+    return servicio;
   }
 
-  async findSuggestedPrice(idServicio: number, fecha: Date, tipoHabitacion = "DBL") {
-    const anio = fecha.getUTCFullYear();
-    const mes = fecha.getUTCMonth() + 1;
+  async create(input: TarifaInput, userId?: number) {
+    await this.validateServicioTarifable(input.idServicio);
 
-    const tarifa = await prisma.servicioPrecioMes.findUnique({
-      where: {
-        idServicio_anio_mes_tipoHabitacion: {
-          idServicio,
-          anio,
-          mes,
-          tipoHabitacion
-        }
-      }
+    const record = await tarifaRepository.create({
+      ...input,
+      createdBy: userId ?? null
     });
 
-    return tarifa;
+    return toTarifaListItem(record);
+  }
+
+  async update(id: number, input: TarifaInput, userId?: number) {
+    const current = await tarifaRepository.findById(id);
+
+    if (!current) {
+      throw new AppError(404, "TARIFA_NOT_FOUND", "Tarifa no encontrada");
+    }
+
+    await this.validateServicioTarifable(input.idServicio);
+
+    const record = await tarifaRepository.update(id, {
+      ...input,
+      updatedBy: userId ?? null
+    });
+
+    return toTarifaListItem(record);
   }
 }
 

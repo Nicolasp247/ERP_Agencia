@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/servicio/repository/servicio.repository.ts */
+
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/core/db/prisma";
 import type { ServicioFilters, ServicioInput, TipoServicioInput } from "@/modules/servicio/dto/servicio.dto";
@@ -101,9 +103,15 @@ export class ServicioRepository {
         },
         tren: true,
         vuelo: true,
-        tarifas: {
+        tarifasRango: {
+          where: {
+            activo: true
+          },
           take: 1,
-          orderBy: [{ anio: "desc" }, { mes: "desc" }]
+          orderBy: [
+            { precioNeto: "asc" },
+            { fechaDesde: "asc" }
+          ]
         }
       },
       orderBy: {
@@ -161,8 +169,12 @@ export class ServicioRepository {
         },
         tren: true,
         vuelo: true,
-        tarifas: {
-          orderBy: [{ anio: "desc" }, { mes: "desc" }]
+        tarifasRango: {
+          orderBy: [
+            { fechaDesde: "asc" },
+            { fechaHasta: "asc" },
+            { tipoTarifa: "asc" }
+          ]
         }
       }
     });

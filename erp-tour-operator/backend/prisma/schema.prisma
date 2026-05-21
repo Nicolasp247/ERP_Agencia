@@ -284,6 +284,7 @@ model Servicio {
   tren               Tren?
   vuelo              Vuelo?
   tarifas            ServicioPrecioMes[]
+  tarifasRango       ServicioTarifa[]
   cotizacionItems    CotizacionItem[]
   reservaItems       ReservaItem[]
 
@@ -383,6 +384,36 @@ model ServicioPrecioMes {
 
   @@id([idServicio, anio, mes, tipoHabitacion])
   @@map("servicio_precio_mes")
+}
+
+model ServicioTarifa {
+  id             Int      @id @default(autoincrement())
+  idServicio     Int      @map("id_servicio")
+
+  fechaDesde     DateTime @map("fecha_desde") @db.Date
+  fechaHasta     DateTime @map("fecha_hasta") @db.Date
+
+  tipoTarifa     String   @map("tipo_tarifa") @db.VarChar(50)
+  unidadPrecio   String   @map("unidad_precio") @db.VarChar(50)
+
+  precioNeto     Decimal  @map("precio_neto") @db.Decimal(12, 2)
+  monedaCodigo   String   @default("USD") @map("moneda_codigo") @db.Char(3)
+
+  activo         Boolean  @default(true)
+  observaciones  String?  @db.Text
+  fechaRevision  DateTime? @map("fecha_revision") @db.Date
+
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      Int?     @map("created_by")
+  updatedBy      Int?     @map("updated_by")
+
+  servicio       Servicio @relation(fields: [idServicio], references: [id])
+
+  @@index([idServicio], map: "idx_servicio_tarifa_servicio")
+  @@index([fechaDesde, fechaHasta], map: "idx_servicio_tarifa_rango")
+  @@index([activo], map: "idx_servicio_tarifa_activo")
+  @@map("servicio_tarifa")
 }
 
 model Hotel {

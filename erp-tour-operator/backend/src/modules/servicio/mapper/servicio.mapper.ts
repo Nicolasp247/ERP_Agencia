@@ -1,3 +1,33 @@
+/* erp-tour-operator/backend/src/modules/servicio/mapper/servicio.mapper.ts */
+
+function formatDateOnly(value: Date | string | null | undefined) {
+  if (!value) return null;
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function toTarifaRangoItem(item: any) {
+  return {
+    id: item.id,
+    idServicio: item.idServicio,
+    fechaDesde: formatDateOnly(item.fechaDesde),
+    fechaHasta: formatDateOnly(item.fechaHasta),
+    tipoTarifa: item.tipoTarifa,
+    unidadPrecio: item.unidadPrecio,
+    precioNeto: item.precioNeto?.toString?.() ?? String(item.precioNeto ?? ""),
+    monedaCodigo: item.monedaCodigo,
+    activo: item.activo,
+    observaciones: item.observaciones ?? null,
+    fechaRevision: formatDateOnly(item.fechaRevision)
+  };
+}
+
 export function toTipoServicioListItem(record: {
   id: number;
   nombre: string;
@@ -21,10 +51,10 @@ export function toServicioListItem(
     traslado?: any;
     tren?: any;
     vuelo?: any;
-    tarifas: Array<{ precioUsd: { toString(): string } | null; monedaCodigo: string }>;
+    tarifasRango?: Array<any>;
   }
 ) {
-  const tarifa = record.tarifas[0];
+  const tarifa = record.tarifasRango?.[0];
 
   const detalleTipo = record.tour
     ? {
@@ -64,7 +94,7 @@ export function toServicioListItem(
     proveedor: record.proveedor.nombreComercial,
     ciudad: record.ciudad.nombre,
     pais: record.ciudad.pais?.nombre ?? null,
-    precioBase: tarifa?.precioUsd?.toString() ?? null,
+    precioBase: tarifa?.precioNeto?.toString?.() ?? null,
     monedaCodigo: tarifa?.monedaCodigo ?? null,
     activo: record.activo,
     detalleTipo
@@ -99,14 +129,7 @@ export function toServicioDetail(
     traslado: unknown;
     tren: unknown;
     vuelo: unknown;
-    tarifas?: Array<{
-      anio: number;
-      mes: number;
-      tipoHabitacion: string;
-      precioUsd: { toString(): string } | null;
-      monedaCodigo: string;
-      activo: boolean;
-    }>;
+    tarifasRango?: Array<any>;
   }
 ) {
   return {
@@ -148,9 +171,6 @@ export function toServicioDetail(
       : record.tren
       ? record.tren
       : record.vuelo,
-    tarifas: (record.tarifas ?? []).map((item) => ({
-      ...item,
-      precioUsd: item.precioUsd?.toString() ?? null
-    }))
+    tarifas: (record.tarifasRango ?? []).map(toTarifaRangoItem)
   };
 }
