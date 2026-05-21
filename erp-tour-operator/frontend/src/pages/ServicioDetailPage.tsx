@@ -1,11 +1,13 @@
 /* erp-tour-operator/frontend/src/pages/ServicioDetailPage.tsx */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
 import { getServicio, updateServicioEstado } from "@/modules/servicio/servicio-api";
 import { buildServicioCotizacionPreview } from "@/modules/servicio/servicio-preview";
+import { deleteTarifa, saveTarifa } from "@/modules/tarifa/tarifa-api";
 import { formatDateRangeShortEs, formatDateShortEs } from "@/utils/date-format";
 
 function getPuntoNombre(value: any) {
@@ -21,10 +23,31 @@ function formatLabel(value?: string | null) {
     .replace(/^\w/, (letter) => letter.toUpperCase());
 }
 
+const TIPOS_TARIFA = [
+  "GENERAL",
+  "ADULTO",
+  "NIÑO",
+  "SGL",
+  "DBL",
+  "TPL",
+  "VEHICULO",
+  "GRUPO"
+];
+
+const UNIDADES_PRECIO = [
+  "POR_PERSONA",
+  "POR_SERVICIO",
+  "POR_NOCHE",
+  "POR_HABITACION",
+  "POR_VEHICULO",
+  "POR_GRUPO"
+];
+
 export function ServicioDetailPage() {
   const params = useParams();
   const queryClient = useQueryClient();
   const servicioId = Number(params.id);
+  const [tarifaEditando, setTarifaEditando] = useState<any | null>(null);
 
   const query = useQuery({
     queryKey: ["servicio", params.id],
@@ -37,6 +60,25 @@ export function ServicioDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["servicio", params.id] });
       queryClient.invalidateQueries({ queryKey: ["servicios"] });
+    }
+  });
+
+  const editarTarifaMutation = useMutation({
+    mutationFn: (values: any) => saveTarifa(values, values.id),
+    onSuccess: () => {
+      setTarifaEditando(null);
+      queryClient.invalidateQueries({ queryKey: ["servicio", params.id] });
+      queryClient.invalidateQueries({ queryKey: ["servicios"] });
+      queryClient.invalidateQueries({ queryKey: ["tarifas"] });
+    }
+  });
+
+  const eliminarTarifaMutation = useMutation({
+    mutationFn: (id: number) => deleteTarifa(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["servicio", params.id] });
+      queryClient.invalidateQueries({ queryKey: ["servicios"] });
+      queryClient.invalidateQueries({ queryKey: ["tarifas"] });
     }
   });
 
@@ -91,6 +133,39 @@ export function ServicioDetailPage() {
     trenClase: detalle?.clase,
     trenSillasReservadas: detalle?.sillasReservadas
   });
+
+  function iniciarEdicionTarifa(tarifa: any) {
+    setTarifaEditando({
+      id: tarifa.id,
+      idServicio: tarifa.idServicio ?? servicio.id,
+      fechaDesde: tarifa.fechaDesde ?? "",
+      fechaHasta: tarifa.fechaHasta ?? "",
+      tipoTarifa: tarifa.tipoTarifa ?? "GENERAL",
+      unidadPrecio: tarifa.unidadPrecio ?? "POR_PERSONA",
+      precioNeto: tarifa.precioNeto ?? "",
+      monedaCodigo: tarifa.monedaCodigo ?? "USD",
+      activo: Boolean(tarifa.activo),
+      observaciones: tarifa.observaciones ?? "",
+      fechaRevision: tarifa.fechaRevision ?? ""
+    });
+  }
+
+  function actualizarTarifaEditando(key: string, value: unknown) {
+    setTarifaEditando((current: any) => ({
+      ...current,
+      [key]: value
+    }));
+  }
+
+  function eliminarTarifa(id: number) {
+    const confirmar = window.confirm(
+      "¿Seguro que deseas eliminar esta tarifa? Esta acción no eliminará el servicio."
+    );
+
+    if (confirmar) {
+      eliminarTarifaMutation.mutate(id);
+    }
+  }
 
   return (
     <div className="stack">
@@ -335,6 +410,7 @@ export function ServicioDetailPage() {
                 <th>Precio neto</th>
                 <th>Revisión</th>
                 <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
 
@@ -359,6 +435,26 @@ export function ServicioDetailPage() {
                       {tarifa.activo ? "Activa" : "Inactiva"}
                     </span>
                   </td>
+                  <td>
+                    <div className="toolbar">
+                      <button
+                        className="link-button"
+                        type="button"
+                        onClick={() => iniciarEdicionTarifa(tarifa)}
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        className="danger-button"
+                        type="button"
+                        disabled={eliminarTarifaMutation.isPending}
+                        onClick={() => eliminarTarifa(tarifa.id)}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -366,6 +462,139 @@ export function ServicioDetailPage() {
         ) : (
           <p>No hay tarifas registradas.</p>
         )}
+        {tarifaEditando ? (
+          <form
+            className="tarifa-edit-card"
+            onSubmit={(event) => {
+              event.preventDefault();
+              editarTarifaMutation.mutate(tarifaEditando);
+            }}
+          >
+            <div>
+              <strong>Editar tarifa</strong>
+              <p className="muted">
+                Modifica la vigencia, tipo, unidad o precio neto de esta tarifa.
+              </p>
+            </div>
+
+            <div className="grid-3">
+              <label>
+                Fecha desde
+                <input
+                  type="date"
+                  value={tarifaEditando.fechaDesde}
+                  onChange={(event) => actualizarTarifaEditando("fechaDesde", event.target.value)}
+                />
+              </label>
+
+              <label>
+                Fecha hasta
+                <input
+                  type="date"
+                  value={tarifaEditando.fechaHasta}
+                  onChange={(event) => actualizarTarifaEditando("fechaHasta", event.target.value)}
+                />
+              </label>
+
+              <label>
+                Precio neto
+                <input
+                  type="number"
+                  step="0.01"
+                  value={tarifaEditando.precioNeto}
+                  onChange={(event) => actualizarTarifaEditando("precioNeto", event.target.value)}
+                />
+              </label>
+            </div>
+
+            <div className="grid-3">
+              <label>
+                Tipo tarifa
+                <select
+                  value={tarifaEditando.tipoTarifa}
+                  onChange={(event) => actualizarTarifaEditando("tipoTarifa", event.target.value)}
+                >
+                  {TIPOS_TARIFA.map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {formatLabel(tipo)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Unidad precio
+                <select
+                  value={tarifaEditando.unidadPrecio}
+                  onChange={(event) => actualizarTarifaEditando("unidadPrecio", event.target.value)}
+                >
+                  {UNIDADES_PRECIO.map((unidad) => (
+                    <option key={unidad} value={unidad}>
+                      {formatLabel(unidad)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Moneda
+                <input
+                  maxLength={3}
+                  value={tarifaEditando.monedaCodigo}
+                  onChange={(event) =>
+                    actualizarTarifaEditando("monedaCodigo", event.target.value.toUpperCase())
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="grid-3">
+              <label>
+                Fecha revisión
+                <input
+                  type="date"
+                  value={tarifaEditando.fechaRevision ?? ""}
+                  onChange={(event) => actualizarTarifaEditando("fechaRevision", event.target.value)}
+                />
+              </label>
+
+              <label>
+                Estado
+                <select
+                  value={tarifaEditando.activo ? "true" : "false"}
+                  onChange={(event) =>
+                    actualizarTarifaEditando("activo", event.target.value === "true")
+                  }
+                >
+                  <option value="true">Activa</option>
+                  <option value="false">Inactiva</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Observaciones
+              <textarea
+                value={tarifaEditando.observaciones ?? ""}
+                onChange={(event) => actualizarTarifaEditando("observaciones", event.target.value)}
+              />
+            </label>
+
+            <div className="toolbar">
+              <button className="primary-button" type="submit" disabled={editarTarifaMutation.isPending}>
+                {editarTarifaMutation.isPending ? "Guardando..." : "Guardar cambios"}
+              </button>
+
+              <button
+                className="link-button"
+                type="button"
+                onClick={() => setTarifaEditando(null)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        ) : null}
       </PageSection>
     </div>
   );

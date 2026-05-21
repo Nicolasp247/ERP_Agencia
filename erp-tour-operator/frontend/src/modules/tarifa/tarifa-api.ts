@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/modules/tarifa/tarifa-api.ts */
+
 import { z } from "zod";
 
 import { api } from "@/services/http";
@@ -34,8 +36,11 @@ export async function listTarifas() {
 }
 
 export async function saveTarifa(values: TarifaFormValues, id?: number) {
+  const rawValues = values as any;
+
   const payload = {
     ...values,
+    activo: rawValues.activo === "false" ? false : Boolean(rawValues.activo),
     observaciones: values.observaciones?.trim() || null,
     fechaRevision: values.fechaRevision || null
   };
@@ -46,5 +51,10 @@ export async function saveTarifa(values: TarifaFormValues, id?: number) {
   }
 
   const response = await api.post<ApiResponse<Record<string, unknown>>>("/tarifa", payload);
+  return response.data.data;
+}
+
+export async function deleteTarifa(id: number) {
+  const response = await api.delete<ApiResponse<Record<string, unknown>>>(`/tarifa/${id}`);
   return response.data.data;
 }

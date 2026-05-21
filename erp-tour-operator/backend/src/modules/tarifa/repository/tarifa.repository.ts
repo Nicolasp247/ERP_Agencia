@@ -154,6 +154,14 @@ export class TarifaRepository {
       }
     });
   }
+  
+  delete(id: number) {
+    return prisma.servicioTarifa.delete({
+      where: {
+        id
+      }
+    });
+  }
 }
 
 export const tarifaRepository = new TarifaRepository();

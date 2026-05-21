@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/tarifa/index.ts */
+
 import { Router } from "express";
 
 import { authenticate } from "@/core/middleware/authenticate";
@@ -23,4 +25,10 @@ tarifaRouter.put(
   validateParams(tarifaIdParamSchema),
   validateBody(tarifaSchema),
   asyncHandler(tarifaController.update)
+);
+
+tarifaRouter.delete(
+  "/:id",
+  validateParams(tarifaIdParamSchema),
+  asyncHandler(tarifaController.delete)
 );

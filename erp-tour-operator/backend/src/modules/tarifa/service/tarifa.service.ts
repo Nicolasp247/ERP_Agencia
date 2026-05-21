@@ -62,6 +62,20 @@ export class TarifaService {
 
     return toTarifaListItem(record);
   }
+
+  async delete(id: number) {
+    const current = await tarifaRepository.findById(id);
+
+    if (!current) {
+      throw new AppError(404, "TARIFA_NOT_FOUND", "Tarifa no encontrada");
+    }
+
+    await tarifaRepository.delete(id);
+
+    return {
+      id
+    };
+  }
 }
 
 export const tarifaService = new TarifaService();
