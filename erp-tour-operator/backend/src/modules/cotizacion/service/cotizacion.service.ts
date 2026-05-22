@@ -1,33 +1,33 @@
 /* erp-tour-operator/backend/src/modules/cotizacion/service/cotizacion.service.ts */
 
-import { CotizacionEstado } from "@prisma/client";
+import { ExpedienteEstado } from "@prisma/client";
 
 import { prisma } from "@/core/db/prisma";
 import { AppError } from "@/core/errors/app-error";
 import { auditoriaService } from "@/modules/auditoria/service/auditoria.service";
-import type { CotizacionFilters, CotizacionInput, CotizacionItemInput } from "@/modules/cotizacion/dto/cotizacion.dto";
-import { toCotizacionDetail, toCotizacionListItem } from "@/modules/cotizacion/mapper/cotizacion.mapper";
+import type { CotizacionFilters, CotizacionInput } from "@/modules/cotizacion/dto/cotizacion.dto";
+import { toExpedienteDetail, toExpedienteListItem } from "@/modules/cotizacion/mapper/cotizacion.mapper";
 import { cotizacionRepository } from "@/modules/cotizacion/repository/cotizacion.repository";
-import { resolveItemPricing, sumPassengerGroups } from "@/modules/cotizacion/service/cotizacion.calculator";
-import { tarifaService } from "@/modules/tarifa/service/tarifa.service";
+import { sumPassengerGroups } from "@/modules/cotizacion/service/cotizacion.calculator";
 
 export class CotizacionService {
   async list(filters: CotizacionFilters) {
     const records = await cotizacionRepository.list({
-      estado: filters.estado ?? "ACTIVA",
+      estado: filters.estado ?? "COTIZACION",
       ...filters
     });
-    return records.map(toCotizacionListItem);
+
+    return records.map(toExpedienteListItem);
   }
 
   async getById(id: number) {
     const record = await cotizacionRepository.findById(id);
 
     if (!record) {
-      throw new AppError(404, "COTIZACION_NOT_FOUND", "Cotización no encontrada");
+      throw new AppError(404, "EXPEDIENTE_NOT_FOUND", "Expediente no encontrado");
     }
 
-    return toCotizacionDetail(record);
+    return toExpedienteDetail(record);
   }
 
   private async validateHeader(input: CotizacionInput) {
@@ -41,12 +41,16 @@ export class CotizacionService {
       );
     }
 
+    if (totalCalculado <= 0) {
+      throw new AppError(400, "TOTAL_PASAJEROS_CERO", "La cotización debe tener al menos un pasajero");
+    }
+
     const cliente = await prisma.cliente.findUnique({
       where: { id: input.idCliente }
     });
 
-    if (!cliente) {
-      throw new AppError(400, "CLIENTE_INVALIDO", "Debe existir el cliente");
+    if (!cliente || !cliente.activo) {
+      throw new AppError(400, "CLIENTE_INVALIDO", "Debe existir un cliente activo");
     }
 
     if (input.idClienteAgente) {
@@ -60,123 +64,72 @@ export class CotizacionService {
     }
   }
 
-  private async prepareItems(items: CotizacionItemInput[], monedaCodigo: string) {
-    const services = await prisma.servicio.findMany({
-      where: {
-        id: {
-          in: items.map((item) => item.idServicio)
-        }
-      }
-    });
-
-    if (services.length !== items.length) {
-      throw new AppError(400, "SERVICIO_INVALIDO", "Cada ítem debe tener un servicio válido");
-    }
-
-    return Promise.all(
-      items.map(async (item) => {
-        const suggestedTariff = await tarifaService.findSuggestedPrice(item.idServicio, item.fechaServicio);
-        const pricing = resolveItemPricing(
-          suggestedTariff?.precioUsd ? Number(suggestedTariff.precioUsd.toString()) : null,
-          item.precioSugerido,
-          item.precioVenta
-        );
-
-        return {
-          idServicio: item.idServicio,
-          fechaServicio: item.fechaServicio,
-          ordenDia: item.ordenDia,
-          esOpcional: item.esOpcional,
-          operadorMostrado: item.operadorMostrado ?? null,
-          linkOperador: item.linkOperador ?? null,
-          tituloOverride: item.tituloOverride ?? null,
-          claseOverride: item.claseOverride ?? null,
-          idiomaOverride: item.idiomaOverride ?? null,
-          notaLinea: item.notaLinea ?? null,
-          precioSugerido: pricing.precioSugerido,
-          precioVenta: pricing.precioVenta,
-          precioMonedaCodigo: item.precioMonedaCodigo ?? monedaCodigo,
-          precioEditadoManual: pricing.precioEditadoManual
-        };
-      })
-    );
-  }
-
   async create(input: CotizacionInput, userId?: number) {
     await this.validateHeader(input);
-    const items = await this.prepareItems(input.items, input.monedaCodigo);
 
-    const record = await cotizacionRepository.create(
-      {
-        ...input,
-        createdBy: userId ?? null
-      },
-      items
-    );
+    const record = await cotizacionRepository.createExpedienteWithCotizacionA({
+      ...input,
+      createdBy: userId ?? null
+    });
 
     await auditoriaService.record({
-      entidad: "cotizacion",
+      entidad: "expediente",
       entidadId: record.id,
-      accion: "CREADA",
+      accion: "CREADO",
       valorNuevo: record,
       idUsuario: userId ?? null
     });
 
-    return this.getById(record.id);
+    return toExpedienteDetail(record);
   }
 
   async update(id: number, input: CotizacionInput, userId?: number) {
     const current = await cotizacionRepository.findById(id);
 
     if (!current) {
-      throw new AppError(404, "COTIZACION_NOT_FOUND", "Cotización no encontrada");
+      throw new AppError(404, "EXPEDIENTE_NOT_FOUND", "Expediente no encontrado");
     }
 
-    if (current.estado !== CotizacionEstado.ACTIVA) {
-      throw new AppError(409, "COTIZACION_NO_EDITABLE", "La cotización no puede editarse en su estado actual");
+    if (current.estado !== ExpedienteEstado.COTIZACION) {
+      throw new AppError(409, "EXPEDIENTE_NO_EDITABLE", "El expediente no puede editarse en su estado actual");
     }
 
     await this.validateHeader(input);
-    const items = await this.prepareItems(input.items, input.monedaCodigo);
 
-    const updated = await cotizacionRepository.update(
-      id,
-      {
-        ...input,
-        updatedBy: userId ?? null
-      },
-      items
-    );
+    const updated = await cotizacionRepository.updateExpediente(id, {
+      ...input,
+      updatedBy: userId ?? null
+    });
 
     await auditoriaService.record({
-      entidad: "cotizacion",
+      entidad: "expediente",
       entidadId: updated.id,
-      accion: "ACTUALIZADA",
+      accion: "ACTUALIZADO",
       valorAnterior: current,
       valorNuevo: updated,
       idUsuario: userId ?? null
     });
 
-    return this.getById(updated.id);
+    return toExpedienteDetail(updated);
   }
 
   async discard(id: number, userId?: number) {
     const current = await cotizacionRepository.findById(id);
 
     if (!current) {
-      throw new AppError(404, "COTIZACION_NOT_FOUND", "Cotización no encontrada");
+      throw new AppError(404, "EXPEDIENTE_NOT_FOUND", "Expediente no encontrado");
     }
 
-    if (current.estado !== CotizacionEstado.ACTIVA) {
-      throw new AppError(409, "COTIZACION_NO_DESCARTABLE", "Solo se pueden descartar cotizaciones activas");
+    if (current.estado !== ExpedienteEstado.COTIZACION && current.estado !== ExpedienteEstado.CONFIRMACION) {
+      throw new AppError(409, "EXPEDIENTE_NO_DESCARTABLE", "Solo se pueden descartar expedientes activos");
     }
 
     const updated = await cotizacionRepository.markDiscarded(id, userId ?? null);
 
     await auditoriaService.record({
-      entidad: "cotizacion",
+      entidad: "expediente",
       entidadId: updated.id,
-      accion: "DESCARTADA",
+      accion: "DESCARTADO",
       valorAnterior: current,
       valorNuevo: updated,
       idUsuario: userId ?? null

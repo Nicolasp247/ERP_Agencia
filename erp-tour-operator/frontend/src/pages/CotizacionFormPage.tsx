@@ -1,26 +1,30 @@
 /* erp-tour-operator/frontend/src/pages/CotizacionFormPage.tsx */
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFieldArray, useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { fetchContinentes } from "@/core/catalog-api";
 import { PageSection } from "@/components/PageSection";
+import { fetchContinentes } from "@/core/catalog-api";
 import { listAgentes } from "@/modules/cliente-agente/cliente-agente-api";
 import { listClientes } from "@/modules/cliente/cliente-api";
 import { cotizacionFormSchema, getCotizacion, saveCotizacion } from "@/modules/cotizacion/cotizacion-api";
-import { listServicios } from "@/modules/servicio/servicio-api";
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export function CotizacionFormPage() {
   const navigate = useNavigate();
   const params = useParams();
   const editingId = params.id ? Number(params.id) : undefined;
+
   const clientesQuery = useQuery({ queryKey: ["clientes"], queryFn: listClientes });
   const agentesQuery = useQuery({ queryKey: ["agentes"], queryFn: listAgentes });
-  const serviciosQuery = useQuery({ queryKey: ["servicios"], queryFn: listServicios });
   const continentesQuery = useQuery({ queryKey: ["continentes"], queryFn: fetchContinentes });
+
   const cotizacionQuery = useQuery({
     queryKey: ["cotizacion", editingId],
     queryFn: () => getCotizacion(editingId!),
@@ -30,6 +34,8 @@ export function CotizacionFormPage() {
   const form = useForm<any>({
     resolver: zodResolver(cotizacionFormSchema),
     defaultValues: {
+      nombreCotizacion: "",
+      fechaViajePrincipal: today(),
       monedaCodigo: "USD",
       presupuestoTipo: "TOTAL",
       adultos65: 0,
@@ -38,21 +44,9 @@ export function CotizacionFormPage() {
       ninos311: 0,
       infantes02: 0,
       totalPasajeros: 2,
-      items: [
-        {
-          idServicio: 0,
-          fechaServicio: new Date().toISOString().slice(0, 10),
-          ordenDia: 1,
-          esOpcional: false,
-          precioMonedaCodigo: "USD"
-        }
-      ]
+      nota: "",
+      notasInternas: ""
     }
-  });
-
-  const itemArray = useFieldArray<any>({
-    control: form.control,
-    name: "items"
   });
 
   useEffect(() => {
@@ -72,41 +66,28 @@ export function CotizacionFormPage() {
 
   useEffect(() => {
     if (cotizacionQuery.data) {
-      const cotizacion = cotizacionQuery.data as any;
+      const expediente = cotizacionQuery.data as any;
+
       form.reset({
-        idCliente: cotizacion.cliente.id,
-        idClienteAgente: cotizacion.clienteAgente?.id ?? null,
-        nombreCotizacion: cotizacion.nombreCotizacion,
-        fechaViajePrincipal: new Date(cotizacion.fechaViajePrincipal).toISOString().slice(0, 10),
-        idDestinoPrincipal: cotizacion.destinoPrincipal?.id ?? null,
-        categoriaViaje: cotizacion.categoriaViaje ?? "",
-        monedaCodigo: cotizacion.monedaCodigo,
-        presupuestoEstimado: cotizacion.presupuestoEstimado ? Number(cotizacion.presupuestoEstimado) : null,
-        presupuestoTipo: cotizacion.presupuestoTipo ?? "TOTAL",
-        comisionPctAplicada: cotizacion.comisionPctAplicada ? Number(cotizacion.comisionPctAplicada) : null,
-        margenAplicadoValor: cotizacion.margenAplicadoValor ? Number(cotizacion.margenAplicadoValor) : null,
-        adultos65: cotizacion.adultos65,
-        adultos1964: cotizacion.adultos1964,
-        jovenes1218: cotizacion.jovenes1218,
-        ninos311: cotizacion.ninos311,
-        infantes02: cotizacion.infantes02,
-        totalPasajeros: cotizacion.totalPasajeros,
-        nota: cotizacion.nota ?? "",
-        items: cotizacion.items.map((item: any) => ({
-          idServicio: item.servicio.id,
-          fechaServicio: new Date(item.fechaServicio).toISOString().slice(0, 10),
-          ordenDia: item.ordenDia,
-          esOpcional: item.esOpcional,
-          operadorMostrado: item.operadorMostrado ?? "",
-          linkOperador: item.linkOperador ?? "",
-          tituloOverride: item.tituloOverride ?? "",
-          claseOverride: item.claseOverride ?? "",
-          idiomaOverride: item.idiomaOverride ?? "",
-          notaLinea: item.notaLinea ?? "",
-          precioSugerido: item.precioSugerido ? Number(item.precioSugerido) : null,
-          precioVenta: item.precioVenta ? Number(item.precioVenta) : null,
-          precioMonedaCodigo: item.precioMonedaCodigo
-        }))
+        idCliente: expediente.cliente.id,
+        idClienteAgente: expediente.clienteAgente?.id ?? null,
+        nombreCotizacion: expediente.nombreExpediente,
+        fechaViajePrincipal: expediente.fechaViajePrincipal,
+        idDestinoPrincipal: expediente.destinoPrincipal?.id ?? null,
+        categoriaViaje: "",
+        monedaCodigo: expediente.monedaCodigo,
+        presupuestoEstimado: null,
+        presupuestoTipo: "TOTAL",
+        comisionPctAplicada: null,
+        margenAplicadoValor: null,
+        adultos65: expediente.adultos65,
+        adultos1964: expediente.adultos1964,
+        jovenes1218: expediente.jovenes1218,
+        ninos311: expediente.ninos311,
+        infantes02: expediente.infantes02,
+        totalPasajeros: expediente.totalPasajeros,
+        nota: expediente.observacionesCliente ?? "",
+        notasInternas: expediente.notasInternas ?? ""
       });
     }
   }, [cotizacionQuery.data, form]);
@@ -123,7 +104,7 @@ export function CotizacionFormPage() {
           Volver
         </Link>
       }
-      title={editingId ? "Editar cotización" : "Nueva cotización"}
+      title={editingId ? "Editar datos generales" : "Nueva cotización"}
     >
       <form className="stack" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
         <div className="grid-3">
@@ -138,6 +119,7 @@ export function CotizacionFormPage() {
               ))}
             </select>
           </label>
+
           <label>
             Agencia
             <select {...form.register("idClienteAgente")}>
@@ -149,14 +131,20 @@ export function CotizacionFormPage() {
               ))}
             </select>
           </label>
+
           <label>
-            Nombre cotización
-            <input {...form.register("nombreCotizacion")} />
+            Destino y nombre pasajero
+            <input
+              {...form.register("nombreCotizacion")}
+              placeholder="Ej: EUR Pedro Perez"
+            />
           </label>
+
           <label>
             Fecha principal
             <input {...form.register("fechaViajePrincipal")} type="date" />
           </label>
+
           <label>
             Destino principal
             <select {...form.register("idDestinoPrincipal")}>
@@ -168,6 +156,7 @@ export function CotizacionFormPage() {
               ))}
             </select>
           </label>
+
           <label>
             Moneda
             <input {...form.register("monedaCodigo")} />
@@ -179,91 +168,53 @@ export function CotizacionFormPage() {
             Adultos 65+
             <input {...form.register("adultos65")} type="number" />
           </label>
+
           <label>
             Adultos 19-64
             <input {...form.register("adultos1964")} type="number" />
           </label>
+
           <label>
             Jóvenes 12-18
             <input {...form.register("jovenes1218")} type="number" />
           </label>
+
           <label>
             Niños 3-11
             <input {...form.register("ninos311")} type="number" />
           </label>
+
           <label>
             Infantes 0-2
             <input {...form.register("infantes02")} type="number" />
           </label>
+
           <label>
             Total pasajeros
             <input {...form.register("totalPasajeros")} readOnly type="number" />
           </label>
         </div>
 
-        <PageSection
-          action={
-            <button
-              className="link-button"
-              onClick={() =>
-                itemArray.append({
-                  idServicio: 0,
-                  fechaServicio: form.getValues("fechaViajePrincipal"),
-                  ordenDia: itemArray.fields.length + 1,
-                  esOpcional: false,
-                  precioMonedaCodigo: form.getValues("monedaCodigo")
-                })
-              }
-              type="button"
-            >
-              Añadir ítem
-            </button>
-          }
-          title="Itinerario"
-        >
-          <div className="stack">
-            {itemArray.fields.map((field, index) => (
-              <div className="panel" key={field.id}>
-                <div className="grid-3">
-                  <label>
-                    Servicio
-                    <select {...form.register(`items.${index}.idServicio`)}>
-                      <option value="">Selecciona</option>
-                      {((serviciosQuery.data ?? []) as Array<any>).map((servicio) => (
-                        <option key={servicio.id} value={servicio.id}>
-                          {servicio.nombreWtravel}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Fecha servicio
-                    <input {...form.register(`items.${index}.fechaServicio`)} type="date" />
-                  </label>
-                  <label>
-                    Orden
-                    <input {...form.register(`items.${index}.ordenDia`)} type="number" />
-                  </label>
-                  <label>
-                    Precio sugerido
-                    <input {...form.register(`items.${index}.precioSugerido`)} type="number" />
-                  </label>
-                  <label>
-                    Precio venta
-                    <input {...form.register(`items.${index}.precioVenta`)} type="number" />
-                  </label>
-                  <label>
-                    Opcional
-                    <input {...form.register(`items.${index}.esOpcional`)} type="checkbox" />
-                  </label>
-                </div>
-              </div>
-            ))}
-          </div>
-        </PageSection>
+        <div className="grid-2">
+          <label>
+            Observaciones del pasajero
+            <textarea
+              {...form.register("nota")}
+              placeholder="Ej: quiere viaje económico, prefiere hoteles céntricos, evitar caminatas largas..."
+            />
+          </label>
 
-        <button className="primary-button" type="submit">
-          Guardar cotización
+          <label>
+            Notas internas
+            <textarea
+              {...form.register("notasInternas")}
+              placeholder="Notas internas del equipo comercial. No se muestran al pasajero."
+            />
+          </label>
+        </div>
+
+        <button className="primary-button" disabled={mutation.isPending} type="submit">
+          {mutation.isPending ? "Guardando..." : "Guardar y abrir carpeta"}
         </button>
       </form>
     </PageSection>

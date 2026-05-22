@@ -73,11 +73,27 @@ enum CategoriaHabitacion {
   OTRO
 }
 
+enum ExpedienteEstado {
+  COTIZACION
+  CONFIRMACION
+  DESCARTADO
+  YA_VIAJARON
+}
+
+enum CotizacionVersionEstado {
+  BORRADOR
+  ENVIADA
+  ACEPTADA
+  DESCARTADA
+  CONVERTIDA_CONFIRMACION
+}
+
 model Continente {
   id                    Int          @id @default(autoincrement())
   nombre                String       @db.VarChar(100)
   paises                Pais[]
   cotizacionesDestino   Cotizacion[]
+  expedientesDestino    Expediente[]
   reservasDestino       Reserva[]
 
   @@map("continente")
@@ -185,6 +201,7 @@ model ClienteAgente {
   pais              Pais?        @relation(fields: [idPais], references: [id])
   ciudad            Ciudad?      @relation(fields: [idCiudad], references: [id])
   clientes          Cliente[]
+  expedientes       Expediente[]
   cotizaciones      Cotizacion[]
   reservas          Reserva[]
 
@@ -211,6 +228,7 @@ model Cliente {
   clienteAgente      ClienteAgente?  @relation(fields: [idClienteAgente], references: [id])
   pais               Pais?           @relation(fields: [idPais], references: [id])
   ciudad             Ciudad?         @relation(fields: [idCiudad], references: [id])
+  expedientes        Expediente[]
   cotizaciones       Cotizacion[]
   reservas           Reserva[]
 
@@ -527,8 +545,55 @@ model UsuarioRol {
   @@map("usuario_rol")
 }
 
+model Expediente {
+  id                    Int               @id @default(autoincrement())
+  codigo                String            @unique(map: "uq_expediente_codigo") @db.VarChar(50)
+
+  idCliente             Int               @map("id_cliente")
+  idClienteAgente       Int?              @map("id_cliente_agente")
+
+  nombreExpediente      String            @map("nombre_expediente") @db.VarChar(255)
+  estado                ExpedienteEstado  @default(COTIZACION)
+
+  fechaViajePrincipal   DateTime          @map("fecha_viaje_principal") @db.Date
+  idDestinoPrincipal    Int?              @map("id_destino_principal")
+
+  monedaCodigo          String            @default("USD") @map("moneda_codigo") @db.Char(3)
+
+  adultos65             Int               @default(0) @map("adultos_65")
+  adultos1964           Int               @default(0) @map("adultos_19_64")
+  jovenes1218           Int               @default(0) @map("jovenes_12_18")
+  ninos311              Int               @default(0) @map("ninos_3_11")
+  infantes02            Int               @default(0) @map("infantes_0_2")
+  totalPasajeros        Int               @map("total_pasajeros")
+
+  observacionesCliente  String?           @map("observaciones_cliente") @db.Text
+  notasInternas         String?           @map("notas_internas") @db.Text
+
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  createdBy             Int?              @map("created_by")
+  updatedBy             Int?              @map("updated_by")
+
+  cliente               Cliente           @relation(fields: [idCliente], references: [id])
+  clienteAgente         ClienteAgente?    @relation(fields: [idClienteAgente], references: [id])
+  destinoPrincipal      Continente?       @relation(fields: [idDestinoPrincipal], references: [id])
+  cotizaciones          Cotizacion[]
+
+  @@index([estado], map: "idx_expediente_estado")
+  @@index([idCliente], map: "idx_expediente_cliente")
+  @@index([idClienteAgente], map: "idx_expediente_cliente_agente")
+  @@index([fechaViajePrincipal], map: "idx_expediente_fecha_viaje")
+  @@map("expediente")
+}
+
 model Cotizacion {
   id                    Int                @id @default(autoincrement())
+  idExpediente          Int                     @map("id_expediente")
+  versionNumero         Int                     @default(1) @map("version_numero")
+  versionCodigo         String                  @default("A") @map("version_codigo") @db.VarChar(10)
+  estadoVersion         CotizacionVersionEstado @default(BORRADOR) @map("estado_version")
+  origenCotizacionId    Int?                    @map("origen_cotizacion_id")
   idCliente             Int                @map("id_cliente")
   idClienteAgente       Int?               @map("id_cliente_agente")
   nombreCotizacion      String             @map("nombre_cotizacion") @db.VarChar(255)
@@ -554,9 +619,12 @@ model Cotizacion {
   updatedAt             DateTime           @updatedAt @map("updated_at")
   createdBy             Int?               @map("created_by")
   updatedBy             Int?               @map("updated_by")
-  cliente               Cliente            @relation(fields: [idCliente], references: [id])
-  clienteAgente         ClienteAgente?     @relation(fields: [idClienteAgente], references: [id])
-  destinoPrincipal      Continente?        @relation(fields: [idDestinoPrincipal], references: [id])
+  cliente               Cliente                 @relation(fields: [idCliente], references: [id])
+  clienteAgente         ClienteAgente?          @relation(fields: [idClienteAgente], references: [id])
+  destinoPrincipal      Continente?             @relation(fields: [idDestinoPrincipal], references: [id])
+  expediente            Expediente              @relation(fields: [idExpediente], references: [id])
+  origenCotizacion      Cotizacion?             @relation("CotizacionOrigen", fields: [origenCotizacionId], references: [id])
+  cotizacionesDerivadas Cotizacion[]            @relation("CotizacionOrigen")
   items                 CotizacionItem[]
   reserva               Reserva?
 
@@ -564,6 +632,9 @@ model Cotizacion {
   @@index([idCliente], map: "idx_cotizacion_cliente")
   @@index([idClienteAgente], map: "idx_cotizacion_cliente_agente")
   @@index([fechaViajePrincipal], map: "idx_cotizacion_fecha_viaje")
+  @@index([idExpediente], map: "idx_cotizacion_expediente")
+  @@index([idExpediente, versionNumero], map: "idx_cotizacion_version")
+  @@index([origenCotizacionId], map: "idx_cotizacion_origen")
   @@map("cotizacion")
 }
 

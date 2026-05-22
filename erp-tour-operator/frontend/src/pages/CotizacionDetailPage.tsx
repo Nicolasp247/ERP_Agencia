@@ -1,14 +1,13 @@
 /* erp-tour-operator/frontend/src/pages/CotizacionDetailPage.tsx */
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
-import { convertCotizacion, discardCotizacion, getCotizacion } from "@/modules/cotizacion/cotizacion-api";
-import { openPdf } from "@/utils/pdf";
+import { discardCotizacion, getCotizacion } from "@/modules/cotizacion/cotizacion-api";
+import { formatDateShortEs } from "@/utils/date-format";
 
 export function CotizacionDetailPage() {
-  const navigate = useNavigate();
   const params = useParams();
   const id = Number(params.id);
 
@@ -22,14 +21,9 @@ export function CotizacionDetailPage() {
     onSuccess: () => void query.refetch()
   });
 
-  const convertMutation = useMutation({
-    mutationFn: () => convertCotizacion(id),
-    onSuccess: (data: any) => navigate(`/reservas/${data.id}`)
-  });
+  const expediente = query.data as any;
 
-  const cotizacion = query.data as any;
-
-  if (!cotizacion) {
+  if (!expediente) {
     return <PageSection title="Cotización">Cargando...</PageSection>;
   }
 
@@ -39,50 +33,147 @@ export function CotizacionDetailPage() {
         action={
           <div className="toolbar">
             <Link className="link-button" to={`/cotizaciones/${id}/edit`}>
-              Editar
+              Editar datos
             </Link>
-            <button className="link-button" onClick={() => void openPdf(`/documento/cotizacion/${id}/pdf`)} type="button">
-              PDF
-            </button>
+
             <button className="link-button" onClick={() => discardMutation.mutate()} type="button">
-              Descartar
+              Descartar expediente
             </button>
-            <button className="primary-button" onClick={() => convertMutation.mutate()} type="button">
-              Convertir
-            </button>
+
+            <Link className="link-button" to="/cotizaciones">
+              Volver
+            </Link>
           </div>
         }
-        title={`${cotizacion.codigo} · ${cotizacion.nombreCotizacion}`}
+        title={`${expediente.codigo} · ${expediente.nombreExpediente}`}
       >
         <div className="grid-3">
           <div>
             <strong>Cliente</strong>
-            <p>{cotizacion.cliente.nombreCompleto}</p>
+            <p>{expediente.cliente?.nombreCompleto ?? "N/D"}</p>
           </div>
+
           <div>
             <strong>Agencia</strong>
-            <p>{cotizacion.clienteAgente?.razonSocial ?? "Directo"}</p>
+            <p>{expediente.clienteAgente?.razonSocial ?? "Directo"}</p>
           </div>
+
           <div>
-            <strong>Total venta</strong>
-            <p>{cotizacion.totales.totalVenta}</p>
+            <strong>Estado</strong>
+            <p>{expediente.estado}</p>
+          </div>
+
+          <div>
+            <strong>Fecha principal</strong>
+            <p>{formatDateShortEs(expediente.fechaViajePrincipal)}</p>
+          </div>
+
+          <div>
+            <strong>Destino principal</strong>
+            <p>{expediente.destinoPrincipal?.nombre ?? "N/D"}</p>
+          </div>
+
+          <div>
+            <strong>Moneda</strong>
+            <p>{expediente.monedaCodigo}</p>
+          </div>
+        </div>
+
+        <div className="grid-3">
+          <div>
+            <strong>Adultos 65+</strong>
+            <p>{expediente.adultos65}</p>
+          </div>
+
+          <div>
+            <strong>Adultos 19-64</strong>
+            <p>{expediente.adultos1964}</p>
+          </div>
+
+          <div>
+            <strong>Jóvenes 12-18</strong>
+            <p>{expediente.jovenes1218}</p>
+          </div>
+
+          <div>
+            <strong>Niños 3-11</strong>
+            <p>{expediente.ninos311}</p>
+          </div>
+
+          <div>
+            <strong>Infantes 0-2</strong>
+            <p>{expediente.infantes02}</p>
+          </div>
+
+          <div>
+            <strong>Total pasajeros</strong>
+            <p>{expediente.totalPasajeros}</p>
+          </div>
+        </div>
+
+        <div className="grid-2">
+          <div>
+            <strong>Observaciones del pasajero</strong>
+            <p>{expediente.observacionesCliente ?? "N/D"}</p>
+          </div>
+
+          <div>
+            <strong>Notas internas</strong>
+            <p>{expediente.notasInternas ?? "N/D"}</p>
           </div>
         </div>
       </PageSection>
 
-      <PageSection title="Itinerario">
-        <table>
-          <tbody>
-            {cotizacion.items.map((item: any) => (
-              <tr key={item.id}>
-                <td>{new Date(item.fechaServicio).toISOString().slice(0, 10)}</td>
-                <td>{item.servicio.nombreWtravel}</td>
-                <td>{item.precioVenta ?? "N/D"}</td>
-                <td>{item.esOpcional ? "Opcional" : "Incluido"}</td>
+      <PageSection
+        action={
+          <button className="primary-button" type="button">
+            Crear nuevo itinerario
+          </button>
+        }
+        title="Versiones de cotización"
+      >
+        {expediente.cotizaciones?.length ? (
+          <table>
+            <thead>
+              <tr>
+                <th>Versión</th>
+                <th>Estado</th>
+                <th>Fecha creación</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {expediente.cotizaciones.map((version: any) => (
+                <tr key={version.id}>
+                  <td>
+                    <strong>{version.versionLabel}</strong>
+                    <p className="table-subtext">{version.nombreCotizacion}</p>
+                  </td>
+
+                  <td>
+                    <span className="status-chip status-chip-neutral">{version.estadoVersion}</span>
+                  </td>
+
+                  <td>{formatDateShortEs(version.createdAt)}</td>
+
+                  <td>
+                    <div className="toolbar">
+                      <button className="link-button" type="button">
+                        Construir
+                      </button>
+                      <button className="link-button" type="button">
+                        Duplicar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p>Este expediente todavía no tiene versiones de cotización.</p>
+        )}
       </PageSection>
     </div>
   );

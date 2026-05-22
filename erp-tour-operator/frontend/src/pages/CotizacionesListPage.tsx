@@ -1,16 +1,16 @@
 /* erp-tour-operator/frontend/src/pages/CotizacionesListPage.tsx */
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
-import { convertCotizacion, discardCotizacion, listCotizaciones } from "@/modules/cotizacion/cotizacion-api";
+import { discardCotizacion, listCotizaciones } from "@/modules/cotizacion/cotizacion-api";
+import { formatDateShortEs } from "@/utils/date-format";
 
 export function CotizacionesListPage() {
-  const navigate = useNavigate();
   const query = useQuery({
     queryKey: ["cotizaciones"],
-    queryFn: () => listCotizaciones({ estado: "ACTIVA" })
+    queryFn: () => listCotizaciones({ estado: "COTIZACION" })
   });
 
   const discardMutation = useMutation({
@@ -18,12 +18,7 @@ export function CotizacionesListPage() {
     onSuccess: () => void query.refetch()
   });
 
-  const convertMutation = useMutation({
-    mutationFn: convertCotizacion,
-    onSuccess: (data: any) => navigate(`/reservas/${data.id}`)
-  });
-
-  const cotizaciones = (query.data ?? []) as Array<any>;
+  const expedientes = (query.data ?? []) as Array<any>;
 
   return (
     <PageSection
@@ -32,37 +27,49 @@ export function CotizacionesListPage() {
           Nueva cotización
         </Link>
       }
-      title="Cotizaciones activas"
+      title="Expedientes de cotización"
     >
       <table>
         <thead>
           <tr>
             <th>Código</th>
+            <th>Nombre</th>
             <th>Cliente</th>
             <th>Agencia</th>
+            <th>Estado</th>
             <th>Fecha viaje</th>
-            <th>Total venta</th>
+            <th>Versión activa</th>
             <th />
           </tr>
         </thead>
+
         <tbody>
-          {cotizaciones.map((cotizacion) => (
-            <tr key={cotizacion.id}>
-              <td>{cotizacion.codigo}</td>
-              <td>{cotizacion.cliente.nombreCompleto}</td>
-              <td>{cotizacion.clienteAgente?.razonSocial ?? "Directo"}</td>
-              <td>{new Date(cotizacion.fechaViajePrincipal).toISOString().slice(0, 10)}</td>
-              <td>{cotizacion.totalVenta}</td>
+          {expedientes.map((expediente) => (
+            <tr key={expediente.id}>
+              <td>{expediente.codigo}</td>
+              <td>
+                <strong>{expediente.nombreExpediente}</strong>
+              </td>
+              <td>{expediente.cliente?.nombreCompleto ?? "N/D"}</td>
+              <td>{expediente.clienteAgente?.razonSocial ?? "Directo"}</td>
+              <td>
+                <span className="status-chip status-chip-neutral">{expediente.estado}</span>
+              </td>
+              <td>{formatDateShortEs(expediente.fechaViajePrincipal)}</td>
+              <td>{expediente.versionPrincipal?.versionLabel ?? "Sin versión"}</td>
               <td>
                 <div className="toolbar">
-                  <Link className="link-button" to={`/cotizaciones/${cotizacion.id}`}>
-                    Ver
+                  <Link className="link-button" to={`/cotizaciones/${expediente.id}`}>
+                    Ver carpeta
                   </Link>
-                  <button className="link-button" onClick={() => discardMutation.mutate(cotizacion.id)} type="button">
+
+                  <button
+                    className="link-button"
+                    disabled={discardMutation.isPending}
+                    onClick={() => discardMutation.mutate(expediente.id)}
+                    type="button"
+                  >
                     Descartar
-                  </button>
-                  <button className="primary-button" onClick={() => convertMutation.mutate(cotizacion.id)} type="button">
-                    Convertir
                   </button>
                 </div>
               </td>
@@ -70,6 +77,8 @@ export function CotizacionesListPage() {
           ))}
         </tbody>
       </table>
+
+      {!expedientes.length ? <p>No hay expedientes de cotización activos.</p> : null}
     </PageSection>
   );
 }

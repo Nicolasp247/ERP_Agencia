@@ -1,32 +1,105 @@
 /* erp-tour-operator/backend/src/modules/cotizacion/repository/cotizacion.repository.ts */
 
-import { CotizacionEstado } from "@prisma/client";
+import { ExpedienteEstado } from "@prisma/client";
 
 import { prisma as prismaClient } from "@/core/db/prisma";
 import type { CotizacionFilters, CotizacionInput } from "@/modules/cotizacion/dto/cotizacion.dto";
 
-type PreparedItem = {
-  idServicio: number;
-  fechaServicio: Date;
-  ordenDia: number;
-  esOpcional: boolean;
-  operadorMostrado?: string | null;
-  linkOperador?: string | null;
-  tituloOverride?: string | null;
-  claseOverride?: string | null;
-  idiomaOverride?: string | null;
-  notaLinea?: string | null;
-  precioSugerido?: number | null;
-  precioVenta?: number | null;
-  precioMonedaCodigo: string;
-  precioEditadoManual: boolean;
-};
+function toDateOnly(value: Date | string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  return new Date(`${value}T00:00:00.000Z`);
+}
+
+function getYearMonthCode(value: Date | string) {
+  const date = toDateOnly(value)!;
+  const year = String(date.getUTCFullYear()).slice(-2);
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+
+  return `${year}${month}`;
+}
+
+function normalizeName(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function buildBaseExpedienteCode(params: {
+  fechaViajePrincipal: Date | string;
+  agenciaCodigo?: string | null;
+  nombreBase: string;
+}) {
+  const yearMonth = getYearMonthCode(params.fechaViajePrincipal);
+  const agencyCode = normalizeName(params.agenciaCodigo || "WT").toUpperCase();
+  const nombreBase = normalizeName(params.nombreBase);
+
+  return `${yearMonth} ${agencyCode} ${nombreBase}`;
+}
+
+async function buildUniqueExpedienteCode(
+  tx: any,
+  params: {
+    fechaViajePrincipal: Date | string;
+    agenciaCodigo?: string | null;
+    nombreBase: string;
+    excludeId?: number;
+  }
+) {
+  const baseCode = buildBaseExpedienteCode(params);
+  let candidate = baseCode;
+  let counter = 2;
+
+  while (true) {
+    const existing = await tx.expediente.findFirst({
+      where: {
+        codigo: candidate,
+        id: params.excludeId
+          ? {
+              not: params.excludeId
+            }
+          : undefined
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!existing) {
+      return candidate;
+    }
+
+    candidate = `${baseCode}-${counter}`;
+    counter += 1;
+  }
+}
+
+async function resolveAgenciaCodigo(tx: any, idClienteAgente?: number | null) {
+  if (!idClienteAgente) {
+    return "WT";
+  }
+
+  const agente = await tx.clienteAgente.findUnique({
+    where: {
+      id: idClienteAgente
+    },
+    select: {
+      codigo: true
+    }
+  });
+
+  return agente?.codigo || "WT";
+}
 
 export class CotizacionRepository {
   list(filters: CotizacionFilters) {
-    return prismaClient.cotizacion.findMany({
+    return prismaClient.expediente.findMany({
       where: {
-        estado: filters.estado as CotizacionEstado | undefined,
+        estado: filters.estado as ExpedienteEstado | undefined,
         idCliente: filters.idCliente,
         idClienteAgente: filters.idClienteAgente,
         idDestinoPrincipal: filters.idDestinoPrincipal,
@@ -51,12 +124,11 @@ export class CotizacionRepository {
           }
         },
         destinoPrincipal: true,
-        items: {
-          select: {
-            esOpcional: true,
-            precioSugerido: true,
-            precioVenta: true
-          }
+        cotizaciones: {
+          orderBy: {
+            versionNumero: "desc"
+          },
+          take: 1
         }
       },
       orderBy: {
@@ -66,7 +138,7 @@ export class CotizacionRepository {
   }
 
   findById(id: number) {
-    return prismaClient.cotizacion.findUnique({
+    return prismaClient.expediente.findUnique({
       where: { id },
       include: {
         cliente: {
@@ -82,120 +154,199 @@ export class CotizacionRepository {
           }
         },
         destinoPrincipal: true,
-        items: {
-          include: {
-            servicio: {
-              include: {
-                tipo: true,
-                ciudad: true
-              }
-            }
-          },
-          orderBy: [{ fechaServicio: "asc" }, { ordenDia: "asc" }]
+        cotizaciones: {
+          orderBy: {
+            versionNumero: "asc"
+          }
         }
       }
     });
   }
 
-  create(data: CotizacionInput & { createdBy?: number | null }, items: PreparedItem[]) {
+  createExpedienteWithCotizacionA(data: CotizacionInput & { createdBy?: number | null }) {
     return prismaClient.$transaction(async (tx) => {
-      const quote = await tx.cotizacion.create({
+      const nombreBase = normalizeName(data.nombreCotizacion);
+      const agenciaCodigo = await resolveAgenciaCodigo(tx, data.idClienteAgente ?? null);
+
+      const codigo = await buildUniqueExpedienteCode(tx, {
+        fechaViajePrincipal: data.fechaViajePrincipal,
+        agenciaCodigo,
+        nombreBase
+      });
+
+      const expediente = await tx.expediente.create({
         data: {
+          codigo,
           idCliente: data.idCliente,
-          idClienteAgente: data.idClienteAgente,
-          nombreCotizacion: data.nombreCotizacion,
-          fechaViajePrincipal: data.fechaViajePrincipal,
-          idDestinoPrincipal: data.idDestinoPrincipal,
-          categoriaViaje: data.categoriaViaje,
+          idClienteAgente: data.idClienteAgente ?? null,
+          nombreExpediente: nombreBase,
+          estado: ExpedienteEstado.COTIZACION,
+          fechaViajePrincipal: toDateOnly(data.fechaViajePrincipal)!,
+          idDestinoPrincipal: data.idDestinoPrincipal ?? null,
           monedaCodigo: data.monedaCodigo,
-          presupuestoEstimado: data.presupuestoEstimado,
-          presupuestoTipo: data.presupuestoTipo,
-          comisionPctAplicada: data.comisionPctAplicada,
-          margenAplicadoValor: data.margenAplicadoValor,
           adultos65: data.adultos65,
           adultos1964: data.adultos1964,
           jovenes1218: data.jovenes1218,
           ninos311: data.ninos311,
           infantes02: data.infantes02,
           totalPasajeros: data.totalPasajeros,
-          nota: data.nota,
+          observacionesCliente: data.nota ?? null,
+          notasInternas: data.notasInternas ?? null,
           createdBy: data.createdBy ?? null,
           updatedBy: data.createdBy ?? null
         }
       });
 
-      await tx.cotizacionItem.createMany({
-        data: items.map((item) => ({
-          idCotizacion: quote.id,
-          ...item
-        }))
-      });
-
-      return quote;
-    });
-  }
-
-  update(id: number, data: CotizacionInput & { updatedBy?: number | null }, items: PreparedItem[]) {
-    return prismaClient.$transaction(async (tx) => {
-      await tx.cotizacion.update({
-        where: { id },
+      await tx.cotizacion.create({
         data: {
+          idExpediente: expediente.id,
+          versionNumero: 1,
+          versionCodigo: "A",
+          estadoVersion: "BORRADOR",
+
           idCliente: data.idCliente,
-          idClienteAgente: data.idClienteAgente,
-          nombreCotizacion: data.nombreCotizacion,
-          fechaViajePrincipal: data.fechaViajePrincipal,
-          idDestinoPrincipal: data.idDestinoPrincipal,
-          categoriaViaje: data.categoriaViaje,
+          idClienteAgente: data.idClienteAgente ?? null,
+          nombreCotizacion: `${codigo} - Cotización A`,
+          fechaViajePrincipal: toDateOnly(data.fechaViajePrincipal)!,
+          idDestinoPrincipal: data.idDestinoPrincipal ?? null,
+          categoriaViaje: data.categoriaViaje ?? null,
           monedaCodigo: data.monedaCodigo,
-          presupuestoEstimado: data.presupuestoEstimado,
-          presupuestoTipo: data.presupuestoTipo,
-          comisionPctAplicada: data.comisionPctAplicada,
-          margenAplicadoValor: data.margenAplicadoValor,
+          presupuestoEstimado: data.presupuestoEstimado ?? null,
+          presupuestoTipo: data.presupuestoTipo ?? null,
+          comisionPctAplicada: data.comisionPctAplicada ?? null,
+          margenAplicadoValor: data.margenAplicadoValor ?? null,
           adultos65: data.adultos65,
           adultos1964: data.adultos1964,
           jovenes1218: data.jovenes1218,
           ninos311: data.ninos311,
           infantes02: data.infantes02,
           totalPasajeros: data.totalPasajeros,
-          nota: data.nota,
+          nota: data.nota ?? null,
+          createdBy: data.createdBy ?? null,
+          updatedBy: data.createdBy ?? null
+        }
+      });
+
+      return tx.expediente.findUniqueOrThrow({
+        where: {
+          id: expediente.id
+        },
+        include: {
+          cliente: {
+            select: {
+              id: true,
+              nombreCompleto: true
+            }
+          },
+          clienteAgente: {
+            select: {
+              id: true,
+              razonSocial: true
+            }
+          },
+          destinoPrincipal: true,
+          cotizaciones: {
+            orderBy: {
+              versionNumero: "asc"
+            }
+          }
+        }
+      });
+    });
+  }
+
+  updateExpediente(id: number, data: CotizacionInput & { updatedBy?: number | null }) {
+    return prismaClient.$transaction(async (tx) => {
+      const nombreBase = normalizeName(data.nombreCotizacion);
+      const agenciaCodigo = await resolveAgenciaCodigo(tx, data.idClienteAgente ?? null);
+
+      const codigo = await buildUniqueExpedienteCode(tx, {
+        fechaViajePrincipal: data.fechaViajePrincipal,
+        agenciaCodigo,
+        nombreBase,
+        excludeId: id
+      });
+      await tx.expediente.update({
+        where: { id },
+        data: {
+          idCliente: data.idCliente,
+          idClienteAgente: data.idClienteAgente ?? null,
+          codigo,
+          nombreExpediente: nombreBase,
+          fechaViajePrincipal: toDateOnly(data.fechaViajePrincipal)!,
+          idDestinoPrincipal: data.idDestinoPrincipal ?? null,
+          monedaCodigo: data.monedaCodigo,
+          adultos65: data.adultos65,
+          adultos1964: data.adultos1964,
+          jovenes1218: data.jovenes1218,
+          ninos311: data.ninos311,
+          infantes02: data.infantes02,
+          totalPasajeros: data.totalPasajeros,
+          observacionesCliente: data.nota ?? null,
+          notasInternas: data.notasInternas ?? null,
           updatedBy: data.updatedBy ?? null
         }
       });
 
-      await tx.cotizacionItem.deleteMany({
-        where: { idCotizacion: id }
+      await tx.cotizacion.updateMany({
+        where: {
+          idExpediente: id,
+          versionNumero: 1
+        },
+        data: {
+          idCliente: data.idCliente,
+          idClienteAgente: data.idClienteAgente ?? null,
+          nombreCotizacion: `${codigo} - Cotización A`,
+          fechaViajePrincipal: toDateOnly(data.fechaViajePrincipal)!,
+          idDestinoPrincipal: data.idDestinoPrincipal ?? null,
+          categoriaViaje: data.categoriaViaje ?? null,
+          monedaCodigo: data.monedaCodigo,
+          presupuestoEstimado: data.presupuestoEstimado ?? null,
+          presupuestoTipo: data.presupuestoTipo ?? null,
+          comisionPctAplicada: data.comisionPctAplicada ?? null,
+          margenAplicadoValor: data.margenAplicadoValor ?? null,
+          adultos65: data.adultos65,
+          adultos1964: data.adultos1964,
+          jovenes1218: data.jovenes1218,
+          ninos311: data.ninos311,
+          infantes02: data.infantes02,
+          totalPasajeros: data.totalPasajeros,
+          nota: data.nota ?? null,
+          updatedBy: data.updatedBy ?? null
+        }
       });
 
-      await tx.cotizacionItem.createMany({
-        data: items.map((item) => ({
-          idCotizacion: id,
-          ...item
-        }))
-      });
-
-      return tx.cotizacion.findUniqueOrThrow({
-        where: { id }
+      return tx.expediente.findUniqueOrThrow({
+        where: { id },
+        include: {
+          cliente: {
+            select: {
+              id: true,
+              nombreCompleto: true
+            }
+          },
+          clienteAgente: {
+            select: {
+              id: true,
+              razonSocial: true
+            }
+          },
+          destinoPrincipal: true,
+          cotizaciones: {
+            orderBy: {
+              versionNumero: "asc"
+            }
+          }
+        }
       });
     });
   }
 
   markDiscarded(id: number, userId?: number | null) {
-    return prismaClient.cotizacion.update({
+    return prismaClient.expediente.update({
       where: { id },
       data: {
-        estado: CotizacionEstado.DESCARTADA,
-        fechaDescartada: new Date(),
-        updatedBy: userId ?? null
-      }
-    });
-  }
-
-  markConverted(id: number, userId?: number | null) {
-    return prismaClient.cotizacion.update({
-      where: { id },
-      data: {
-        estado: CotizacionEstado.CONVERTIDA_RESERVA,
-        fechaConvertidaReserva: new Date(),
+        estado: ExpedienteEstado.DESCARTADO,
         updatedBy: userId ?? null
       }
     });

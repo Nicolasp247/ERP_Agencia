@@ -1,135 +1,82 @@
 /* erp-tour-operator/backend/src/modules/cotizacion/mapper/cotizacion.mapper.ts */
 
-import { buildCotizacionCode, calculateCotizacionTotals } from "@/modules/cotizacion/service/cotizacion.calculator";
+function formatDateOnly(value: Date | string | null | undefined) {
+  if (!value) return null;
 
-export function toCotizacionListItem(
-  record: {
-    id: number;
-    nombreCotizacion: string;
-    estado: string;
-    fechaViajePrincipal: Date;
-    totalPasajeros: number;
-    createdAt: Date;
-    cliente: { id: number; nombreCompleto: string };
-    clienteAgente: { id: number; razonSocial: string } | null;
-    destinoPrincipal: { id: number; nombre: string } | null;
-    items: Array<{
-      esOpcional: boolean;
-      precioSugerido: { toString(): string } | null;
-      precioVenta: { toString(): string } | null;
-    }>;
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
   }
-) {
-  const totals = calculateCotizacionTotals(
-    record.items.map((item) => ({
-      esOpcional: item.esOpcional,
-      precioSugerido: item.precioSugerido ? Number(item.precioSugerido.toString()) : 0,
-      precioVenta: item.precioVenta ? Number(item.precioVenta.toString()) : 0
-    })),
-    record.totalPasajeros
-  );
 
+  return date.toISOString().slice(0, 10);
+}
+
+export function buildExpedienteCode(id: number) {
+  return `EXP-${String(id).padStart(5, "0")}`;
+}
+
+export function buildVersionLabel(versionCodigo?: string | null) {
+  return `Cotización ${versionCodigo ?? "A"}`;
+}
+
+function toCotizacionVersionItem(record: any) {
   return {
     id: record.id,
-    codigo: buildCotizacionCode(record.id),
-    nombreCotizacion: record.nombreCotizacion,
+    idExpediente: record.idExpediente,
+    versionNumero: record.versionNumero,
+    versionCodigo: record.versionCodigo,
+    versionLabel: buildVersionLabel(record.versionCodigo),
+    estadoVersion: record.estadoVersion,
     estado: record.estado,
-    fechaViajePrincipal: record.fechaViajePrincipal,
+    nombreCotizacion: record.nombreCotizacion,
+    fechaViajePrincipal: formatDateOnly(record.fechaViajePrincipal),
     totalPasajeros: record.totalPasajeros,
-    createdAt: record.createdAt,
-    cliente: record.cliente,
-    clienteAgente: record.clienteAgente,
-    destinoPrincipal: record.destinoPrincipal,
-    totalVenta: totals.totalVenta
+    createdAt: record.createdAt
   };
 }
 
-export function toCotizacionDetail(
-  record: {
-    id: number;
-    nombreCotizacion: string;
-    estado: string;
-    fechaViajePrincipal: Date;
-    categoriaViaje: string | null;
-    monedaCodigo: string;
-    presupuestoEstimado: { toString(): string } | null;
-    presupuestoTipo: string | null;
-    comisionPctAplicada: { toString(): string } | null;
-    margenAplicadoValor: { toString(): string } | null;
-    adultos65: number;
-    adultos1964: number;
-    jovenes1218: number;
-    ninos311: number;
-    infantes02: number;
-    totalPasajeros: number;
-    nota: string | null;
-    fechaDescartada: Date | null;
-    fechaConvertidaReserva: Date | null;
-    cliente: { id: number; nombreCompleto: string };
-    clienteAgente: { id: number; razonSocial: string } | null;
-    destinoPrincipal: { id: number; nombre: string } | null;
-    items: Array<{
-      id: number;
-      fechaServicio: Date;
-      ordenDia: number;
-      esOpcional: boolean;
-      operadorMostrado: string | null;
-      linkOperador: string | null;
-      tituloOverride: string | null;
-      claseOverride: string | null;
-      idiomaOverride: string | null;
-      notaLinea: string | null;
-      precioSugerido: { toString(): string } | null;
-      precioVenta: { toString(): string } | null;
-      precioMonedaCodigo: string;
-      precioEditadoManual: boolean;
-      servicio: {
-        id: number;
-        nombreWtravel: string;
-        tipo: { nombre: string };
-        ciudad: { nombre: string };
-      };
-    }>;
-  }
-) {
-  const totals = calculateCotizacionTotals(
-    record.items.map((item) => ({
-      esOpcional: item.esOpcional,
-      precioSugerido: item.precioSugerido ? Number(item.precioSugerido.toString()) : 0,
-      precioVenta: item.precioVenta ? Number(item.precioVenta.toString()) : 0
-    })),
-    record.totalPasajeros
-  );
+export function toExpedienteListItem(record: any) {
+  const versionPrincipal = record.cotizaciones?.[0] ?? null;
 
   return {
     id: record.id,
-    codigo: buildCotizacionCode(record.id),
-    nombreCotizacion: record.nombreCotizacion,
+    codigo: record.codigo,
+    nombreExpediente: record.nombreExpediente,
     estado: record.estado,
-    fechaViajePrincipal: record.fechaViajePrincipal,
-    categoriaViaje: record.categoriaViaje,
+    fechaViajePrincipal: formatDateOnly(record.fechaViajePrincipal),
     monedaCodigo: record.monedaCodigo,
-    presupuestoEstimado: record.presupuestoEstimado?.toString() ?? null,
-    presupuestoTipo: record.presupuestoTipo,
-    comisionPctAplicada: record.comisionPctAplicada?.toString() ?? null,
-    margenAplicadoValor: record.margenAplicadoValor?.toString() ?? null,
+    totalPasajeros: record.totalPasajeros,
+    cliente: record.cliente,
+    clienteAgente: record.clienteAgente,
+    destinoPrincipal: record.destinoPrincipal,
+    versionPrincipal: versionPrincipal ? toCotizacionVersionItem(versionPrincipal) : null,
+    createdAt: record.createdAt
+  };
+}
+
+export function toExpedienteDetail(record: any) {
+  return {
+    id: record.id,
+    codigo: record.codigo,
+    nombreExpediente: record.nombreExpediente,
+    estado: record.estado,
+    fechaViajePrincipal: formatDateOnly(record.fechaViajePrincipal),
+    idDestinoPrincipal: record.idDestinoPrincipal,
+    monedaCodigo: record.monedaCodigo,
     adultos65: record.adultos65,
     adultos1964: record.adultos1964,
     jovenes1218: record.jovenes1218,
     ninos311: record.ninos311,
     infantes02: record.infantes02,
     totalPasajeros: record.totalPasajeros,
-    nota: record.nota,
-    fechaDescartada: record.fechaDescartada,
-    fechaConvertidaReserva: record.fechaConvertidaReserva,
+    observacionesCliente: record.observacionesCliente,
+    notasInternas: record.notasInternas,
     cliente: record.cliente,
     clienteAgente: record.clienteAgente,
     destinoPrincipal: record.destinoPrincipal,
-    items: record.items.map((item) => ({
-      ...item,
-      precioSugerido: item.precioSugerido?.toString() ?? null,
-      precioVenta: item.precioVenta?.toString() ?? null
-    })),
-    totales: totals
+    cotizaciones: (record.cotizaciones ?? []).map(toCotizacionVersionItem),
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt
   };
 }
