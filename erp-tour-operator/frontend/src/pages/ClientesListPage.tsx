@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/pages/ClientesListPage.tsx */
+
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
@@ -19,27 +21,32 @@ export function ClientesListPage() {
           Nuevo cliente
         </Link>
       }
-      title="Clientes finales"
+      title="Clientes"
     >
       <table>
         <thead>
           <tr>
             <th>Nombre</th>
-            <th>Agencia</th>
-            <th>País / Ciudad</th>
+            <th>Email</th>
+            <th>Teléfono</th>
             <th>Estado</th>
-            <th />
+            <th>Acciones</th>
           </tr>
         </thead>
+
         <tbody>
           {clientes.map((cliente) => (
             <tr key={cliente.id}>
-              <td>{cliente.nombreCompleto}</td>
-              <td>{cliente.clienteAgente?.razonSocial ?? "Directo"}</td>
               <td>
-                {cliente.pais ?? "N/D"} / {cliente.ciudad ?? "N/D"}
+                <strong>{cliente.nombreCompleto}</strong>
               </td>
-              <td>{cliente.activo ? "Activo" : "Inactivo"}</td>
+              <td>{cliente.email ?? "N/D"}</td>
+              <td>{cliente.telefono ?? "N/D"}</td>
+              <td>
+                <span className={`status-chip ${cliente.activo ? "status-chip-active" : "status-chip-inactive"}`}>
+                  {cliente.activo ? "Activo" : "Inactivo"}
+                </span>
+              </td>
               <td>
                 <Link className="link-button" to={`/clientes/${cliente.id}`}>
                   Ver detalle
@@ -49,6 +56,12 @@ export function ClientesListPage() {
           ))}
         </tbody>
       </table>
+
+      {!clientes.length ? (
+        <div className="services-empty-state">
+          No hay clientes registrados.
+        </div>
+      ) : null}
     </PageSection>
   );
 }

@@ -4,8 +4,22 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
+import {
+  getExpedienteEstadoClass,
+  getVersionEstadoClass,
+  formatExpedienteEstado,
+  formatVersionEstado
+} from "@/modules/cotizacion/cotizacion-labels";
 import { discardCotizacion, getCotizacion } from "@/modules/cotizacion/cotizacion-api";
 import { formatDateShortEs } from "@/utils/date-format";
+
+function formatValue(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return "N/D";
+  }
+
+  return String(value);
+}
 
 export function CotizacionDetailPage() {
   const params = useParams();
@@ -13,7 +27,8 @@ export function CotizacionDetailPage() {
 
   const query = useQuery({
     queryKey: ["cotizacion", id],
-    queryFn: () => getCotizacion(id)
+    queryFn: () => getCotizacion(id),
+    enabled: Number.isFinite(id)
   });
 
   const discardMutation = useMutation({
@@ -27,6 +42,14 @@ export function CotizacionDetailPage() {
     return <PageSection title="Cotización">Cargando...</PageSection>;
   }
 
+  const totalAdultos =
+    Number(expediente.adultos65 ?? 0) + Number(expediente.adultos1964 ?? 0);
+
+  const totalMenores =
+    Number(expediente.jovenes1218 ?? 0) +
+    Number(expediente.ninos311 ?? 0) +
+    Number(expediente.infantes02 ?? 0);
+
   return (
     <div className="stack">
       <PageSection
@@ -36,8 +59,13 @@ export function CotizacionDetailPage() {
               Editar datos
             </Link>
 
-            <button className="link-button" onClick={() => discardMutation.mutate()} type="button">
-              Descartar expediente
+            <button
+              className="link-button"
+              disabled={discardMutation.isPending}
+              onClick={() => discardMutation.mutate()}
+              type="button"
+            >
+              {discardMutation.isPending ? "Descartando..." : "Descartar expediente"}
             </button>
 
             <Link className="link-button" to="/cotizaciones">
@@ -45,81 +73,92 @@ export function CotizacionDetailPage() {
             </Link>
           </div>
         }
-        title={`${expediente.codigo}`}
+        title={expediente.codigo}
       >
-        <div className="grid-3">
+        <div className="expediente-hero">
           <div>
-            <strong>Cliente</strong>
-            <p>{expediente.cliente?.nombreCompleto ?? "N/D"}</p>
+            <p className="eyebrow">Carpeta comercial</p>
+            <h3>{expediente.nombreExpediente}</h3>
+            <p className="muted">
+              Cliente: {formatValue(expediente.cliente?.nombreCompleto)} · Agencia:{" "}
+              {expediente.clienteAgente?.razonSocial ?? "WT / Directo"}
+            </p>
           </div>
 
-          <div>
-            <strong>Agencia</strong>
-            <p>{expediente.clienteAgente?.razonSocial ?? "Directo"}</p>
-          </div>
-
-          <div>
-            <strong>Estado</strong>
-            <p>{expediente.estado}</p>
-          </div>
-
-          <div>
-            <strong>Fecha principal</strong>
-            <p>{formatDateShortEs(expediente.fechaViajePrincipal)}</p>
-          </div>
-
-          <div>
-            <strong>Destino principal</strong>
-            <p>{expediente.destinoPrincipal?.nombre ?? "N/D"}</p>
-          </div>
-
-          <div>
-            <strong>Moneda</strong>
-            <p>{expediente.monedaCodigo}</p>
-          </div>
+          <span className={`status-chip ${getExpedienteEstadoClass(expediente.estado)}`}>
+            {formatExpedienteEstado(expediente.estado)}
+          </span>
         </div>
 
-        <div className="grid-3">
-          <div>
-            <strong>Adultos 65+</strong>
-            <p>{expediente.adultos65}</p>
+        <div className="expediente-summary-grid">
+          <div className="metric-card">
+            <span>Fecha principal</span>
+            <strong>{formatDateShortEs(expediente.fechaViajePrincipal)}</strong>
           </div>
 
-          <div>
-            <strong>Adultos 19-64</strong>
-            <p>{expediente.adultos1964}</p>
+          <div className="metric-card">
+            <span>Destino principal</span>
+            <strong>{expediente.destinoPrincipal?.nombre ?? "Sin destino"}</strong>
           </div>
 
-          <div>
-            <strong>Jóvenes 12-18</strong>
-            <p>{expediente.jovenes1218}</p>
+          <div className="metric-card">
+            <span>Moneda</span>
+            <strong>{expediente.monedaCodigo}</strong>
           </div>
 
-          <div>
-            <strong>Niños 3-11</strong>
-            <p>{expediente.ninos311}</p>
-          </div>
-
-          <div>
-            <strong>Infantes 0-2</strong>
-            <p>{expediente.infantes02}</p>
-          </div>
-
-          <div>
-            <strong>Total pasajeros</strong>
-            <p>{expediente.totalPasajeros}</p>
+          <div className="metric-card">
+            <span>Total pasajeros</span>
+            <strong>{expediente.totalPasajeros}</strong>
           </div>
         </div>
+      </PageSection>
 
+      <PageSection title="Pasajeros">
+        <div className="expediente-summary-grid">
+          <div className="metric-card">
+            <span>Adultos 65+</span>
+            <strong>{expediente.adultos65}</strong>
+          </div>
+
+          <div className="metric-card">
+            <span>Adultos 19-64</span>
+            <strong>{expediente.adultos1964}</strong>
+          </div>
+
+          <div className="metric-card">
+            <span>Jóvenes 12-18</span>
+            <strong>{expediente.jovenes1218}</strong>
+          </div>
+
+          <div className="metric-card">
+            <span>Niños 3-11</span>
+            <strong>{expediente.ninos311}</strong>
+          </div>
+
+          <div className="metric-card">
+            <span>Infantes 0-2</span>
+            <strong>{expediente.infantes02}</strong>
+          </div>
+
+          <div className="metric-card metric-card-highlight">
+            <span>Resumen</span>
+            <strong>
+              {totalAdultos} adultos · {totalMenores} menores
+            </strong>
+          </div>
+        </div>
+      </PageSection>
+
+      <PageSection title="Notas del expediente">
         <div className="grid-2">
-          <div>
+          <div className="note-card">
             <strong>Observaciones del pasajero</strong>
-            <p>{expediente.observacionesCliente ?? "N/D"}</p>
+            <p>{expediente.observacionesCliente ?? "Sin observaciones registradas."}</p>
           </div>
 
-          <div>
+          <div className="note-card">
             <strong>Notas internas</strong>
-            <p>{expediente.notasInternas ?? "N/D"}</p>
+            <p>{expediente.notasInternas ?? "Sin notas internas registradas."}</p>
           </div>
         </div>
       </PageSection>
@@ -152,7 +191,9 @@ export function CotizacionDetailPage() {
                   </td>
 
                   <td>
-                    <span className="status-chip status-chip-neutral">{version.estadoVersion}</span>
+                    <span className={`status-chip ${getVersionEstadoClass(version.estadoVersion)}`}>
+                      {formatVersionEstado(version.estadoVersion)}
+                    </span>
                   </td>
 
                   <td>{formatDateShortEs(version.createdAt)}</td>
@@ -162,6 +203,7 @@ export function CotizacionDetailPage() {
                       <button className="link-button" type="button">
                         Construir
                       </button>
+
                       <button className="link-button" type="button">
                         Duplicar
                       </button>
@@ -174,6 +216,16 @@ export function CotizacionDetailPage() {
         ) : (
           <p>Este expediente todavía no tiene versiones de cotización.</p>
         )}
+      </PageSection>
+
+      <PageSection title="Confirmación y reserva">
+        <div className="future-card">
+          <strong>Próximo paso del flujo</strong>
+          <p>
+            Cuando una versión sea aceptada por el pasajero, desde aquí se podrá crear la
+            confirmación comercial y posteriormente la reserva activa.
+          </p>
+        </div>
       </PageSection>
     </div>
   );

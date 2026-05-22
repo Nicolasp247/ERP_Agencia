@@ -387,8 +387,95 @@ td {
   margin: 0.25rem 0 0;
 }
 
+.expediente-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #ece6d9;
+  border-radius: 20px;
+  background: #f8f6ef;
+}
+
+.expediente-hero h3 {
+  margin: 0.25rem 0;
+  font-size: 1.4rem;
+}
+
+.expediente-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.metric-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid #ece6d9;
+  border-radius: 18px;
+  background: #fffef9;
+}
+
+.metric-card span {
+  color: #68747c;
+  font-size: 0.85rem;
+}
+
+.metric-card strong {
+  font-size: 1.05rem;
+}
+
+.metric-card-highlight {
+  background: #f0eadb;
+}
+
+.note-card {
+  min-height: 130px;
+  padding: 1rem;
+  border: 1px solid #ece6d9;
+  border-radius: 18px;
+  background: #fffef9;
+}
+
+.note-card p {
+  margin-bottom: 0;
+  color: #3e4a51;
+}
+
+.future-card {
+  padding: 1rem;
+  border: 1px dashed #d8d2c2;
+  border-radius: 18px;
+  background: #f8f6ef;
+}
+
+.future-card p {
+  margin-bottom: 0;
+  color: #68747c;
+}
+
+.list-page-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 @media (max-width: 960px) {
   .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .expediente-hero,
+  .list-page-intro {
+    display: grid;
+  }
+
+  .expediente-summary-grid {
     grid-template-columns: 1fr;
   }
 
