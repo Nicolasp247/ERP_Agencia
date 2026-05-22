@@ -1,8 +1,11 @@
+// erp-tour-operator/frontend/tsconfig.json
+
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "module": "ESNext",
+    "moduleResolution": "bundler",
     "paths": {
       "@/*": ["./src/*"]
     },

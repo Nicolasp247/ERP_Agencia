@@ -2,16 +2,14 @@
   "name": "erp-tour-operator",
   "private": true,
   "version": "0.1.0",
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
+  "packageManager": "pnpm@11.2.2",
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
-    "build": "npm run build --workspace backend && npm run build --workspace frontend",
+    "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
+    "build": "pnpm --filter backend build && pnpm --filter frontend build",
     "lint": "eslint \"backend/src/**/*.{ts}\" \"frontend/src/**/*.{ts,tsx}\"",
-    "test": "npm run test --workspace backend",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,css}\""
+    "test": "pnpm --filter backend test",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,css}\"",
+    "prisma:generate": "pnpm --filter backend exec prisma generate --schema prisma/schema.prisma"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
