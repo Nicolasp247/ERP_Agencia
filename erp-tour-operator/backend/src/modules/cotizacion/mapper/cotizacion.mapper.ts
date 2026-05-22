@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/cotizacion/mapper/cotizacion.mapper.ts */
+
 import { buildCotizacionCode, calculateCotizacionTotals } from "@/modules/cotizacion/service/cotizacion.calculator";
 
 export function toCotizacionListItem(

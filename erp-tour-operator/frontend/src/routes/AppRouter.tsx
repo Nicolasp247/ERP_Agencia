@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/routes/AppRouter.tsx */
+
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { Protected } from "@/components/Protected";

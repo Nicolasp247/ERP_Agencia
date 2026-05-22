@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/cotizacion/dto/cotizacion.dto.ts */
+
 import { z } from "zod";
 
 export const cotizacionItemSchema = z.object({

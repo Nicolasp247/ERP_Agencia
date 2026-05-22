@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/cotizacion/validator/cotizacion.validator.ts */
+
 export {
   cotizacionFilterSchema,
   cotizacionIdParamSchema,

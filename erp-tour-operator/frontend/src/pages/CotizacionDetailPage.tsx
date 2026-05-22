@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/pages/CotizacionDetailPage.tsx */
+
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 

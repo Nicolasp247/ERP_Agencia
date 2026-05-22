@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/cotizacion/service/cotizacion.calculator.ts */
+
 import type { CotizacionTotales } from "@/modules/cotizacion/types/cotizacion.types";
 
 export function sumPassengerGroups(input: {
