@@ -45,7 +45,7 @@ export function CotizacionDetailPage() {
             </Link>
           </div>
         }
-        title={`${expediente.codigo} · ${expediente.nombreExpediente}`}
+        title={`${expediente.codigo}`}
       >
         <div className="grid-3">
           <div>

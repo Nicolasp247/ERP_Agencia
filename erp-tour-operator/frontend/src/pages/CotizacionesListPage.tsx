@@ -32,9 +32,7 @@ export function CotizacionesListPage() {
       <table>
         <thead>
           <tr>
-            <th>Código</th>
             <th>Nombre</th>
-            <th>Cliente</th>
             <th>Agencia</th>
             <th>Estado</th>
             <th>Fecha viaje</th>
@@ -46,11 +44,9 @@ export function CotizacionesListPage() {
         <tbody>
           {expedientes.map((expediente) => (
             <tr key={expediente.id}>
-              <td>{expediente.codigo}</td>
               <td>
-                <strong>{expediente.nombreExpediente}</strong>
+                <strong>{expediente.codigo}</strong>
               </td>
-              <td>{expediente.cliente?.nombreCompleto ?? "N/D"}</td>
               <td>{expediente.clienteAgente?.razonSocial ?? "Directo"}</td>
               <td>
                 <span className="status-chip status-chip-neutral">{expediente.estado}</span>

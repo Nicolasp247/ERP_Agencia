@@ -132,7 +132,7 @@ export class CotizacionRepository {
         }
       },
       orderBy: {
-        createdAt: "desc"
+        codigo: "asc"
       }
     });
   }
