@@ -1,0 +1,42 @@
+/* erp-tour-operator/frontend/src/styles/base.css */
+:root {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #172026;
+  background:
+    radial-gradient(circle at top left, rgba(248, 203, 112, 0.35), transparent 30%),
+    linear-gradient(180deg, #f3efe5 0%, #f8f7f2 100%);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #d3cdc0;
+  border-radius: 12px;
+  background: #fffef9;
+}
+
+label {
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.92rem;
+}

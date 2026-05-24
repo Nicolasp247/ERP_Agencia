@@ -12,30 +12,34 @@ type BuilderHeaderProps = {
 export function BuilderHeader({ expediente, version }: BuilderHeaderProps) {
   return (
     <div className="builder-header-card">
-      <div>
-        <p className="eyebrow">Constructor de cotización</p>
-        <h3>{expediente.codigo}</h3>
-        <p className="muted">
-          {version?.versionLabel ?? "Cotización"} · Cliente:{" "}
-          {expediente.cliente?.nombreCompleto ?? "N/D"} · Agencia:{" "}
-          {expediente.clienteAgente?.razonSocial ?? "WT / Directo"}
-        </p>
-      </div>
+      <h2>Construir cotización</h2>
 
-      <div className="builder-header-meta">
-        <span>{formatDateShortEs(expediente.fechaViajePrincipal)}</span>
-        <span>{expediente.totalPasajeros} pasajeros</span>
-        <span>{expediente.monedaCodigo}</span>
-      </div>
+      <div className="builder-header-inner">
+        <div>
+          <p className="eyebrow">Constructor de cotización</p>
+          <h3>{expediente.codigo}</h3>
+          <p className="muted">
+            {version?.versionLabel ?? "Cotización"} · Cliente:{" "}
+            {expediente.cliente?.nombreCompleto ?? "N/D"} · Agencia:{" "}
+            {expediente.clienteAgente?.razonSocial ?? "WT / Directo"}
+          </p>
+        </div>
 
-      <div className="toolbar">
-        <Link className="link-button" to={`/expedientes/${expediente.id}`}>
-          Volver al expediente
-        </Link>
+        <div className="builder-header-meta">
+          <span>{formatDateShortEs(expediente.fechaViajePrincipal)}</span>
+          <span>{expediente.totalPasajeros} pasajeros</span>
+          <span>{expediente.monedaCodigo}</span>
+        </div>
 
-        <button className="primary-button" type="button">
-          Guardar cambios
-        </button>
+        <div className="toolbar">
+          <Link className="link-button" to={`/expedientes/${expediente.id}`}>
+            Volver al expediente
+          </Link>
+
+          <button className="primary-button" type="button">
+            Guardar cambios
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,12 @@
 
 import { api } from "@/services/http";
 import type { ApiResponse } from "@/types/api";
-import type { BuilderColumn, BuilderRow } from "@/pages/cotizacion-builder/types/cotizacion-builder.types";
+import type {
+  BuilderColumn,
+  BuilderColumnType,
+  BuilderPriceUnit,
+  BuilderRow
+} from "@/pages/cotizacion-builder/types/cotizacion-builder.types";
 
 export type CotizacionBuilderDetail = {
   version: {
@@ -43,9 +48,50 @@ export type CotizacionBuilderDetail = {
   rows: BuilderRow[];
 };
 
+export type BuilderColumnFormValues = {
+  grupo: string;
+  nombre: string;
+  tipo: BuilderColumnType;
+  unidad: BuilderPriceUnit;
+  multiplicador: number;
+  orden?: number;
+};
+
 export async function getCotizacionBuilder(versionId: number) {
   const response = await api.get<ApiResponse<CotizacionBuilderDetail>>(
     `/cotizacion-builder/${versionId}`
+  );
+
+  return response.data.data;
+}
+
+export async function createCotizacionBuilderColumn(
+  versionId: number,
+  values: BuilderColumnFormValues
+) {
+  const response = await api.post<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/${versionId}/columns`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function updateCotizacionBuilderColumn(
+  columnId: number,
+  values: BuilderColumnFormValues
+) {
+  const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/columns/${columnId}`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function deleteCotizacionBuilderColumn(columnId: number) {
+  const response = await api.delete<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/columns/${columnId}`
   );
 
   return response.data.data;

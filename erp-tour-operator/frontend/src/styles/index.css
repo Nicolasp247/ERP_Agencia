@@ -1,0 +1,13 @@
+/* erp-tour-operator/frontend/src/styles/index.css */
+
+@import "./base.css";
+@import "./layout.css";
+@import "./components.css";
+@import "./forms.css";
+@import "./tables.css";
+@import "./services.css";
+@import "./expediente.css";
+@import "./cotizacion-builder.css";
+@import "./responsive.css";
+@import "./tarifas.css";
+@import "./login.css";

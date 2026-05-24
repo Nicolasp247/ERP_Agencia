@@ -89,20 +89,17 @@ enum CotizacionVersionEstado {
 }
 
 enum CotizacionColumnaTipo {
-  HOTEL
+  TERRESTRE
   TRANSPORTE
-  OPCIONAL
-  PERSONALIZADA
+  OPCIONALES
+  OTRO
 }
 
 enum CotizacionColumnaUnidad {
   POR_PERSONA
+  POR_NINO
   POR_HABITACION
-  POR_SERVICIO
-  POR_VEHICULO
   POR_GRUPO
-  POR_NOCHE
-  POR_VILLA
 }
 
 model Continente {
@@ -694,8 +691,10 @@ model CotizacionColumna {
   grupo         String                  @db.VarChar(80)
   nombre        String                  @db.VarChar(80)
 
-  tipo          CotizacionColumnaTipo   @default(PERSONALIZADA)
+  tipo          CotizacionColumnaTipo   @default(TERRESTRE)
   unidad        CotizacionColumnaUnidad @default(POR_PERSONA)
+
+  multiplicador Int                     @default(1)
 
   orden         Int                     @default(1)
   activo        Boolean                 @default(true)

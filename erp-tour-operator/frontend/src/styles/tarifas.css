@@ -1,0 +1,15 @@
+/* erp-tour-operator/frontend/src/styles/tarifas.css */
+
+.tarifa-edit-card {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #d8d2c2;
+  border-radius: 18px;
+  background: #f8f6ef;
+}
+
+.tarifa-edit-card p {
+  margin: 0.25rem 0 0;
+}

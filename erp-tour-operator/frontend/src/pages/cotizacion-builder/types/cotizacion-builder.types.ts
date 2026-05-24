@@ -1,32 +1,30 @@
 /* erp-tour-operator/frontend/src/pages/cotizacion-builder/types/cotizacion-builder.types.ts */
 
-export type BuilderColumnType = "HOTEL" | "TRANSPORTE" | "OPCIONAL" | "PERSONALIZADA";
+export type BuilderColumnType = "TERRESTRE" | "TRANSPORTE" | "OPCIONALES" | "OTRO";
 
 export type BuilderPriceUnit =
   | "POR_PERSONA"
+  | "POR_NINO"
   | "POR_HABITACION"
-  | "POR_SERVICIO"
-  | "POR_VEHICULO"
-  | "POR_GRUPO"
-  | "POR_NOCHE"
-  | "POR_VILLA";
+  | "POR_GRUPO";
 
 export type BuilderColumn = {
-  id: string;
+  id: number;
   grupo: string;
   nombre: string;
   tipo: BuilderColumnType;
   unidad: BuilderPriceUnit;
+  multiplicador: number;
   orden: number;
 };
 
 export type BuilderRowPrice = {
-  columnId: string;
+  columnId: number;
   precioNeto: number | null;
 };
 
 export type BuilderRow = {
-  id: string;
+  id: number;
   fecha: string;
   servicioIncluido: string;
   operador: string;

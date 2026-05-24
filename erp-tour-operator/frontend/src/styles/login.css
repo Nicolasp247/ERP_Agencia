@@ -1,0 +1,20 @@
+/* erp-tour-operator/frontend/src/styles/login.css */
+
+.login-page {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+.login-card {
+  width: min(460px, 100%);
+  padding: 2rem;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 24px 80px rgba(22, 48, 55, 0.12);
+}
+
+.login-card h1 {
+  margin-top: 0.25rem;
+}

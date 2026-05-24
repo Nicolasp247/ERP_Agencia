@@ -1,0 +1,19 @@
+/* erp-tour-operator/frontend/src/styles/tables.css */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.75rem 0.45rem;
+  border-bottom: 1px solid #ece6d9;
+  text-align: left;
+  vertical-align: top;
+}
+
+.table-subtext {
+  margin: 0.2rem 0 0;
+  color: #68747c;
+  font-size: 0.82rem;
+}

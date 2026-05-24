@@ -1,10 +1,15 @@
 /* erp-tour-operator/frontend/src/pages/cotizacion-builder/CotizacionBuilderPage.tsx */
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
-import { getCotizacionBuilder } from "@/modules/cotizacion-builder/cotizacion-builder-api";
+import {
+  createCotizacionBuilderColumn,
+  deleteCotizacionBuilderColumn,
+  getCotizacionBuilder,
+  type BuilderColumnFormValues
+} from "@/modules/cotizacion-builder/cotizacion-builder-api";
 import { BuilderHeader } from "./components/BuilderHeader";
 import { ColumnConfigPanel } from "./components/ColumnConfigPanel";
 import { CotizacionBuilderTable } from "./components/CotizacionBuilderTable";
@@ -13,30 +18,59 @@ import { TotalsPanel } from "./components/TotalsPanel";
 export function CotizacionBuilderPage() {
   const params = useParams();
   const versionId = Number(params.versionId);
+  const queryClient = useQueryClient();
+
+  const queryKey = ["cotizacion-builder", versionId];
 
   const query = useQuery({
-    queryKey: ["cotizacion-builder", versionId],
+    queryKey,
     queryFn: () => getCotizacionBuilder(versionId),
     enabled: Number.isFinite(versionId)
   });
 
+  const createColumnMutation = useMutation({
+    mutationFn: (values: BuilderColumnFormValues) =>
+      createCotizacionBuilderColumn(versionId, values),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const deleteColumnMutation = useMutation({
+    mutationFn: deleteCotizacionBuilderColumn,
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
   const builder = query.data;
+
+  const isSavingColumn = createColumnMutation.isPending || deleteColumnMutation.isPending;
 
   if (query.isLoading) {
     return <PageSection title="Constructor de cotización">Cargando...</PageSection>;
   }
 
   if (!builder) {
-    return <PageSection title="Constructor de cotización">No se encontró la versión de cotización.</PageSection>;
+    return (
+      <PageSection title="Constructor de cotización">
+        No se encontró la versión de cotización.
+      </PageSection>
+    );
   }
 
   return (
     <div className="stack">
-      <PageSection title="Construir cotización">
+      <div className="builder-top-grid">
         <BuilderHeader expediente={builder.expediente} version={builder.version} />
-      </PageSection>
 
-      <ColumnConfigPanel columns={builder.columns} />
+        <ColumnConfigPanel
+          columns={builder.columns}
+          isSaving={isSavingColumn}
+          onCreateColumn={(values) => createColumnMutation.mutate(values)}
+          onDeleteColumn={(columnId) => deleteColumnMutation.mutate(columnId)}
+        />
+      </div>
 
       <PageSection
         action={

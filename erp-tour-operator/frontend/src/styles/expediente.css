@@ -1,0 +1,44 @@
+/* erp-tour-operator/frontend/src/styles/expediente.css */
+
+.expediente-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #ece6d9;
+  border-radius: 20px;
+  background: #f8f6ef;
+}
+
+.expediente-hero h3 {
+  margin: 0.25rem 0;
+  font-size: 1.4rem;
+}
+
+.expediente-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.future-card {
+  padding: 1rem;
+  border: 1px dashed #d8d2c2;
+  border-radius: 18px;
+  background: #f8f6ef;
+}
+
+.future-card p {
+  margin-bottom: 0;
+  color: #68747c;
+}
+
+.list-page-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}

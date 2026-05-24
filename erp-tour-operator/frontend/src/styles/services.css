@@ -1,0 +1,77 @@
+/* erp-tour-operator/frontend/src/styles/services.css */
+
+
+.service-status-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid #d8d2c2;
+  border-radius: 16px;
+  padding: 1rem;
+  background: #f8f6ef;
+}
+
+.service-status-card p {
+  margin: 0.25rem 0 0;
+}
+
+.service-status-toggle {
+  display: flex;
+  align-items: center;
+  width: auto;
+  gap: 0.65rem;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.service-status-toggle input {
+  width: 18px;
+  height: 18px;
+}
+
+.services-filter-panel {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.services-search-field {
+  max-width: 100%;
+}
+
+.services-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.services-filter-grid-secondary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+}
+
+.services-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: end;
+}
+
+.services-list-summary {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+  color: #68747c;
+  font-size: 0.9rem;
+}
+
+.services-empty-state {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px dashed #d8d2c2;
+  border-radius: 16px;
+  background: #f8f6ef;
+  color: #68747c;
+  text-align: center;
+}

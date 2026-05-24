@@ -54,6 +54,7 @@ export function toCotizacionBuilderDetail(record: any) {
         nombre: column.nombre,
         tipo: column.tipo,
         unidad: column.unidad,
+        multiplicador: column.multiplicador,
         orden: column.orden
       })),
 
