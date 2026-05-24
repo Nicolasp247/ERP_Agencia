@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/components/Protected.tsx */
+
 import type { PropsWithChildren } from "react";
 import { Navigate } from "react-router-dom";
 

@@ -1,4 +1,4 @@
-/* erp-tour-operator/frontend/src/pages/CotizacionDetailPage.tsx */
+/* erp-tour-operator/frontend/src/pages/expediente/ExpedienteDetailPage.tsx */
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
@@ -21,12 +21,12 @@ function formatValue(value: unknown) {
   return String(value);
 }
 
-export function CotizacionDetailPage() {
+export function ExpedienteDetailPage() {
   const params = useParams();
   const id = Number(params.id);
 
   const query = useQuery({
-    queryKey: ["cotizacion", id],
+    queryKey: ["expediente", id],
     queryFn: () => getCotizacion(id),
     enabled: Number.isFinite(id)
   });
@@ -55,7 +55,7 @@ export function CotizacionDetailPage() {
       <PageSection
         action={
           <div className="toolbar">
-            <Link className="link-button" to={`/cotizaciones/${id}/edit`}>
+            <Link className="link-button" to={`/expedientes/${id}/edit`}>
               Editar datos
             </Link>
 
@@ -68,7 +68,7 @@ export function CotizacionDetailPage() {
               {discardMutation.isPending ? "Descartando..." : "Descartar expediente"}
             </button>
 
-            <Link className="link-button" to="/cotizaciones">
+            <Link className="link-button" to="/expedientes">
               Volver
             </Link>
           </div>
@@ -200,9 +200,12 @@ export function CotizacionDetailPage() {
 
                   <td>
                     <div className="toolbar">
-                      <button className="link-button" type="button">
+                      <Link
+                        className="link-button"
+                        to={`/expedientes/${expediente.id}/versiones/${version.id}/construir`}
+                      >
                         Construir
-                      </button>
+                      </Link>
 
                       <button className="link-button" type="button">
                         Duplicar

@@ -1,4 +1,4 @@
-/* erp-tour-operator/frontend/src/pages/CotizacionesListPage.tsx */
+/* erp-tour-operator/frontend/src/pages/expediente/ExpedientesListPage.tsx */
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -11,9 +11,9 @@ import {
 import { discardCotizacion, listCotizaciones } from "@/modules/cotizacion/cotizacion-api";
 import { formatDateShortEs } from "@/utils/date-format";
 
-export function CotizacionesListPage() {
+export function ExpedientesListPage() {
   const query = useQuery({
-    queryKey: ["cotizaciones"],
+    queryKey: ["expedientes"],
     queryFn: () => listCotizaciones({ estado: "COTIZACION" })
   });
 
@@ -27,11 +27,11 @@ export function CotizacionesListPage() {
   return (
     <PageSection
       action={
-        <Link className="primary-button" to="/cotizaciones/new">
-          Nueva cotización
+        <Link className="primary-button" to="/expedientes/new">
+          Nuevo expediente
         </Link>
       }
-      title="Expedientes de cotización"
+      title="Expedientes"
     >
       <div className="list-page-intro">
         <div>
@@ -83,8 +83,8 @@ export function CotizacionesListPage() {
 
               <td>
                 <div className="toolbar">
-                  <Link className="link-button" to={`/cotizaciones/${expediente.id}`}>
-                    Ver carpeta
+                  <Link className="link-button" to={`/expedientes/${expediente.id}`}>
+                    Ver expediente
                   </Link>
 
                   <button
@@ -104,7 +104,7 @@ export function CotizacionesListPage() {
 
       {!expedientes.length ? (
         <div className="services-empty-state">
-          No hay expedientes de cotización activos.
+          No hay expedientes activos.
         </div>
       ) : null}
     </PageSection>

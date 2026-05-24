@@ -1,4 +1,4 @@
-/* erp-tour-operator/frontend/src/pages/CotizacionFormPage.tsx */
+/* erp-tour-operator/frontend/src/pages/expediente/ExpedienteFormPage.tsx */
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -16,7 +16,7 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function CotizacionFormPage() {
+export function ExpedienteFormPage() {
   const navigate = useNavigate();
   const params = useParams();
   const editingId = params.id ? Number(params.id) : undefined;
@@ -94,17 +94,17 @@ export function CotizacionFormPage() {
 
   const mutation = useMutation({
     mutationFn: (values: any) => saveCotizacion(values, editingId),
-    onSuccess: (data: any) => navigate(`/cotizaciones/${data.id}`)
+    onSuccess: (data: any) => navigate(`/expedientes/${data.id}`)
   });
 
   return (
     <PageSection
       action={
-        <Link className="link-button" to="/cotizaciones">
+        <Link className="link-button" to="/expedientes">
           Volver
         </Link>
       }
-      title={editingId ? "Editar datos generales" : "Nueva cotización"}
+      title={editingId ? "Editar expediente" : "Nuevo expediente"}
     >
       <form className="stack" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
         <div className="grid-3">
@@ -214,7 +214,7 @@ export function CotizacionFormPage() {
         </div>
 
         <button className="primary-button" disabled={mutation.isPending} type="submit">
-          {mutation.isPending ? "Guardando..." : "Guardar y abrir carpeta"}
+          {mutation.isPending ? "Guardando..." : "Guardar y abrir expediente"}
         </button>
       </form>
     </PageSection>

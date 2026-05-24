@@ -88,6 +88,23 @@ enum CotizacionVersionEstado {
   CONVERTIDA_CONFIRMACION
 }
 
+enum CotizacionColumnaTipo {
+  HOTEL
+  TRANSPORTE
+  OPCIONAL
+  PERSONALIZADA
+}
+
+enum CotizacionColumnaUnidad {
+  POR_PERSONA
+  POR_HABITACION
+  POR_SERVICIO
+  POR_VEHICULO
+  POR_GRUPO
+  POR_NOCHE
+  POR_VILLA
+}
+
 model Continente {
   id                    Int          @id @default(autoincrement())
   nombre                String       @db.VarChar(100)
@@ -626,6 +643,7 @@ model Cotizacion {
   origenCotizacion      Cotizacion?             @relation("CotizacionOrigen", fields: [origenCotizacionId], references: [id])
   cotizacionesDerivadas Cotizacion[]            @relation("CotizacionOrigen")
   items                 CotizacionItem[]
+  columnas              CotizacionColumna[]
   reserva               Reserva?
 
   @@index([estado, fechaViajePrincipal], map: "idx_cotizacion_estado_fecha")
@@ -657,14 +675,64 @@ model CotizacionItem {
   precioEditadoManual  Boolean     @default(false) @map("precio_editado_manual")
   createdAt            DateTime    @default(now()) @map("created_at")
   updatedAt            DateTime    @updatedAt @map("updated_at")
-  cotizacion           Cotizacion  @relation(fields: [idCotizacion], references: [id])
-  servicio             Servicio    @relation(fields: [idServicio], references: [id])
+
+  cotizacion           Cotizacion            @relation(fields: [idCotizacion], references: [id])
+  servicio             Servicio              @relation(fields: [idServicio], references: [id])
+  precios              CotizacionItemPrecio[]
   reservaItems         ReservaItem[]
 
   @@index([idCotizacion, ordenDia], map: "idx_cot_item_cotizacion_orden")
   @@index([fechaServicio], map: "idx_cot_item_fecha")
   @@index([idServicio], map: "idx_cot_item_servicio")
   @@map("cotizacion_item")
+}
+
+model CotizacionColumna {
+  id            Int                     @id @default(autoincrement())
+  idCotizacion  Int                     @map("id_cotizacion")
+
+  grupo         String                  @db.VarChar(80)
+  nombre        String                  @db.VarChar(80)
+
+  tipo          CotizacionColumnaTipo   @default(PERSONALIZADA)
+  unidad        CotizacionColumnaUnidad @default(POR_PERSONA)
+
+  orden         Int                     @default(1)
+  activo        Boolean                 @default(true)
+
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+
+  cotizacion    Cotizacion              @relation(fields: [idCotizacion], references: [id])
+  precios       CotizacionItemPrecio[]
+
+  @@index([idCotizacion], map: "idx_cotizacion_columna_cotizacion")
+  @@index([idCotizacion, orden], map: "idx_cotizacion_columna_orden")
+  @@map("cotizacion_columna")
+}
+
+model CotizacionItemPrecio {
+  id                    Int                @id @default(autoincrement())
+
+  idCotizacionItem       Int                @map("id_cotizacion_item")
+  idCotizacionColumna    Int                @map("id_cotizacion_columna")
+
+  precioNeto             Decimal?           @map("precio_neto") @db.Decimal(12, 2)
+  monedaCodigo           String             @default("USD") @map("moneda_codigo") @db.Char(3)
+
+  precioEditadoManual    Boolean            @default(false) @map("precio_editado_manual")
+  observaciones          String?            @db.Text
+
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  cotizacionItem         CotizacionItem     @relation(fields: [idCotizacionItem], references: [id])
+  cotizacionColumna      CotizacionColumna  @relation(fields: [idCotizacionColumna], references: [id])
+
+  @@unique([idCotizacionItem, idCotizacionColumna], map: "uq_cot_item_precio_item_columna")
+  @@index([idCotizacionItem], map: "idx_cot_item_precio_item")
+  @@index([idCotizacionColumna], map: "idx_cot_item_precio_columna")
+  @@map("cotizacion_item_precio")
 }
 
 model Reserva {

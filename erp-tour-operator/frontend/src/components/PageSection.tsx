@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/components/PageSection.tsx */
+
 import type { PropsWithChildren, ReactNode } from "react";
 
 type PageSectionProps = PropsWithChildren<{
