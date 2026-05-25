@@ -1,15 +1,22 @@
 /* erp-tour-operator/frontend/src/pages/cotizacion-builder/CotizacionBuilderPage.tsx */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
 import {
   createCotizacionBuilderColumn,
+  createCotizacionBuilderItem,
   deleteCotizacionBuilderColumn,
+  deleteCotizacionBuilderItem,
   getCotizacionBuilder,
-  type BuilderColumnFormValues
+  updateCotizacionBuilderItemPrices,
+  type BuilderColumnFormValues,
+  type BuilderItemFormValues,
+  type BuilderPriceFormValues
 } from "@/modules/cotizacion-builder/cotizacion-builder-api";
+import { AddServicePanel } from "./components/AddServicePanel";
 import { BuilderHeader } from "./components/BuilderHeader";
 import { ColumnConfigPanel } from "./components/ColumnConfigPanel";
 import { CotizacionBuilderTable } from "./components/CotizacionBuilderTable";
@@ -19,6 +26,7 @@ export function CotizacionBuilderPage() {
   const params = useParams();
   const versionId = Number(params.versionId);
   const queryClient = useQueryClient();
+  const [showAddService, setShowAddService] = useState(false);
 
   const queryKey = ["cotizacion-builder", versionId];
 
@@ -43,9 +51,45 @@ export function CotizacionBuilderPage() {
     }
   });
 
+  const createItemMutation = useMutation({
+    mutationFn: (values: BuilderItemFormValues) =>
+      createCotizacionBuilderItem(versionId, values),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+      setShowAddService(false);
+    }
+  });
+
+  const updateItemPricesMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      values
+    }: {
+      itemId: number;
+      values: BuilderPriceFormValues;
+    }) => updateCotizacionBuilderItemPrices(itemId, values),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: deleteCotizacionBuilderItem,
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
   const builder = query.data;
 
+  const nextOrder = useMemo(() => {
+    const rows = builder?.rows ?? [];
+    const maxOrder = rows.reduce((max, row) => Math.max(max, row.ordenDia ?? 0), 0);
+    return maxOrder + 1;
+  }, [builder?.rows]);
+
   const isSavingColumn = createColumnMutation.isPending || deleteColumnMutation.isPending;
+  const isSavingItem = createItemMutation.isPending;
 
   if (query.isLoading) {
     return <PageSection title="Constructor de cotización">Cargando...</PageSection>;
@@ -74,13 +118,41 @@ export function CotizacionBuilderPage() {
 
       <PageSection
         action={
-          <button className="primary-button" type="button">
+          <button
+            className="primary-button"
+            onClick={() => setShowAddService(true)}
+            type="button"
+          >
             Añadir servicio
           </button>
         }
         title="Servicios de la cotización"
       >
-        <CotizacionBuilderTable columns={builder.columns} rows={builder.rows} />
+        <CotizacionBuilderTable
+          columns={builder.columns}
+          rows={builder.rows}
+          onDeleteItem={(itemId) => deleteItemMutation.mutate(itemId)}
+          onUpdateItemPrices={(itemId, values) =>
+            updateItemPricesMutation.mutate({
+              itemId,
+              values
+            })
+          }
+        />
+
+        {showAddService ? (
+          <div className="builder-modal-backdrop">
+            <div className="builder-modal">
+              <AddServicePanel
+                defaultDate={builder.expediente.fechaViajePrincipal}
+                isSaving={isSavingItem}
+                nextOrder={nextOrder}
+                onCancel={() => setShowAddService(false)}
+                onCreateItem={(values) => createItemMutation.mutate(values)}
+              />
+            </div>
+          </div>
+        ) : null}
       </PageSection>
 
       <TotalsPanel

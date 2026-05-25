@@ -7,7 +7,11 @@ import {
 } from "@prisma/client";
 
 import { prisma } from "@/core/db/prisma";
-import type { CotizacionBuilderColumnInput } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
+import type {
+  CotizacionBuilderColumnInput,
+  CotizacionBuilderItemInput,
+  CotizacionBuilderPriceInput
+} from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
 
 const DEFAULT_COLUMNS = [
   {
@@ -43,6 +47,10 @@ const DEFAULT_COLUMNS = [
     orden: 4
   }
 ];
+
+function toMysqlDate(value: string) {
+  return new Date(`${value}T00:00:00.000Z`);
+}
 
 export class CotizacionBuilderRepository {
   private includeBuilderDetail = {
@@ -258,6 +266,204 @@ export class CotizacionBuilderRepository {
     });
   }
 
+  async createItem(versionId: number, data: CotizacionBuilderItemInput) {
+    return prisma.$transaction(async (tx) => {
+      const version = await tx.cotizacion.findUnique({
+        where: {
+          id: versionId
+        },
+        select: {
+          id: true
+        }
+      });
+
+      if (!version) {
+        return null;
+      }
+
+      const servicio = await tx.servicio.findUnique({
+        where: {
+          id: data.idServicio
+        },
+        include: {
+          proveedor: {
+            select: {
+              nombreComercial: true
+            }
+          }
+        }
+      });
+
+      if (!servicio || !servicio.activo) {
+        return "SERVICIO_NOT_FOUND" as const;
+      }
+
+      const maxOrder = await tx.cotizacionItem.aggregate({
+        where: {
+          idCotizacion: versionId
+        },
+        _max: {
+          ordenDia: true
+        }
+      });
+
+      await tx.cotizacionItem.create({
+        data: {
+          idCotizacion: versionId,
+          idServicio: data.idServicio,
+          fechaServicio: toMysqlDate(data.fechaServicio),
+          ordenDia: data.ordenDia ?? Number(maxOrder._max.ordenDia ?? 0) + 1,
+          esOpcional: data.esOpcional,
+          operadorMostrado: servicio.proveedor?.nombreComercial ?? null,
+          linkOperador: servicio.linkReserva ?? null,
+          notaLinea: data.notaLinea?.trim() || null,
+          precioMonedaCodigo: "USD"
+        }
+      });
+
+      await this.syncPriceMatrixWithClient(tx, versionId);
+
+      return tx.cotizacion.findUnique({
+        where: {
+          id: versionId
+        },
+        include: this.includeBuilderDetail
+      });
+    });
+  }
+
+  async deleteItem(itemId: number) {
+    return prisma.$transaction(async (tx) => {
+      const currentItem = await tx.cotizacionItem.findUnique({
+        where: {
+          id: itemId
+        },
+        select: {
+          id: true,
+          idCotizacion: true
+        }
+      });
+
+      if (!currentItem) {
+        return null;
+      }
+
+      await tx.cotizacionItemPrecio.deleteMany({
+        where: {
+          idCotizacionItem: itemId
+        }
+      });
+
+      await tx.cotizacionItem.delete({
+        where: {
+          id: itemId
+        }
+      });
+
+      return tx.cotizacion.findUnique({
+        where: {
+          id: currentItem.idCotizacion
+        },
+        include: this.includeBuilderDetail
+      });
+    });
+  }
+
+  async updateItemPrices(itemId: number, data: CotizacionBuilderPriceInput) {
+    return prisma.$transaction(async (tx) => {
+      const currentItem = await tx.cotizacionItem.findUnique({
+        where: {
+          id: itemId
+        },
+        select: {
+          id: true,
+          idCotizacion: true
+        }
+      });
+
+      if (!currentItem) {
+        return null;
+      }
+
+      const columnIds = data.prices.map((price) => price.columnId);
+
+      const validColumns = await tx.cotizacionColumna.findMany({
+        where: {
+          id: {
+            in: columnIds
+          },
+          idCotizacion: currentItem.idCotizacion,
+          activo: true
+        },
+        select: {
+          id: true
+        }
+      });
+
+      const validColumnIds = new Set(validColumns.map((column) => column.id));
+
+      for (const price of data.prices) {
+        if (!validColumnIds.has(price.columnId)) {
+          continue;
+        }
+
+        const existingPrice = await tx.cotizacionItemPrecio.findFirst({
+          where: {
+            idCotizacionItem: itemId,
+            idCotizacionColumna: price.columnId
+          },
+          select: {
+            id: true
+          }
+        });
+
+        const precioNeto =
+          price.precioNeto === null ? null : new Prisma.Decimal(price.precioNeto);
+
+        if (existingPrice) {
+          await tx.cotizacionItemPrecio.update({
+            where: {
+              id: existingPrice.id
+            },
+            data: {
+              precioNeto,
+              monedaCodigo: "USD",
+              precioEditadoManual: true
+            }
+          });
+
+          continue;
+        }
+
+        await tx.cotizacionItemPrecio.create({
+          data: {
+            idCotizacionItem: itemId,
+            idCotizacionColumna: price.columnId,
+            precioNeto,
+            monedaCodigo: "USD",
+            precioEditadoManual: true
+          }
+        });
+      }
+
+      await tx.cotizacionItem.update({
+        where: {
+          id: itemId
+        },
+        data: {
+          precioEditadoManual: true
+        }
+      });
+
+      return tx.cotizacion.findUnique({
+        where: {
+          id: currentItem.idCotizacion
+        },
+        include: this.includeBuilderDetail
+      });
+    });
+  }
+
   async syncPriceMatrix(versionId: number) {
     await prisma.$transaction(async (tx) => {
       await this.syncPriceMatrixWithClient(tx, versionId);
@@ -273,7 +479,19 @@ export class CotizacionBuilderRepository {
         idCotizacion: versionId
       },
       select: {
-        id: true
+        id: true,
+        idServicio: true,
+        fechaServicio: true,
+        esOpcional: true,
+        servicio: {
+          select: {
+            tipo: {
+              select: {
+                nombre: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -283,7 +501,8 @@ export class CotizacionBuilderRepository {
         activo: true
       },
       select: {
-        id: true
+        id: true,
+        tipo: true
       }
     });
 
@@ -301,37 +520,114 @@ export class CotizacionBuilderRepository {
         }
       },
       select: {
+        id: true,
         idCotizacionItem: true,
-        idCotizacionColumna: true
+        idCotizacionColumna: true,
+        precioNeto: true,
+        precioEditadoManual: true
       }
     });
 
-    const existingKeys = new Set(
-      existingPrices.map(
-        (price) => `${price.idCotizacionItem}-${price.idCotizacionColumna}`
-      )
+    const existingPricesByKey = new Map(
+      existingPrices.map((price) => [
+        `${price.idCotizacionItem}-${price.idCotizacionColumna}`,
+        price
+      ])
     );
 
-    const missingPrices = items.flatMap((item) =>
-      columns
-        .filter((column) => !existingKeys.has(`${item.id}-${column.id}`))
-        .map((column) => ({
-          idCotizacionItem: item.id,
-          idCotizacionColumna: column.id,
-          precioNeto: null,
-          monedaCodigo: "USD",
-          precioEditadoManual: false
-        }))
-    );
+    const tarifaByItemId = new Map<
+      number,
+      {
+        precioNeto: Prisma.Decimal;
+        monedaCodigo: string;
+      } | null
+    >();
 
-    if (!missingPrices.length) {
-      return;
+    for (const item of items) {
+      const tarifa = await tx.servicioTarifa.findFirst({
+        where: {
+          idServicio: item.idServicio,
+          activo: true,
+          fechaDesde: {
+            lte: item.fechaServicio
+          },
+          fechaHasta: {
+            gte: item.fechaServicio
+          }
+        },
+        orderBy: [
+          {
+            fechaDesde: "desc"
+          },
+          {
+            id: "desc"
+          }
+        ],
+        select: {
+          precioNeto: true,
+          monedaCodigo: true
+        }
+      });
+
+      tarifaByItemId.set(item.id, tarifa);
     }
 
-    await tx.cotizacionItemPrecio.createMany({
-      data: missingPrices,
-      skipDuplicates: true
-    });
+    const pricesToCreate: Array<{
+      idCotizacionItem: number;
+      idCotizacionColumna: number;
+      precioNeto: Prisma.Decimal | null;
+      monedaCodigo: string;
+      precioEditadoManual: boolean;
+    }> = [];
+
+    for (const item of items) {
+      const tipoServicio = item.servicio.tipo.nombre.trim().toLowerCase();
+      const tarifa = tarifaByItemId.get(item.id) ?? null;
+
+      const allowedColumns = columns.filter((column) => {
+        if (item.esOpcional) {
+          return column.tipo === CotizacionColumnaTipo.OPCIONALES;
+        }
+
+        if (tipoServicio === "vuelo" || tipoServicio === "tren") {
+          return column.tipo === CotizacionColumnaTipo.TRANSPORTE;
+        }
+
+        if (tipoServicio === "otro") {
+          return false;
+        }
+
+        return column.tipo === CotizacionColumnaTipo.TERRESTRE;
+      });
+
+      for (const column of allowedColumns) {
+        const key = `${item.id}-${column.id}`;
+        const existingPrice = existingPricesByKey.get(key);
+
+        if (!existingPrice) {
+          pricesToCreate.push({
+            idCotizacionItem: item.id,
+            idCotizacionColumna: column.id,
+            precioNeto: tarifa?.precioNeto ?? null,
+            monedaCodigo: tarifa?.monedaCodigo ?? "USD",
+            precioEditadoManual: false
+          });
+
+          continue;
+        }
+
+        if (existingPrice) {
+          continue;
+        }
+      }
+    }
+
+    if (pricesToCreate.length) {
+      await tx.cotizacionItemPrecio.createMany({
+        data: pricesToCreate,
+        skipDuplicates: true
+      });
+    }
   }
 }
 

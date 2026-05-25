@@ -2,7 +2,11 @@
 
 import type { Request, Response } from "express";
 
-import { cotizacionBuilderColumnSchema } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
+import {
+  cotizacionBuilderColumnSchema,
+  cotizacionBuilderItemSchema,
+  cotizacionBuilderPriceSchema
+} from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
 import { ok } from "@/core/utils/api-response";
 import { cotizacionBuilderService } from "@/modules/cotizacion-builder/service/cotizacion-builder.service";
 
@@ -26,6 +30,23 @@ export class CotizacionBuilderController {
 
   deleteColumn = async (req: Request, res: Response) => {
     const data = await cotizacionBuilderService.deleteColumn(Number(req.params.columnId));
+    res.json(ok(data));
+  };
+
+  createItem = async (req: Request, res: Response) => {
+    const body = cotizacionBuilderItemSchema.parse(req.body);
+    const data = await cotizacionBuilderService.createItem(Number(req.params.versionId), body);
+    res.json(ok(data));
+  };
+
+  deleteItem = async (req: Request, res: Response) => {
+    const data = await cotizacionBuilderService.deleteItem(Number(req.params.itemId));
+    res.json(ok(data));
+  };
+
+  updateItemPrices = async (req: Request, res: Response) => {
+    const body = cotizacionBuilderPriceSchema.parse(req.body);
+    const data = await cotizacionBuilderService.updateItemPrices(Number(req.params.itemId), body);
     res.json(ok(data));
   };
 }

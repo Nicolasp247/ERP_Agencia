@@ -1,7 +1,11 @@
 /* erp-tour-operator/backend/src/modules/cotizacion-builder/service/cotizacion-builder.service.ts */
 
 import { AppError } from "@/core/errors/app-error";
-import type { CotizacionBuilderColumnInput } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
+import type {
+  CotizacionBuilderColumnInput,
+  CotizacionBuilderItemInput,
+  CotizacionBuilderPriceInput
+} from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
 import { toCotizacionBuilderDetail } from "@/modules/cotizacion-builder/mapper/cotizacion-builder.mapper";
 import { cotizacionBuilderRepository } from "@/modules/cotizacion-builder/repository/cotizacion-builder.repository";
 
@@ -53,6 +57,41 @@ export class CotizacionBuilderService {
 
     return toCotizacionBuilderDetail(record);
   }
+
+  async createItem(versionId: number, data: CotizacionBuilderItemInput) {
+    const record = await cotizacionBuilderRepository.createItem(versionId, data);
+
+    if (!record) {
+      throw new AppError(404, "COTIZACION_VERSION_NOT_FOUND", "Versión de cotización no encontrada");
+    }
+
+    if (record === "SERVICIO_NOT_FOUND") {
+      throw new AppError(404, "SERVICIO_NOT_FOUND", "Servicio no encontrado o inactivo");
+    }
+
+    return toCotizacionBuilderDetail(record);
+  }
+
+  async deleteItem(itemId: number) {
+    const record = await cotizacionBuilderRepository.deleteItem(itemId);
+
+    if (!record) {
+      throw new AppError(404, "COTIZACION_ITEM_NOT_FOUND", "Servicio de cotización no encontrado");
+    }
+
+    return toCotizacionBuilderDetail(record);
+  }
+  
+  async updateItemPrices(itemId: number, data: CotizacionBuilderPriceInput) {
+    const record = await cotizacionBuilderRepository.updateItemPrices(itemId, data);
+
+    if (!record) {
+      throw new AppError(404, "COTIZACION_ITEM_NOT_FOUND", "Servicio de cotización no encontrado");
+    }
+
+    return toCotizacionBuilderDetail(record);
+  }
+
 }
 
 export const cotizacionBuilderService = new CotizacionBuilderService();

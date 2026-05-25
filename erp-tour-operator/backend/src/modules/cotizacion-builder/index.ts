@@ -16,6 +16,10 @@ const cotizacionBuilderColumnParamsSchema = z.object({
   columnId: z.coerce.number().int().positive()
 });
 
+const cotizacionBuilderItemParamsSchema = z.object({
+  itemId: z.coerce.number().int().positive()
+});
+
 export const cotizacionBuilderRouter = Router();
 
 cotizacionBuilderRouter.use(authenticate);
@@ -42,4 +46,22 @@ cotizacionBuilderRouter.delete(
   "/columns/:columnId",
   validateParams(cotizacionBuilderColumnParamsSchema),
   asyncHandler(cotizacionBuilderController.deleteColumn)
+);
+
+cotizacionBuilderRouter.post(
+  "/:versionId/items",
+  validateParams(cotizacionBuilderParamsSchema),
+  asyncHandler(cotizacionBuilderController.createItem)
+);
+
+cotizacionBuilderRouter.delete(
+  "/items/:itemId",
+  validateParams(cotizacionBuilderItemParamsSchema),
+  asyncHandler(cotizacionBuilderController.deleteItem)
+);
+
+cotizacionBuilderRouter.put(
+  "/items/:itemId/prices",
+  validateParams(cotizacionBuilderItemParamsSchema),
+  asyncHandler(cotizacionBuilderController.updateItemPrices)
 );

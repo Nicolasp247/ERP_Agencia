@@ -57,6 +57,21 @@ export type BuilderColumnFormValues = {
   orden?: number;
 };
 
+export type BuilderItemFormValues = {
+  idServicio: number;
+  fechaServicio: string;
+  ordenDia?: number;
+  esOpcional: boolean;
+  notaLinea?: string | null;
+};
+
+export type BuilderPriceFormValues = {
+  prices: Array<{
+    columnId: number;
+    precioNeto: number | null;
+  }>;
+};
+
 export async function getCotizacionBuilder(versionId: number) {
   const response = await api.get<ApiResponse<CotizacionBuilderDetail>>(
     `/cotizacion-builder/${versionId}`
@@ -92,6 +107,38 @@ export async function updateCotizacionBuilderColumn(
 export async function deleteCotizacionBuilderColumn(columnId: number) {
   const response = await api.delete<ApiResponse<CotizacionBuilderDetail>>(
     `/cotizacion-builder/columns/${columnId}`
+  );
+
+  return response.data.data;
+}
+
+export async function createCotizacionBuilderItem(
+  versionId: number,
+  values: BuilderItemFormValues
+) {
+  const response = await api.post<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/${versionId}/items`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function deleteCotizacionBuilderItem(itemId: number) {
+  const response = await api.delete<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/items/${itemId}`
+  );
+
+  return response.data.data;
+}
+
+export async function updateCotizacionBuilderItemPrices(
+  itemId: number,
+  values: BuilderPriceFormValues
+) {
+  const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/items/${itemId}/prices`,
+    values
   );
 
   return response.data.data;

@@ -60,7 +60,9 @@ export function toCotizacionBuilderDetail(record: any) {
 
     rows: (record.items ?? []).map((item: any) => ({
       id: item.id,
+      idServicio: item.idServicio,
       fecha: formatDateOnly(item.fechaServicio),
+      ordenDia: item.ordenDia,
       servicioIncluido: getServicioIncluido(item),
       operador: item.operadorMostrado || item.servicio?.proveedor?.nombreComercial || "N/D",
       notas: item.notaLinea ?? "",

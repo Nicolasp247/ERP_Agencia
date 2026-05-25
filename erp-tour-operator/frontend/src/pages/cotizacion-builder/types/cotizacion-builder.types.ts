@@ -25,7 +25,9 @@ export type BuilderRowPrice = {
 
 export type BuilderRow = {
   id: number;
+  idServicio: number;
   fecha: string;
+  ordenDia: number;
   servicioIncluido: string;
   operador: string;
   notas: string;
