@@ -48,6 +48,77 @@
   margin-bottom: 0;
 }
 
+.builder-modal.builder-column-form {
+  width: min(860px, 100%);
+  margin-bottom: 0;
+}
+
+.builder-modal.builder-delete-column-panel {
+  width: min(760px, 100%);
+}
+
+.builder-column-form-grid-other {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.builder-other-column-help {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px dashed #d8d2c2;
+  border-radius: 18px;
+  background: #fff8ea;
+}
+
+.builder-other-column-help-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.builder-other-column-help-card strong {
+  color: #163037;
+}
+
+.builder-other-column-help dl {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.builder-other-column-help dl div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.builder-other-column-help dt {
+  font-weight: 800;
+  color: #163037;
+}
+
+.builder-other-column-help dd {
+  margin: 0;
+  color: #68747c;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.builder-example-list {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+  border-radius: 14px;
+  background: #fffef9;
+  border: 1px solid #ece6d9;
+}
+
+.builder-other-column-example p {
+  margin: 0;
+  color: #3e4a51;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
 .builder-header-card h3 {
   margin: 0.15rem 0;
   font-size: 1.25rem;
@@ -296,6 +367,49 @@
   font-weight: 700;
 }
 
+.icon-button-active {
+  background: #163037;
+  color: #fff;
+}
+
+.icon-button-active:hover {
+  background: #10252b;
+}
+
+.builder-operator-link {
+  color: #163037;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.builder-operator-link:hover {
+  color: #c27d07;
+}
+
+.builder-notes-cell {
+  max-width: 520px;
+  padding: 0.95rem 1.2rem;
+  background: #fff8ea;
+  color: #2b3438;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  text-align: left !important;
+  white-space: pre-wrap;
+}
+
+.builder-note-textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #d8d2c2;
+  border-radius: 14px;
+  background: #fffef9;
+  color: #172026;
+  resize: vertical;
+  line-height: 1.45;
+}
+
 .builder-row-optional {
   background: #fff8ea;
 }
@@ -345,6 +459,18 @@
   min-height: 90px;
 }
 
+.builder-add-service-manual-column {
+  grid-column: span 2;
+}
+
+.builder-helper-text {
+  display: block;
+  margin-top: 0.25rem;
+  color: #68747c;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
 .builder-checkbox-field {
   display: flex;
   align-items: center;
@@ -390,6 +516,10 @@
   }
 
   .builder-column-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-other-column-help {
     grid-template-columns: 1fr;
   }
 

@@ -65,3 +65,15 @@ cotizacionBuilderRouter.put(
   validateParams(cotizacionBuilderItemParamsSchema),
   asyncHandler(cotizacionBuilderController.updateItemPrices)
 );
+
+cotizacionBuilderRouter.put(
+  "/items/:itemId/move",
+  validateParams(cotizacionBuilderItemParamsSchema),
+  asyncHandler(cotizacionBuilderController.moveItem)
+);
+
+cotizacionBuilderRouter.put(
+  "/items/:itemId/notes",
+  validateParams(cotizacionBuilderItemParamsSchema),
+  asyncHandler(cotizacionBuilderController.updateItemNotes)
+);

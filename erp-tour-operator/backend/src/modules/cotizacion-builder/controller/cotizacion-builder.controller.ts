@@ -5,6 +5,8 @@ import type { Request, Response } from "express";
 import {
   cotizacionBuilderColumnSchema,
   cotizacionBuilderItemSchema,
+  cotizacionBuilderMoveItemSchema,
+  cotizacionBuilderNoteSchema,
   cotizacionBuilderPriceSchema
 } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
 import { ok } from "@/core/utils/api-response";
@@ -47,6 +49,18 @@ export class CotizacionBuilderController {
   updateItemPrices = async (req: Request, res: Response) => {
     const body = cotizacionBuilderPriceSchema.parse(req.body);
     const data = await cotizacionBuilderService.updateItemPrices(Number(req.params.itemId), body);
+    res.json(ok(data));
+  };
+
+  moveItem = async (req: Request, res: Response) => {
+    const body = cotizacionBuilderMoveItemSchema.parse(req.body);
+    const data = await cotizacionBuilderService.moveItem(Number(req.params.itemId), body);
+    res.json(ok(data));
+  };
+
+  updateItemNotes = async (req: Request, res: Response) => {
+    const body = cotizacionBuilderNoteSchema.parse(req.body);
+    const data = await cotizacionBuilderService.updateItemNotes(Number(req.params.itemId), body);
     res.json(ok(data));
   };
 }

@@ -4,6 +4,8 @@ import { AppError } from "@/core/errors/app-error";
 import type {
   CotizacionBuilderColumnInput,
   CotizacionBuilderItemInput,
+  CotizacionBuilderMoveItemInput,
+  CotizacionBuilderNoteInput,
   CotizacionBuilderPriceInput
 } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
 import { toCotizacionBuilderDetail } from "@/modules/cotizacion-builder/mapper/cotizacion-builder.mapper";
@@ -81,9 +83,29 @@ export class CotizacionBuilderService {
 
     return toCotizacionBuilderDetail(record);
   }
+
+  async moveItem(itemId: number, data: CotizacionBuilderMoveItemInput) {
+    const record = await cotizacionBuilderRepository.moveItem(itemId, data);
+
+    if (!record) {
+      throw new AppError(404, "COTIZACION_ITEM_NOT_FOUND", "Servicio de cotización no encontrado");
+    }
+
+    return toCotizacionBuilderDetail(record);
+  }
   
   async updateItemPrices(itemId: number, data: CotizacionBuilderPriceInput) {
     const record = await cotizacionBuilderRepository.updateItemPrices(itemId, data);
+
+    if (!record) {
+      throw new AppError(404, "COTIZACION_ITEM_NOT_FOUND", "Servicio de cotización no encontrado");
+    }
+
+    return toCotizacionBuilderDetail(record);
+  }
+
+  async updateItemNotes(itemId: number, data: CotizacionBuilderNoteInput) {
+    const record = await cotizacionBuilderRepository.updateItemNotes(itemId, data);
 
     if (!record) {
       throw new AppError(404, "COTIZACION_ITEM_NOT_FOUND", "Servicio de cotización no encontrado");

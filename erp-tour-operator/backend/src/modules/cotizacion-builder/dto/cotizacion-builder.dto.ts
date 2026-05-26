@@ -16,7 +16,12 @@ export const cotizacionBuilderItemSchema = z.object({
   fechaServicio: z.string().min(1),
   ordenDia: z.coerce.number().int().positive().optional(),
   esOpcional: z.coerce.boolean().default(false),
-  notaLinea: z.string().trim().optional().nullable()
+  notaLinea: z.string().trim().optional().nullable(),
+  idCotizacionColumnaManual: z.coerce.number().int().positive().optional()
+});
+
+export const cotizacionBuilderMoveItemSchema = z.object({
+  direction: z.enum(["UP", "DOWN"])
 });
 
 export const cotizacionBuilderPriceSchema = z.object({
@@ -28,6 +33,12 @@ export const cotizacionBuilderPriceSchema = z.object({
   )
 });
 
+export const cotizacionBuilderNoteSchema = z.object({
+  notaLinea: z.string().trim().max(1000).nullable()
+});
+
 export type CotizacionBuilderColumnInput = z.infer<typeof cotizacionBuilderColumnSchema>;
 export type CotizacionBuilderItemInput = z.infer<typeof cotizacionBuilderItemSchema>;
 export type CotizacionBuilderPriceInput = z.infer<typeof cotizacionBuilderPriceSchema>;
+export type CotizacionBuilderMoveItemInput = z.infer<typeof cotizacionBuilderMoveItemSchema>;
+export type CotizacionBuilderNoteInput = z.infer<typeof cotizacionBuilderNoteSchema>;

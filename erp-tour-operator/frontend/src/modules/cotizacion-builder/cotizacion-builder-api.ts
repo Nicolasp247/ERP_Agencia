@@ -63,6 +63,7 @@ export type BuilderItemFormValues = {
   ordenDia?: number;
   esOpcional: boolean;
   notaLinea?: string | null;
+  idCotizacionColumnaManual?: number;
 };
 
 export type BuilderPriceFormValues = {
@@ -70,6 +71,14 @@ export type BuilderPriceFormValues = {
     columnId: number;
     precioNeto: number | null;
   }>;
+};
+
+export type BuilderNoteFormValues = {
+  notaLinea: string | null;
+};
+
+export type BuilderMoveItemValues = {
+  direction: "UP" | "DOWN";
 };
 
 export async function getCotizacionBuilder(versionId: number) {
@@ -138,6 +147,30 @@ export async function updateCotizacionBuilderItemPrices(
 ) {
   const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
     `/cotizacion-builder/items/${itemId}/prices`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function moveCotizacionBuilderItem(
+  itemId: number,
+  values: BuilderMoveItemValues
+) {
+  const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/items/${itemId}/move`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function updateCotizacionBuilderItemNotes(
+  itemId: number,
+  values: BuilderNoteFormValues
+) {
+  const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/items/${itemId}/notes`,
     values
   );
 

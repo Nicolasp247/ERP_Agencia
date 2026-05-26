@@ -9,6 +9,13 @@ type CotizacionBuilderTableProps = {
   columns: BuilderColumn[];
   rows: BuilderRow[];
   onDeleteItem: (itemId: number) => void;
+  onMoveItem: (itemId: number, direction: "UP" | "DOWN") => void;
+  onUpdateItemNotes: (
+    itemId: number,
+    values: {
+      notaLinea: string | null;
+    }
+  ) => void;
   onUpdateItemPrices: (
     itemId: number,
     values: {
@@ -24,10 +31,15 @@ export function CotizacionBuilderTable({
   columns,
   rows,
   onDeleteItem,
+  onMoveItem,
+  onUpdateItemNotes,
   onUpdateItemPrices
 }: CotizacionBuilderTableProps) {
   const [editingRowId, setEditingRowId] = useState<number | null>(null);
+  const [visibleNotesRowId, setVisibleNotesRowId] = useState<number | null>(null);
+  const [editingNotesRowId, setEditingNotesRowId] = useState<number | null>(null);
   const [draftPrices, setDraftPrices] = useState<Record<number, string>>({});
+  const [draftNote, setDraftNote] = useState("");
 
   function startEditingPrices(row: BuilderRow) {
     const initialPrices: Record<number, string> = {};
@@ -39,6 +51,9 @@ export function CotizacionBuilderTable({
           : String(price.precioNeto);
     });
 
+    setVisibleNotesRowId(null);
+    setEditingNotesRowId(null);
+    setDraftNote("");
     setEditingRowId(row.id);
     setDraftPrices(initialPrices);
   }
@@ -46,6 +61,50 @@ export function CotizacionBuilderTable({
   function cancelEditingPrices() {
     setEditingRowId(null);
     setDraftPrices({});
+  }
+
+  function openRowNotes(row: BuilderRow) {
+    setEditingRowId(null);
+    setDraftPrices({});
+    setEditingNotesRowId(null);
+    setDraftNote("");
+    setVisibleNotesRowId(row.id);
+  }
+
+  function closeRowNotes() {
+    setVisibleNotesRowId(null);
+    setEditingNotesRowId(null);
+    setDraftNote("");
+  }
+
+  function startEditingNotes(row: BuilderRow) {
+    setEditingRowId(null);
+    setDraftPrices({});
+    setVisibleNotesRowId(row.id);
+    setEditingNotesRowId(row.id);
+    setDraftNote(row.notas ?? "");
+  }
+
+  function cancelEditingNotes() {
+    setEditingNotesRowId(null);
+    setDraftNote("");
+  }
+
+  function saveEditingNotes(row: BuilderRow) {
+    const cleanNote = draftNote.trim();
+
+    onUpdateItemNotes(row.id, {
+      notaLinea: cleanNote || null
+    });
+
+    setEditingNotesRowId(null);
+    setDraftNote("");
+  }
+
+  function toggleRowNotes(rowId: number) {
+    setEditingRowId(null);
+    setDraftPrices({});
+    setVisibleNotesRowId((currentRowId) => (currentRowId === rowId ? null : rowId));
   }
 
   function saveEditingPrices(row: BuilderRow) {
@@ -87,8 +146,8 @@ export function CotizacionBuilderTable({
             </th>
           ))}
 
-          <th>Notas</th>
           <th>Acciones</th>
+
         </tr>
         </thead>
 
@@ -97,10 +156,20 @@ export function CotizacionBuilderTable({
             <tr className={row.esOpcional ? "builder-row-optional" : ""} key={row.id}>
               <td>
                 <div className="builder-row-actions builder-row-actions-compact">
-                  <button className="icon-button" title="Subir servicio" type="button">
+                  <button
+                    className="icon-button"
+                    onClick={() => onMoveItem(row.id, "UP")}
+                    title="Subir servicio"
+                    type="button"
+                  >
                     ↑
                   </button>
-                  <button className="icon-button" title="Bajar servicio" type="button">
+                  <button
+                    className="icon-button"
+                    onClick={() => onMoveItem(row.id, "DOWN")}
+                    title="Bajar servicio"
+                    type="button"
+                  >
                     ↓
                   </button>
                 </div>
@@ -112,42 +181,69 @@ export function CotizacionBuilderTable({
                 <strong>{row.esOpcional ? `Opcional: ${row.servicioIncluido}` : row.servicioIncluido}</strong>
               </td>
 
-              <td>{row.operador}</td>
+              <td>
+                {row.linkReserva ? (
+                  <a
+                    className="builder-operator-link"
+                    href={row.linkReserva}
+                    rel="noreferrer"
+                    target="_blank"
+                    title="Abrir link de reserva"
+                  >
+                    {row.operador}
+                  </a>
+                ) : (
+                  row.operador
+                )}
+              </td>
 
-              {columns.map((column) => {
-                const price = row.precios.find((item) => item.columnId === column.id);
-                const isEditingPrices = editingRowId === row.id;
+              {visibleNotesRowId === row.id ? (
+                <td className="builder-notes-cell" colSpan={columns.length}>
+                  {editingNotesRowId === row.id ? (
+                    <textarea
+                      className="builder-note-textarea"
+                      onChange={(event) => setDraftNote(event.target.value)}
+                      placeholder="Escribe las notas de este servicio..."
+                      value={draftNote}
+                    />
+                  ) : (
+                    row.notas || "Sin notas"
+                  )}
+                </td>
+              ) : (
+                columns.map((column) => {
+                  const price = row.precios.find((item) => item.columnId === column.id);
+                  const isEditingPrices = editingRowId === row.id;
 
-                if (isEditingPrices && price) {
+                  if (isEditingPrices && price) {
+                    return (
+                      <td key={column.id}>
+                        <input
+                          className="builder-price-input"
+                          min="0"
+                          onChange={(event) =>
+                            setDraftPrices((current) => ({
+                              ...current,
+                              [column.id]: event.target.value
+                            }))
+                          }
+                          step="0.01"
+                          type="number"
+                          value={draftPrices[column.id] ?? ""}
+                        />
+                      </td>
+                    );
+                  }
+
                   return (
                     <td key={column.id}>
-                      <input
-                        className="builder-price-input"
-                        min="0"
-                        onChange={(event) =>
-                          setDraftPrices((current) => ({
-                            ...current,
-                            [column.id]: event.target.value
-                          }))
-                        }
-                        step="0.01"
-                        type="number"
-                        value={draftPrices[column.id] ?? ""}
-                      />
+                      {price?.precioNeto !== null && price?.precioNeto !== undefined
+                        ? `$ ${price.precioNeto.toFixed(2)}`
+                        : "-"}
                     </td>
                   );
-                }
-
-                return (
-                  <td key={column.id}>
-                    {price?.precioNeto !== null && price?.precioNeto !== undefined
-                      ? `$ ${price.precioNeto.toFixed(2)}`
-                      : "-"}
-                  </td>
-                );
-              })}
-
-              <td>{row.notas || "Sin notas"}</td>
+                })
+              )}
 
               <td>
                 <div className="builder-row-actions builder-row-actions-compact">
@@ -161,39 +257,92 @@ export function CotizacionBuilderTable({
                       >
                         ✓
                       </button>
+
                       <button
                         className="icon-button"
                         onClick={cancelEditingPrices}
-                        title="Cancelar edición"
+                        title="Cancelar edición de precios"
+                        type="button"
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : editingNotesRowId === row.id ? (
+                    <>
+                      <button
+                        className="icon-button icon-button-success"
+                        onClick={() => saveEditingNotes(row)}
+                        title="Guardar nota"
+                        type="button"
+                      >
+                        ✓
+                      </button>
+
+                      <button
+                        className="icon-button"
+                        onClick={cancelEditingNotes}
+                        title="Cancelar edición de nota"
+                        type="button"
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : visibleNotesRowId === row.id ? (
+                    <>
+                      <button
+                        className="icon-button"
+                        onClick={() => startEditingNotes(row)}
+                        title="Editar notas"
+                        type="button"
+                      >
+                        ✎
+                      </button>
+
+                      <button
+                        className="icon-button"
+                        onClick={closeRowNotes}
+                        title="Salir de notas"
                         type="button"
                       >
                         ×
                       </button>
                     </>
                   ) : (
-                    <button
-                      className="icon-button"
-                      onClick={() => startEditingPrices(row)}
-                      title="Editar precios"
-                      type="button"
-                    >
-                      ✎
-                    </button>
-                  )}
-                  <button
-                    className="icon-button icon-button-danger"
-                    onClick={() => {
-                      const confirmed = window.confirm("¿Eliminar este servicio de la cotización?");
+                    <>
+                      <button
+                        className="icon-button"
+                        onClick={() => startEditingPrices(row)}
+                        title="Editar precios"
+                        type="button"
+                      >
+                        ✎
+                      </button>
 
-                      if (confirmed) {
-                        onDeleteItem(row.id);
-                      }
-                    }}
-                    title="Eliminar servicio"
-                    type="button"
-                  >
-                    ×
-                  </button>
+                      <button
+                        className="icon-button"
+                        onClick={() => openRowNotes(row)}
+                        title="Ver notas"
+                        type="button"
+                      >
+                        ☷
+                      </button>
+
+                      <button
+                        className="icon-button icon-button-danger"
+                        onClick={() => {
+                          const confirmed = window.confirm("¿Eliminar este servicio de la cotización?");
+
+                          if (confirmed) {
+                            onDeleteItem(row.id);
+                          }
+                        }}
+                        title="Eliminar servicio"
+                        type="button"
+                      >
+                        ×
+                      </button>
+                    </>
+                  )}
                 </div>
               </td>
             </tr>

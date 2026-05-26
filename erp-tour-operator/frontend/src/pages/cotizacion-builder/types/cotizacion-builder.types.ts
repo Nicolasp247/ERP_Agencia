@@ -30,6 +30,7 @@ export type BuilderRow = {
   ordenDia: number;
   servicioIncluido: string;
   operador: string;
+  linkReserva: string | null;
   notas: string;
   esOpcional: boolean;
   precios: BuilderRowPrice[];

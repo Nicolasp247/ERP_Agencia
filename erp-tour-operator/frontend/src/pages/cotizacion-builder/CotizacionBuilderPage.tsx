@@ -12,6 +12,10 @@ import {
   deleteCotizacionBuilderItem,
   getCotizacionBuilder,
   updateCotizacionBuilderItemPrices,
+  moveCotizacionBuilderItem,
+  updateCotizacionBuilderItemNotes,
+  type BuilderNoteFormValues,
+  type BuilderMoveItemValues,
   type BuilderColumnFormValues,
   type BuilderItemFormValues,
   type BuilderPriceFormValues
@@ -73,8 +77,34 @@ export function CotizacionBuilderPage() {
     }
   });
 
+  const updateItemNotesMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      values
+    }: {
+      itemId: number;
+      values: BuilderNoteFormValues;
+    }) => updateCotizacionBuilderItemNotes(itemId, values),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
   const deleteItemMutation = useMutation({
     mutationFn: deleteCotizacionBuilderItem,
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const moveItemMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      values
+    }: {
+      itemId: number;
+      values: BuilderMoveItemValues;
+    }) => moveCotizacionBuilderItem(itemId, values),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKey, data);
     }
@@ -132,6 +162,20 @@ export function CotizacionBuilderPage() {
           columns={builder.columns}
           rows={builder.rows}
           onDeleteItem={(itemId) => deleteItemMutation.mutate(itemId)}
+          onMoveItem={(itemId, direction) =>
+            moveItemMutation.mutate({
+              itemId,
+              values: {
+                direction
+              }
+            })
+          }
+          onUpdateItemNotes={(itemId, values) =>
+            updateItemNotesMutation.mutate({
+              itemId,
+              values
+            })
+          }
           onUpdateItemPrices={(itemId, values) =>
             updateItemPricesMutation.mutate({
               itemId,
@@ -144,6 +188,7 @@ export function CotizacionBuilderPage() {
           <div className="builder-modal-backdrop">
             <div className="builder-modal">
               <AddServicePanel
+                columns={builder.columns}
                 defaultDate={builder.expediente.fechaViajePrincipal}
                 isSaving={isSavingItem}
                 nextOrder={nextOrder}

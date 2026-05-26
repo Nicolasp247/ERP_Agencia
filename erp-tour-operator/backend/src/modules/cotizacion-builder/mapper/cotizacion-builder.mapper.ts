@@ -64,7 +64,12 @@ export function toCotizacionBuilderDetail(record: any) {
       fecha: formatDateOnly(item.fechaServicio),
       ordenDia: item.ordenDia,
       servicioIncluido: getServicioIncluido(item),
-      operador: item.operadorMostrado || item.servicio?.proveedor?.nombreComercial || "N/D",
+      operador:
+        item.servicio?.proveedor?.codigo ||
+        item.operadorMostrado ||
+        item.servicio?.proveedor?.nombreComercial ||
+        "N/D",
+      linkReserva: item.servicio?.linkReserva ?? null,
       notas: item.notaLinea ?? "",
       esOpcional: item.esOpcional,
       precios: (item.precios ?? []).map((precio: any) => ({

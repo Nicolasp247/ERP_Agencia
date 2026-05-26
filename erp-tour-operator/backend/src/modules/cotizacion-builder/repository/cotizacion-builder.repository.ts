@@ -10,6 +10,8 @@ import { prisma } from "@/core/db/prisma";
 import type {
   CotizacionBuilderColumnInput,
   CotizacionBuilderItemInput,
+  CotizacionBuilderMoveItemInput,
+  CotizacionBuilderNoteInput,
   CotizacionBuilderPriceInput
 } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
 
@@ -84,6 +86,7 @@ export class CotizacionBuilderRepository {
             proveedor: {
               select: {
                 id: true,
+                codigo: true,
                 nombreComercial: true
               }
             },
@@ -288,7 +291,14 @@ export class CotizacionBuilderRepository {
         include: {
           proveedor: {
             select: {
+              codigo: true,
               nombreComercial: true
+            }
+          },
+          tipo: {
+            select: {
+              nombre: true,
+              codigo: true
             }
           }
         }
@@ -307,14 +317,17 @@ export class CotizacionBuilderRepository {
         }
       });
 
-      await tx.cotizacionItem.create({
+      const createdItem = await tx.cotizacionItem.create({
         data: {
           idCotizacion: versionId,
           idServicio: data.idServicio,
           fechaServicio: toMysqlDate(data.fechaServicio),
           ordenDia: data.ordenDia ?? Number(maxOrder._max.ordenDia ?? 0) + 1,
           esOpcional: data.esOpcional,
-          operadorMostrado: servicio.proveedor?.nombreComercial ?? null,
+          operadorMostrado:
+            servicio.proveedor?.codigo ??
+            servicio.proveedor?.nombreComercial ??
+            null,
           linkOperador: servicio.linkReserva ?? null,
           notaLinea: data.notaLinea?.trim() || null,
           precioMonedaCodigo: "USD"
@@ -322,6 +335,57 @@ export class CotizacionBuilderRepository {
       });
 
       await this.syncPriceMatrixWithClient(tx, versionId);
+
+      if (data.idCotizacionColumnaManual && !data.esOpcional) {
+        const manualColumn = await tx.cotizacionColumna.findFirst({
+          where: {
+            id: data.idCotizacionColumnaManual,
+            idCotizacion: versionId,
+            tipo: CotizacionColumnaTipo.OTRO,
+            activo: true
+          },
+          select: {
+            id: true
+          }
+        });
+
+        if (manualColumn) {
+          const tarifa = await tx.servicioTarifa.findFirst({
+            where: {
+              idServicio: data.idServicio,
+              activo: true,
+              fechaDesde: {
+                lte: createdItem.fechaServicio
+              },
+              fechaHasta: {
+                gte: createdItem.fechaServicio
+              }
+            },
+            orderBy: [
+              {
+                fechaDesde: "desc"
+              },
+              {
+                id: "desc"
+              }
+            ],
+            select: {
+              precioNeto: true,
+              monedaCodigo: true
+            }
+          });
+
+          await tx.cotizacionItemPrecio.create({
+            data: {
+              idCotizacionItem: createdItem.id,
+              idCotizacionColumna: manualColumn.id,
+              precioNeto: tarifa?.precioNeto ?? null,
+              monedaCodigo: tarifa?.monedaCodigo ?? "USD",
+              precioEditadoManual: false
+            }
+          });
+        }
+      }
 
       return tx.cotizacion.findUnique({
         where: {
@@ -464,10 +528,243 @@ export class CotizacionBuilderRepository {
     });
   }
 
+  async updateItemNotes(itemId: number, data: CotizacionBuilderNoteInput) {
+    return prisma.$transaction(async (tx) => {
+      const currentItem = await tx.cotizacionItem.findUnique({
+        where: {
+          id: itemId
+        },
+        select: {
+          id: true,
+          idCotizacion: true
+        }
+      });
+
+      if (!currentItem) {
+        return null;
+      }
+
+      await tx.cotizacionItem.update({
+        where: {
+          id: itemId
+        },
+        data: {
+          notaLinea: data.notaLinea?.trim() || null
+        }
+      });
+
+      return tx.cotizacion.findUnique({
+        where: {
+          id: currentItem.idCotizacion
+        },
+        include: this.includeBuilderDetail
+      });
+    });
+  }
+
+  async moveItem(itemId: number, data: CotizacionBuilderMoveItemInput) {
+    return prisma.$transaction(async (tx) => {
+      const currentItem = await tx.cotizacionItem.findUnique({
+        where: {
+          id: itemId
+        },
+        select: {
+          id: true,
+          idCotizacion: true,
+          fechaServicio: true,
+          ordenDia: true
+        }
+      });
+
+      if (!currentItem) {
+        return null;
+      }
+
+      const itemsSameDate = await tx.cotizacionItem.findMany({
+        where: {
+          idCotizacion: currentItem.idCotizacion,
+          fechaServicio: currentItem.fechaServicio
+        },
+        orderBy: [
+          {
+            ordenDia: "asc"
+          },
+          {
+            id: "asc"
+          }
+        ],
+        select: {
+          id: true,
+          ordenDia: true
+        }
+      });
+
+      const currentIndex = itemsSameDate.findIndex((item) => item.id === itemId);
+
+      if (currentIndex === -1) {
+        return null;
+      }
+
+      if (data.direction === "UP") {
+        const previousItemSameDate = itemsSameDate[currentIndex - 1];
+
+        if (previousItemSameDate) {
+          await tx.cotizacionItem.update({
+            where: {
+              id: currentItem.id
+            },
+            data: {
+              ordenDia: previousItemSameDate.ordenDia
+            }
+          });
+
+          await tx.cotizacionItem.update({
+            where: {
+              id: previousItemSameDate.id
+            },
+            data: {
+              ordenDia: currentItem.ordenDia
+            }
+          });
+
+          await this.normalizeItemOrderByDate(tx, currentItem.idCotizacion, currentItem.fechaServicio);
+        } else {
+          const previousDate = this.addCalendarDays(currentItem.fechaServicio, -1);
+
+          const maxOrderInPreviousDate = await tx.cotizacionItem.aggregate({
+            where: {
+              idCotizacion: currentItem.idCotizacion,
+              fechaServicio: previousDate
+            },
+            _max: {
+              ordenDia: true
+            }
+          });
+
+          await tx.cotizacionItem.update({
+            where: {
+              id: currentItem.id
+            },
+            data: {
+              fechaServicio: previousDate,
+              ordenDia: Number(maxOrderInPreviousDate._max.ordenDia ?? 0) + 1
+            }
+          });
+
+          await this.normalizeItemOrderByDate(tx, currentItem.idCotizacion, currentItem.fechaServicio);
+          await this.normalizeItemOrderByDate(tx, currentItem.idCotizacion, previousDate);
+        }
+      }
+
+      if (data.direction === "DOWN") {
+        const nextItemSameDate = itemsSameDate[currentIndex + 1];
+
+        if (nextItemSameDate) {
+          await tx.cotizacionItem.update({
+            where: {
+              id: currentItem.id
+            },
+            data: {
+              ordenDia: nextItemSameDate.ordenDia
+            }
+          });
+
+          await tx.cotizacionItem.update({
+            where: {
+              id: nextItemSameDate.id
+            },
+            data: {
+              ordenDia: currentItem.ordenDia
+            }
+          });
+
+          await this.normalizeItemOrderByDate(tx, currentItem.idCotizacion, currentItem.fechaServicio);
+        } else {
+          const nextDate = this.addCalendarDays(currentItem.fechaServicio, 1);
+
+          const maxOrderInNextDate = await tx.cotizacionItem.aggregate({
+            where: {
+              idCotizacion: currentItem.idCotizacion,
+              fechaServicio: nextDate
+            },
+            _max: {
+              ordenDia: true
+            }
+          });
+
+          await tx.cotizacionItem.update({
+            where: {
+              id: currentItem.id
+            },
+            data: {
+              fechaServicio: nextDate,
+              ordenDia: Number(maxOrderInNextDate._max.ordenDia ?? 0) + 1
+            }
+          });
+
+          await this.normalizeItemOrderByDate(tx, currentItem.idCotizacion, currentItem.fechaServicio);
+          await this.normalizeItemOrderByDate(tx, currentItem.idCotizacion, nextDate);
+        }
+      }
+
+      return tx.cotizacion.findUnique({
+        where: {
+          id: currentItem.idCotizacion
+        },
+        include: this.includeBuilderDetail
+      });
+    });
+  }
+
   async syncPriceMatrix(versionId: number) {
     await prisma.$transaction(async (tx) => {
       await this.syncPriceMatrixWithClient(tx, versionId);
     });
+  }
+
+  private addCalendarDays(date: Date, days: number) {
+    const nextDate = new Date(date);
+    nextDate.setUTCDate(nextDate.getUTCDate() + days);
+    nextDate.setUTCHours(0, 0, 0, 0);
+
+    return nextDate;
+  }
+
+  private async normalizeItemOrderByDate(
+    tx: Prisma.TransactionClient,
+    versionId: number,
+    fechaServicio: Date
+  ) {
+    const items = await tx.cotizacionItem.findMany({
+      where: {
+        idCotizacion: versionId,
+        fechaServicio
+      },
+      orderBy: [
+        {
+          ordenDia: "asc"
+        },
+        {
+          id: "asc"
+        }
+      ],
+      select: {
+        id: true
+      }
+    });
+
+    await Promise.all(
+      items.map((item, index) =>
+        tx.cotizacionItem.update({
+          where: {
+            id: item.id
+          },
+          data: {
+            ordenDia: index + 1
+          }
+        })
+      )
+    );
   }
 
   private async syncPriceMatrixWithClient(
