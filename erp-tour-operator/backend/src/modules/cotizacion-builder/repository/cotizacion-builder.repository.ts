@@ -90,7 +90,13 @@ export class CotizacionBuilderRepository {
                 nombreComercial: true
               }
             },
-            tipo: true
+            tipo: true,
+            ciudad: {
+              include: {
+                pais: true
+              }
+            },
+            alojamiento: true
           }
         },
         precios: true

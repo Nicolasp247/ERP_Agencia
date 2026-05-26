@@ -27,11 +27,16 @@ export type BuilderRow = {
   id: number;
   idServicio: number;
   fecha: string;
+  fechaFin: string | null;
   ordenDia: number;
   servicioIncluido: string;
   operador: string;
   linkReserva: string | null;
   notas: string;
   esOpcional: boolean;
+  tipoServicio: string;
+  tipoServicioCodigo: string | null;
+  ciudadNombre: string | null;
+  paisNombre: string | null;
   precios: BuilderRowPrice[];
 };

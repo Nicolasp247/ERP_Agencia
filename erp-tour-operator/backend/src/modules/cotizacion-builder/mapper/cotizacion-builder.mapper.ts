@@ -12,6 +12,39 @@ function formatDateOnly(value: Date | string | null | undefined) {
   return date.toISOString().slice(0, 10);
 }
 
+function addDaysToDate(value: Date | string | null | undefined, days: number) {
+  if (!value) return null;
+
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  date.setUTCDate(date.getUTCDate() + days);
+  date.setUTCHours(0, 0, 0, 0);
+
+  return formatDateOnly(date);
+}
+
+function getTipoServicioNombre(item: any) {
+  return item.servicio?.tipo?.nombre ?? "";
+}
+
+function getTipoServicioCodigo(item: any) {
+  return item.servicio?.tipo?.codigo ?? null;
+}
+
+function getFechaFinAlojamiento(item: any) {
+  const noches = Number(item.servicio?.alojamiento?.noches ?? 0);
+
+  if (!noches) {
+    return formatDateOnly(item.fechaServicio);
+  }
+
+  return addDaysToDate(item.fechaServicio, noches);
+}
+
 function buildVersionLabel(versionCodigo?: string | null) {
   return `Cotización ${versionCodigo ?? "A"}`;
 }
@@ -62,6 +95,7 @@ export function toCotizacionBuilderDetail(record: any) {
       id: item.id,
       idServicio: item.idServicio,
       fecha: formatDateOnly(item.fechaServicio),
+      fechaFin: getFechaFinAlojamiento(item),
       ordenDia: item.ordenDia,
       servicioIncluido: getServicioIncluido(item),
       operador:
@@ -72,6 +106,10 @@ export function toCotizacionBuilderDetail(record: any) {
       linkReserva: item.servicio?.linkReserva ?? null,
       notas: item.notaLinea ?? "",
       esOpcional: item.esOpcional,
+      tipoServicio: getTipoServicioNombre(item),
+      tipoServicioCodigo: getTipoServicioCodigo(item),
+      ciudadNombre: item.servicio?.ciudad?.nombre ?? null,
+      paisNombre: item.servicio?.ciudad?.pais?.nombre ?? null,
       precios: (item.precios ?? []).map((precio: any) => ({
         columnId: precio.idCotizacionColumna,
         precioNeto: precio.precioNeto === null || precio.precioNeto === undefined
