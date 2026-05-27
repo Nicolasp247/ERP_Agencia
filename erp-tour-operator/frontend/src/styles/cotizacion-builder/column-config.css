@@ -1,0 +1,102 @@
+/* erp-tour-operator/frontend/src/styles/cotizacion-builder/column-config.css */
+
+.builder-column-form {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #ece6d9;
+  border-radius: 18px;
+  background: #fffef9;
+}
+
+.builder-column-form-compact {
+  margin-top: 0.25rem;
+}
+
+.builder-column-form-title {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.builder-column-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.builder-column-form-grid-other {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.builder-delete-column-panel {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px dashed #d8d2c2;
+  border-radius: 18px;
+  background: #fffef9;
+}
+
+.builder-delete-column-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.builder-other-column-help {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px dashed #d8d2c2;
+  border-radius: 18px;
+  background: #fff8ea;
+}
+
+.builder-other-column-help-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.builder-other-column-help-card strong {
+  color: #163037;
+}
+
+.builder-other-column-help dl {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.builder-other-column-help dl div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.builder-other-column-help dt {
+  font-weight: 800;
+  color: #163037;
+}
+
+.builder-other-column-help dd {
+  margin: 0;
+  color: #68747c;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.builder-example-list {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+  border-radius: 14px;
+  background: #fffef9;
+  border: 1px solid #ece6d9;
+}
+
+.builder-other-column-example p {
+  margin: 0;
+  color: #3e4a51;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}

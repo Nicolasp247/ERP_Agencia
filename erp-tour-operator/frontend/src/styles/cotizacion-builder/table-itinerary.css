@@ -1,0 +1,60 @@
+/* erp-tour-operator/frontend/src/styles/cotizacion-builder/table-itinerary.css */
+
+/* Encabezado: todos los bordes */
+.builder-table thead th {
+  border-top: 1.5px solid #000 !important;
+  border-bottom: 1.5px solid #000 !important;
+}
+
+/* Encabezado Fecha + Servicio incluido: sin borde entre ellas */
+.builder-table thead th:nth-child(2) {
+  border-left: 1.5px solid #000 !important;
+  border-right: 0 !important;
+}
+
+.builder-table thead th:nth-child(3) {
+  border-left: 0 !important;
+  border-right: 1.5px solid #000 !important;
+}
+
+/* Refuerzo para que Orden cierre bien con Fecha */
+.builder-table thead th:nth-child(1),
+.builder-order-cell {
+  border-right: 1.5px solid #000 !important;
+}
+
+/* Fecha y Servicio incluido: sin borde entre ellas */
+.builder-table .builder-date-cell {
+  border-left: 1.5px solid #000 !important;
+  border-right: 0 !important;
+}
+
+.builder-table .builder-service-included-cell {
+  border-left: 0 !important;
+  border-right: 1.5px solid #000 !important;
+}
+
+/* Primera fila de servicios: borde superior negro */
+.builder-table tbody tr:first-child td {
+  border-top: 1.5px solid #000 !important;
+}
+
+/* Alojamiento: borde superior negro en la fila de ciudad */
+.builder-city-row td {
+  border-top: 1.5px solid #000 !important;
+}
+
+/* El bloque de ciudad sigue blanco */
+.builder-city-row .builder-itinerary-title-cell {
+  background: #fff !important;
+}
+
+/* Última fila de servicios: borde inferior negro */
+.builder-table tbody tr:last-child td {
+  border-bottom: 1.5px solid #000 !important;
+}
+
+/* Si el último servicio es alojamiento, los td con rowspan también cierran abajo */
+.builder-table tbody tr:nth-last-child(2).builder-city-row td[rowspan] {
+  border-bottom: 1.5px solid #000 !important;
+}

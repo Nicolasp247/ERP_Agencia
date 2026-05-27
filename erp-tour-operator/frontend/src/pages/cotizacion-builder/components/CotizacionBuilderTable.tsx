@@ -19,6 +19,21 @@ const MONTHS_ES = [
   "diciembre"
 ];
 
+const SHORT_MONTHS_ES = [
+  "ene",
+  "feb",
+  "mar",
+  "abr",
+  "may",
+  "jun",
+  "jul",
+  "ago",
+  "sep",
+  "oct",
+  "nov",
+  "dic"
+];
+
 const WEEKDAYS_ES = [
   "domingo",
   "lunes",
@@ -54,10 +69,10 @@ function formatLongDateEs(value: string | null | undefined) {
 
   const weekday = WEEKDAYS_ES[date.getUTCDay()];
   const day = twoDigits(date.getUTCDate());
-  const month = MONTHS_ES[date.getUTCMonth()];
+  const month = SHORT_MONTHS_ES[date.getUTCMonth()];
   const year = date.getUTCFullYear();
 
-  return `${weekday}, ${day} de ${month} de ${year}`;
+  return `${weekday}, ${day}/${month}/${year}`;
 }
 
 function formatAccommodationDateRange(startValue: string, endValue: string | null) {
@@ -70,20 +85,20 @@ function formatAccommodationDateRange(startValue: string, endValue: string | nul
 
   const startDay = twoDigits(startDate.getUTCDate());
   const endDay = twoDigits(endDate.getUTCDate());
-  const startMonth = MONTHS_ES[startDate.getUTCMonth()];
-  const endMonth = MONTHS_ES[endDate.getUTCMonth()];
+  const startMonth = SHORT_MONTHS_ES[startDate.getUTCMonth()];
+  const endMonth = SHORT_MONTHS_ES[endDate.getUTCMonth()];
   const startYear = startDate.getUTCFullYear();
   const endYear = endDate.getUTCFullYear();
 
   if (startYear === endYear && startDate.getUTCMonth() === endDate.getUTCMonth()) {
-    return `${startDay} - ${endDay} de ${startMonth} de ${startYear}`;
+    return `${startDay} - ${endDay}/${startMonth}/${startYear}`;
   }
 
   if (startYear === endYear) {
-    return `${startDay} de ${startMonth} a ${endDay} de ${endMonth} de ${endYear}`;
+    return `${startDay}/${startMonth} - ${endDay}/${endMonth}/${endYear}`;
   }
 
-  return `${startDay} de ${startMonth} de ${startYear} a ${endDay} de ${endMonth} de ${endYear}`;
+  return `${startDay}/${startMonth}/${startYear} - ${endDay}/${endMonth}/${endYear}`;
 }
 
 function isAlojamientoRow(row: BuilderRow) {
@@ -232,14 +247,31 @@ export function CotizacionBuilderTable({
     setDraftNote("");
   }
 
-  function renderPriceCells(row: BuilderRow) {
+  function renderPriceOrNotesCells(row: BuilderRow, rowSpan?: number) {
+    if (visibleNotesRowId === row.id) {
+      return (
+        <td className="builder-notes-cell" colSpan={columns.length} rowSpan={rowSpan}>
+          {editingNotesRowId === row.id ? (
+            <textarea
+              className="builder-note-textarea"
+              onChange={(event) => setDraftNote(event.target.value)}
+              placeholder="Escribe las notas de este servicio..."
+              value={draftNote}
+            />
+          ) : (
+            row.notas || "Sin notas"
+          )}
+        </td>
+      );
+    }
+
     return columns.map((column) => {
       const price = row.precios.find((item) => item.columnId === column.id);
       const isEditingPrices = editingRowId === row.id;
 
       if (isEditingPrices && price) {
         return (
-          <td key={column.id}>
+          <td key={column.id} rowSpan={rowSpan}>
             <input
               className="builder-price-input"
               min="0"
@@ -258,7 +290,7 @@ export function CotizacionBuilderTable({
       }
 
       return (
-        <td key={column.id}>
+        <td key={column.id} rowSpan={rowSpan}>
           {price?.precioNeto !== null && price?.precioNeto !== undefined
             ? `$ ${price.precioNeto.toFixed(2)}`
             : "-"}
@@ -280,40 +312,92 @@ export function CotizacionBuilderTable({
             >
               ✓
             </button>
+
             <button
               className="icon-button"
               onClick={cancelEditingPrices}
-              title="Cancelar edición"
+              title="Cancelar edición de precios"
+              type="button"
+            >
+              ×
+            </button>
+          </>
+        ) : editingNotesRowId === row.id ? (
+          <>
+            <button
+              className="icon-button icon-button-success"
+              onClick={() => saveEditingNotes(row)}
+              title="Guardar nota"
+              type="button"
+            >
+              ✓
+            </button>
+
+            <button
+              className="icon-button"
+              onClick={cancelEditingNotes}
+              title="Cancelar edición de nota"
+              type="button"
+            >
+              ×
+            </button>
+          </>
+        ) : visibleNotesRowId === row.id ? (
+          <>
+            <button
+              className="icon-button"
+              onClick={() => startEditingNotes(row)}
+              title="Editar notas"
+              type="button"
+            >
+              ✎
+            </button>
+
+            <button
+              className="icon-button"
+              onClick={closeRowNotes}
+              title="Salir de notas"
               type="button"
             >
               ×
             </button>
           </>
         ) : (
-          <button
-            className="icon-button"
-            onClick={() => startEditingPrices(row)}
-            title="Editar precios"
-            type="button"
-          >
-            ✎
-          </button>
+          <>
+            <button
+              className="icon-button"
+              onClick={() => startEditingPrices(row)}
+              title="Editar precios"
+              type="button"
+            >
+              ✎
+            </button>
+
+            <button
+              className="icon-button"
+              onClick={() => openRowNotes(row)}
+              title="Ver notas"
+              type="button"
+            >
+              ☷
+            </button>
+
+            <button
+              className="icon-button icon-button-danger"
+              onClick={() => {
+                const confirmed = window.confirm("¿Eliminar este servicio de la cotización?");
+
+                if (confirmed) {
+                  onDeleteItem(row.id);
+                }
+              }}
+              title="Eliminar servicio"
+              type="button"
+            >
+              ×
+            </button>
+          </>
         )}
-
-        <button
-          className="icon-button icon-button-danger"
-          onClick={() => {
-            const confirmed = window.confirm("¿Eliminar este servicio de la cotización?");
-
-            if (confirmed) {
-              onDeleteItem(row.id);
-            }
-          }}
-          title="Eliminar servicio"
-          type="button"
-        >
-          ×
-        </button>
       </div>
     );
   }
@@ -334,12 +418,6 @@ export function CotizacionBuilderTable({
         {row.operador}
       </a>
     );
-  }
-
-  function toggleRowNotes(rowId: number) {
-    setEditingRowId(null);
-    setDraftPrices({});
-    setVisibleNotesRowId((currentRowId) => (currentRowId === rowId ? null : rowId));
   }
 
   function saveEditingPrices(row: BuilderRow) {
@@ -416,25 +494,27 @@ export function CotizacionBuilderTable({
                       </div>
                     </td>
 
-                    <td className="builder-city-title-cell" colSpan={columns.length + 5}>
+                    <td className="builder-city-title-cell builder-itinerary-title-cell" colSpan={2}>
                       {getCityTitle(row)}
                     </td>
+
+                    <td className="builder-operator-cell" rowSpan={2}>
+                      {renderOperator(row)}
+                    </td>
+
+                    {renderPriceOrNotesCells(row, 2)}
+
+                    <td rowSpan={2}>{renderActions(row)}</td>
                   </tr>
 
                   <tr className={`builder-service-row ${rowTypeClass}`}>
-                    <td>{formatAccommodationDateRange(row.fecha, row.fechaFin)}</td>
-
-                    <td>
-                      <span>{row.servicioIncluido}</span>
+                    <td className="builder-date-cell">
+                      {formatAccommodationDateRange(row.fecha, row.fechaFin)}
                     </td>
 
-                    <td>{renderOperator(row)}</td>
-
-                    {renderPriceCells(row)}
-
-                    <td>{row.notas || "Sin notas"}</td>
-
-                    <td>{renderActions(row)}</td>
+                    <td className="builder-service-name-cell builder-service-included-cell">
+                      <span>{row.servicioIncluido}</span>
+                    </td>
                   </tr>
                 </Fragment>
               );
@@ -442,7 +522,7 @@ export function CotizacionBuilderTable({
 
             return (
               <tr className={`builder-service-row ${rowTypeClass}`} key={row.id}>
-                <td>
+                <td className="builder-order-cell">
                   <div className="builder-row-actions builder-row-actions-compact">
                     <button
                       className="icon-button"
@@ -463,17 +543,17 @@ export function CotizacionBuilderTable({
                   </div>
                 </td>
 
-                <td>{formatLongDateEs(row.fecha)}</td>
+                <td className="builder-date-cell">{formatLongDateEs(row.fecha)}</td>
 
-                <td>
-                  <span>{row.esOpcional ? `Opcional: ${row.servicioIncluido}` : row.servicioIncluido}</span>
+                <td className="builder-service-name-cell builder-service-included-cell">
+                  <span>
+                    {row.esOpcional ? `Opcional: ${row.servicioIncluido}` : row.servicioIncluido}
+                  </span>
                 </td>
 
-                <td>{renderOperator(row)}</td>
+                <td className="builder-operator-cell">{renderOperator(row)}</td>
 
-                {renderPriceCells(row)}
-
-                <td>{row.notas || "Sin notas"}</td>
+                {renderPriceOrNotesCells(row)}
 
                 <td>{renderActions(row)}</td>
               </tr>

@@ -1,0 +1,162 @@
+/* erp-tour-operator/frontend/src/styles/cotizacion-builder/table-base.css */
+
+.builder-table-wrapper {
+  overflow-x: auto;
+}
+
+.builder-table {
+  min-width: 1180px;
+  table-layout: fixed;
+  font-size: 0.88rem;
+}
+
+.builder-column-label {
+  display: inline-grid;
+  gap: 0.05rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.builder-column-label span {
+  display: block;
+}
+
+.builder-table th {
+  border-left: 1.25px solid #000;
+  border-right: 1.25px solid #000;
+  border-top: 0;
+  border-bottom: 0;
+  font-weight: 700;
+  padding: 0.55rem 0.35rem;
+  text-align: center;
+  white-space: normal;
+}
+
+.builder-table td {
+  border-left: 1.25px solid #000;
+  border-right: 1.25px solid #000;
+  border-top: 0;
+  border-bottom: 0;
+  font-weight: 400;
+  padding: 0.45rem 0.35rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.builder-table td:nth-child(3) {
+  text-align: left;
+}
+
+.builder-table th:nth-child(1),
+.builder-table td:nth-child(1) {
+  width: 62px;
+  min-width: 62px;
+}
+
+.builder-table th:nth-child(2),
+.builder-table td:nth-child(2) {
+  width: 165px;
+  min-width: 160px;
+}
+
+.builder-table th:nth-child(3),
+.builder-table td:nth-child(3) {
+  width: 400px;
+  min-width: 400px;
+}
+
+.builder-table th:nth-child(4),
+.builder-table td:nth-child(4) {
+  width: 72px;
+  min-width: 72px;
+}
+
+.builder-table th:last-child,
+.builder-table td:last-child {
+  width: 116px;
+  min-width: 116px;
+}
+
+.builder-table th:nth-child(n + 5):not(:last-child),
+.builder-table td:nth-child(n + 5):not(:last-child) {
+  width: 86px;
+  min-width: 86px;
+}
+
+.builder-table td:nth-child(2) {
+  line-height: 1.35;
+}
+
+.builder-operator-link {
+  color: #163037;
+  font-size: 0.86rem;
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.builder-operator-link:hover {
+  color: #c27d07;
+}
+
+.builder-operator-cell {
+  width: 72px;
+  min-width: 72px;
+  text-align: center !important;
+  vertical-align: middle !important;
+  font-weight: 400 !important;
+}
+
+.builder-service-name-cell {
+  text-align: left !important;
+  vertical-align: middle !important;
+  line-height: 1.35;
+}
+
+.builder-service-name-cell span {
+  display: block;
+}
+
+.builder-order-cell {
+  background: #fffef9 !important;
+}
+
+.builder-row-land-service td {
+  background: #fffef9;
+}
+
+.builder-row-other-service td {
+  background: #f7f3ea;
+}
+
+.builder-row-optional {
+  background: #fff8ea;
+}
+
+.builder-row-optional td {
+  background: #fff8ea !important;
+}
+
+.builder-service-row td {
+  background: #fff !important;
+}
+
+.builder-row-accommodation td {
+  background: #fff !important;
+}
+
+.builder-city-title-cell {
+  font-weight: 800 !important;
+  letter-spacing: 0.02em;
+  text-align: center !important;
+}
+
+.builder-row-transport td {
+  background: #F2F2F2 !important;
+  border-bottom: 1.5px solid #000 !important;
+}
+
+.builder-row-optional,
+.builder-row-optional td {
+  background: #fff8ea !important;
+}

@@ -1,0 +1,89 @@
+/* erp-tour-operator/frontend/src/styles/cotizacion-builder/table-actions.css */
+
+.builder-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.builder-row-actions-compact {
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  background: #f0eadb;
+  color: #163037;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.icon-button:hover {
+  background: #e4dcc9;
+}
+
+.icon-button-danger {
+  background: #f8e7e3;
+  color: #8a2f1f;
+}
+
+.icon-button-danger:hover {
+  background: #f1d3cc;
+}
+
+.icon-button-success {
+  background: #e6f5ea;
+  color: #24613a;
+}
+
+.icon-button-success:hover {
+  background: #d4eddc;
+}
+
+.icon-button-active {
+  background: #163037;
+  color: #fff;
+}
+
+.icon-button-active:hover {
+  background: #10252b;
+}
+
+.builder-price-input {
+  width: 78px;
+  padding: 0.35rem 0.45rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.builder-notes-cell {
+  max-width: 620px;
+  padding: 0.95rem 1.2rem;
+  background: #fff8ea !important;
+  color: #2b3438;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  text-align: left !important;
+  white-space: pre-wrap;
+}
+
+.builder-note-textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #d8d2c2;
+  border-radius: 14px;
+  background: #fffef9;
+  color: #172026;
+  resize: vertical;
+  line-height: 1.45;
+}

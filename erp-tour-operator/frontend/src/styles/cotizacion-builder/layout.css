@@ -1,0 +1,136 @@
+/* erp-tour-operator/frontend/src/styles/cotizacion-builder/layout.css */
+
+.builder-top-grid {
+  display: grid;
+  grid-template-columns: minmax(420px, 0.9fr) minmax(420px, 1.1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.builder-header-card,
+.builder-options-card,
+.builder-card {
+  border: 1px solid rgba(22, 48, 55, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 12px 40px rgba(22, 48, 55, 0.08);
+}
+
+.builder-header-card {
+  display: grid;
+  gap: 0.85rem;
+  height: auto;
+  min-height: 0;
+  padding: 1rem;
+  background: #f8f6ef;
+}
+
+.builder-header-card h3 {
+  margin: 0.15rem 0;
+  font-size: 1.25rem;
+}
+
+.builder-header-card h2 {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.builder-header-inner {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid #ece6d9;
+  border-radius: 20px;
+  background: #f8f6ef;
+}
+
+.builder-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.builder-header-meta span {
+  display: inline-flex;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #fffef9;
+  color: #163037;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.builder-options-card {
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+  height: auto;
+  min-height: 0;
+  padding: 1.25rem;
+}
+
+.builder-options-card h3 {
+  margin: 0;
+}
+
+.builder-option-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.builder-options-card .builder-option-row + .builder-option-row {
+  margin-top: 0.35rem;
+}
+
+.builder-options-card .link-button {
+  padding: 0.75rem 1.35rem;
+}
+
+.builder-commission-field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: auto;
+}
+
+.builder-commission-field input {
+  width: 92px;
+  padding: 0.65rem 0.8rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.builder-option-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.builder-option-actions .link-button {
+  min-width: 120px;
+  font-weight: 700;
+}
+
+.builder-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.builder-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.builder-card-header h3 {
+  margin: 0.25rem 0;
+}
+
+.builder-totals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}

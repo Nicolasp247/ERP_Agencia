@@ -1,0 +1,50 @@
+/* erp-tour-operator/frontend/src/styles/cotizacion-builder/responsive.css */
+
+@media (max-width: 960px) {
+  .builder-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-modal-backdrop {
+    align-items: start;
+    padding: 1rem;
+  }
+
+  .builder-modal {
+    max-height: calc(100vh - 2rem);
+  }
+
+  .builder-add-service-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-add-service-service-field,
+  .builder-add-service-notes {
+    grid-column: auto;
+  }
+
+  .builder-add-service-header {
+    display: grid;
+  }
+
+  .builder-card-header {
+    display: grid;
+  }
+
+  .builder-column-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-other-column-help {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-totals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-option-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
