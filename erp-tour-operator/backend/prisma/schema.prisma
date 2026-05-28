@@ -327,19 +327,15 @@ model Servicio {
 }
 
 model Alojamiento {
-  id                 Int                   @id @default(autoincrement())
-  idServicio         Int                   @unique @map("id_servicio")
-  noches             Int
-  habitaciones       Int
-  desayuno           Boolean               @default(true)
-  regimen            RegimenAlojamiento?
-  regimenOtro        String?               @map("regimen_otro") @db.VarChar(80)
-  categoriaHotel     CategoriaHotel?       @map("categoria_hotel")
-  categoriaHotelOtro String?               @map("categoria_hotel_otro") @db.VarChar(80)
-  categoriaHab       CategoriaHabitacion?  @map("categoria_hab")
-  categoriaHabOtro   String?               @map("categoria_hab_otro") @db.VarChar(80)
-  proveedorHotel     String?               @map("proveedor_hotel") @db.VarChar(10)
-  servicio           Servicio              @relation(fields: [idServicio], references: [id])
+  id               Int                  @id @default(autoincrement())
+  idServicio       Int                  @unique @map("id_servicio")
+  desayuno         Boolean              @default(true)
+  regimen          RegimenAlojamiento?
+  regimenOtro      String?              @map("regimen_otro") @db.VarChar(80)
+  categoriaHab     CategoriaHabitacion? @map("categoria_hab")
+  categoriaHabOtro String?              @map("categoria_hab_otro") @db.VarChar(80)
+  proveedorHotel   String?              @map("proveedor_hotel") @db.VarChar(10)
+  servicio         Servicio             @relation(fields: [idServicio], references: [id])
 
   @@map("alojamiento")
 }
@@ -676,12 +672,24 @@ model CotizacionItem {
   cotizacion           Cotizacion            @relation(fields: [idCotizacion], references: [id])
   servicio             Servicio              @relation(fields: [idServicio], references: [id])
   precios              CotizacionItemPrecio[]
+  alojamientoDetalle   CotizacionItemAlojamiento?
   reservaItems         ReservaItem[]
 
   @@index([idCotizacion, ordenDia], map: "idx_cot_item_cotizacion_orden")
   @@index([fechaServicio], map: "idx_cot_item_fecha")
   @@index([idServicio], map: "idx_cot_item_servicio")
   @@map("cotizacion_item")
+}
+
+model CotizacionItemAlojamiento {
+  id               Int            @id @default(autoincrement())
+  idCotizacionItem Int            @unique @map("id_cotizacion_item")
+  noches           Int
+  habitaciones     Int            @default(1)
+
+  cotizacionItem   CotizacionItem @relation(fields: [idCotizacionItem], references: [id], onDelete: Cascade)
+
+  @@map("cotizacion_item_alojamiento")
 }
 
 model CotizacionColumna {

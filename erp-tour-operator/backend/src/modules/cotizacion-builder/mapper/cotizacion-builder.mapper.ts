@@ -35,14 +35,87 @@ function getTipoServicioCodigo(item: any) {
   return item.servicio?.tipo?.codigo ?? null;
 }
 
-function getFechaFinAlojamiento(item: any) {
-  const noches = Number(item.servicio?.alojamiento?.noches ?? 0);
+function isAlojamientoItem(item: any) {
+  const tipoNombre = String(getTipoServicioNombre(item)).trim().toLowerCase();
+  const tipoCodigo = String(getTipoServicioCodigo(item) ?? "").trim().toLowerCase();
 
-  if (!noches) {
-    return formatDateOnly(item.fechaServicio);
-  }
+  return tipoNombre === "alojamiento" || tipoCodigo === "alojamiento";
+}
+
+function getFechaFinAlojamiento(item: any) {
+  const noches = Number(item.alojamientoDetalle?.noches ?? 1);
 
   return addDaysToDate(item.fechaServicio, noches);
+}
+
+function labelCategoriaHabitacion(alojamiento: any) {
+  if (!alojamiento) {
+    return "habitación estándar";
+  }
+
+  if (alojamiento.categoriaHab === "OTRO") {
+    return alojamiento.categoriaHabOtro
+      ? `habitación ${alojamiento.categoriaHabOtro}`
+      : "habitación";
+  }
+
+  const labels: Record<string, string> = {
+    ESTANDAR: "habitación estándar",
+    SUPERIOR: "habitación superior",
+    SUITE: "suite"
+  };
+
+  return labels[alojamiento.categoriaHab] ?? "habitación estándar";
+}
+
+function labelRegimen(alojamiento: any) {
+  if (!alojamiento) {
+    return "";
+  }
+
+  if (alojamiento.regimen === "OTRO") {
+    return alojamiento.regimenOtro ?? "";
+  }
+
+  if (alojamiento.regimen === "SOLO_ALOJAMIENTO") {
+    return "solo alojamiento";
+  }
+
+  if (alojamiento.regimen === "ALOJAMIENTO_DESAYUNO") {
+    return "desayuno diario";
+  }
+
+  if (alojamiento.regimen === "TODO_INCLUIDO") {
+    return "todo incluido";
+  }
+
+  if (alojamiento.desayuno) {
+    return "desayuno diario";
+  }
+
+  return "";
+}
+
+function getServicioIncluidoAlojamiento(item: any) {
+  const noches = Number(item.alojamientoDetalle?.noches ?? 1);
+  const habitaciones = Number(item.alojamientoDetalle?.habitaciones ?? 1);
+
+  const nochesText = noches === 1 ? "1 noche" : `${noches} noches`;
+  const habitacionText = labelCategoriaHabitacion(item.servicio?.alojamiento);
+  const regimenText = labelRegimen(item.servicio?.alojamiento);
+
+  const habitacionFinalText =
+    habitaciones > 1
+      ? `${habitaciones} ${habitacionText.replace("habitación", "habitaciones")}`
+      : habitacionText;
+
+  const partes = [
+    `Alojamiento ${nochesText}`,
+    habitacionFinalText,
+    regimenText
+  ].filter(Boolean);
+
+  return partes.join(", ");
 }
 
 function buildVersionLabel(versionCodigo?: string | null) {
@@ -50,7 +123,15 @@ function buildVersionLabel(versionCodigo?: string | null) {
 }
 
 function getServicioIncluido(item: any) {
-  return item.tituloOverride || item.servicio?.nombreWtravel || "Servicio sin nombre";
+  if (item.tituloOverride) {
+    return item.tituloOverride;
+  }
+
+  if (isAlojamientoItem(item)) {
+    return getServicioIncluidoAlojamiento(item);
+  }
+
+  return item.servicio?.nombreWtravel || "Servicio sin nombre";
 }
 
 export function toCotizacionBuilderDetail(record: any) {
@@ -95,7 +176,9 @@ export function toCotizacionBuilderDetail(record: any) {
       id: item.id,
       idServicio: item.idServicio,
       fecha: formatDateOnly(item.fechaServicio),
-      fechaFin: getFechaFinAlojamiento(item),
+      fechaFin: isAlojamientoItem(item)
+        ? getFechaFinAlojamiento(item)
+        : formatDateOnly(item.fechaServicio),
       ordenDia: item.ordenDia,
       servicioIncluido: getServicioIncluido(item),
       operador:

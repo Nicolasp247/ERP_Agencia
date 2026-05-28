@@ -181,7 +181,14 @@ export function ServicioFormPage() {
         linkReserva: servicio.linkReserva ?? "",
         activo: servicio.activo,
 
-        alojamiento: "noches" in detalle ? detalle : undefined,
+       alojamiento:
+        "desayuno" in detalle ||
+        "regimen" in detalle ||
+        "categoriaHab" in detalle ||
+        "categoriaHabOtro" in detalle ||
+        "proveedorHotel" in detalle
+          ? detalle
+          : undefined,
 
         tour:
           "idTipoGuia" in detalle && "idIdioma" in detalle

@@ -1,29 +1,12 @@
 import { z } from "zod";
 
 const alojamientoSchema = z.object({
-  noches: z.coerce.number().int().positive(),
-  habitaciones: z.coerce.number().int().positive(),
   desayuno: z.boolean().default(true),
   regimen: z
     .enum(["SOLO_ALOJAMIENTO", "ALOJAMIENTO_DESAYUNO", "TODO_INCLUIDO", "OTRO"])
     .optional()
     .nullable(),
   regimenOtro: z.string().max(80).optional().nullable(),
-  categoriaHotel: z
-    .enum([
-      "H3_ECONOMICO",
-      "H3_SUPERIOR",
-      "H4_ECONOMICO",
-      "H4_SUPERIOR",
-      "H5_ECONOMICO",
-      "H5_SUPERIOR",
-      "LUJO_ECONOMICO",
-      "LUJO_SUPERIOR",
-      "OTRO"
-    ])
-    .optional()
-    .nullable(),
-  categoriaHotelOtro: z.string().max(80).optional().nullable(),
   categoriaHab: z.enum(["ESTANDAR", "SUPERIOR", "SUITE", "OTRO"]).optional().nullable(),
   categoriaHabOtro: z.string().max(80).optional().nullable(),
   proveedorHotel: z.string().max(10).optional().nullable()

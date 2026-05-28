@@ -54,6 +54,110 @@ function toMysqlDate(value: string) {
   return new Date(`${value}T00:00:00.000Z`);
 }
 
+function normalizeText(value: string | null | undefined) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function isAlojamientoTipo(tipo: { nombre?: string | null; codigo?: string | null }) {
+  const nombre = normalizeText(tipo.nombre);
+  const codigo = normalizeText(tipo.codigo);
+
+  return nombre === "alojamiento" || codigo === "alojamiento";
+}
+
+function mapHotelCategoryFromColumn(grupo: string) {
+  const value = normalizeText(grupo);
+
+  if (value.includes("turista superior") || value.includes("3+")) return "H3_SUPERIOR";
+  if (value.includes("turista") || value.includes("3*")) return "H3_ECONOMICO";
+
+  if (value.includes("primera superior") || value.includes("4+")) return "H4_SUPERIOR";
+  if (value.includes("primera") || value.includes("4*")) return "H4_ECONOMICO";
+
+  if (value.includes("lujo superior") || value.includes("5+")) return "H5_SUPERIOR";
+  if (value.includes("lujo") || value.includes("5*")) return "H5_ECONOMICO";
+
+  if (value.includes("super lujo") || value.includes("6*")) return "LUJO_SUPERIOR";
+
+  return null;
+}
+
+function mapRoomTypeFromColumn(nombre: string) {
+  const value = normalizeText(nombre);
+
+  if (value.includes("sencilla") || value.includes("single")) return "SGL";
+  if (value.includes("doble")) return "DBL";
+  if (value.includes("triple")) return "TPL";
+  if (value.includes("cuadruple") || value.includes("cuadruple")) return "CPL";
+
+  return null;
+}
+
+function getAccommodationRoomCategory(alojamiento: any) {
+  if (!alojamiento?.categoriaHab || alojamiento.categoriaHab === "OTRO") {
+    return "ESTANDAR";
+  }
+
+  return alojamiento.categoriaHab;
+}
+
+function getAccommodationRegimen(alojamiento: any) {
+  if (alojamiento?.regimen && alojamiento.regimen !== "OTRO") {
+    return alojamiento.regimen;
+  }
+
+  if (alojamiento?.regimen === "OTRO" && alojamiento.regimenOtro) {
+    return alojamiento.regimenOtro;
+  }
+
+  if (alojamiento?.desayuno) {
+    return "ALOJAMIENTO_DESAYUNO";
+  }
+
+  return "SOLO_ALOJAMIENTO";
+}
+
+function getAccommodationMonth(date: Date) {
+  return {
+    anio: date.getUTCFullYear(),
+    mes: date.getUTCMonth() + 1
+  };
+}
+
+function calculateAccommodationPrice({
+  precioUsd,
+  noches,
+  habitaciones,
+  unidad,
+  multiplicador
+}: {
+  precioUsd: Prisma.Decimal;
+  noches: number;
+  habitaciones: number;
+  unidad: CotizacionColumnaUnidad;
+  multiplicador: number;
+}) {
+  const base = Number(precioUsd);
+  const safeNoches = Math.max(1, noches);
+  const safeHabitaciones = Math.max(1, habitaciones);
+  const safeMultiplicador = Math.max(1, multiplicador);
+
+  if (unidad === CotizacionColumnaUnidad.POR_PERSONA || unidad === CotizacionColumnaUnidad.POR_NINO) {
+    const totalPersonas = safeMultiplicador * safeHabitaciones;
+    return new Prisma.Decimal((base * safeNoches * safeHabitaciones) / totalPersonas);
+  }
+
+  if (unidad === CotizacionColumnaUnidad.POR_HABITACION) {
+    return new Prisma.Decimal(base * safeNoches);
+  }
+
+  return new Prisma.Decimal(base * safeNoches * safeHabitaciones);
+}
+
 export class CotizacionBuilderRepository {
   private includeBuilderDetail = {
     expediente: {
@@ -99,7 +203,8 @@ export class CotizacionBuilderRepository {
             alojamiento: true
           }
         },
-        precios: true
+        precios: true,
+        alojamientoDetalle: true
       },
       orderBy: [
         {
@@ -306,7 +411,8 @@ export class CotizacionBuilderRepository {
               nombre: true,
               codigo: true
             }
-          }
+          },
+          alojamiento: true
         }
       });
 
@@ -330,15 +436,38 @@ export class CotizacionBuilderRepository {
           fechaServicio: toMysqlDate(data.fechaServicio),
           ordenDia: data.ordenDia ?? Number(maxOrder._max.ordenDia ?? 0) + 1,
           esOpcional: data.esOpcional,
-          operadorMostrado:
-            servicio.proveedor?.codigo ??
-            servicio.proveedor?.nombreComercial ??
-            null,
+          operadorMostrado: servicio.proveedor?.codigo ?? servicio.proveedor?.nombreComercial ?? null,
           linkOperador: servicio.linkReserva ?? null,
           notaLinea: data.notaLinea?.trim() || null,
           precioMonedaCodigo: "USD"
         }
       });
+
+      if (isAlojamientoTipo(servicio.tipo)) {
+        await tx.cotizacionItemAlojamiento.create({
+          data: {
+            idCotizacionItem: createdItem.id,
+            noches: data.alojamiento?.noches ?? 1,
+            habitaciones: data.alojamiento?.habitaciones ?? 1
+          }
+        });
+      }
+      
+      const tipoServicio = servicio.tipo.nombre.trim().toLowerCase();
+      const tipoServicioCodigo = servicio.tipo.codigo?.trim().toLowerCase() ?? "";
+
+      const isAlojamiento =
+        tipoServicio === "alojamiento" || tipoServicioCodigo === "alojamiento";
+
+      if (isAlojamiento) {
+        await tx.cotizacionItemAlojamiento.create({
+          data: {
+            idCotizacionItem: createdItem.id,
+            noches: data.alojamiento?.noches ?? 1,
+            habitaciones: data.alojamiento?.habitaciones ?? 1
+          }
+        });
+      }
 
       await this.syncPriceMatrixWithClient(tx, versionId);
 
@@ -786,11 +915,15 @@ export class CotizacionBuilderRepository {
         idServicio: true,
         fechaServicio: true,
         esOpcional: true,
+        alojamientoDetalle: true,
         servicio: {
           select: {
+            idCiudad: true,
+            alojamiento: true,
             tipo: {
               select: {
-                nombre: true
+                nombre: true,
+                codigo: true
               }
             }
           }
@@ -805,7 +938,11 @@ export class CotizacionBuilderRepository {
       },
       select: {
         id: true,
-        tipo: true
+        tipo: true,
+        grupo: true,
+        nombre: true,
+        unidad: true,
+        multiplicador: true
       }
     });
 
@@ -847,6 +984,11 @@ export class CotizacionBuilderRepository {
     >();
 
     for (const item of items) {
+      if (isAlojamientoTipo(item.servicio.tipo)) {
+        tarifaByItemId.set(item.id, null);
+        continue;
+      }
+
       const tarifa = await tx.servicioTarifa.findFirst({
         where: {
           idServicio: item.idServicio,
@@ -884,7 +1026,9 @@ export class CotizacionBuilderRepository {
     }> = [];
 
     for (const item of items) {
-      const tipoServicio = item.servicio.tipo.nombre.trim().toLowerCase();
+      const tipoServicio = normalizeText(item.servicio.tipo.nombre);
+      const tipoServicioCodigo = normalizeText(item.servicio.tipo.codigo);
+      const isAlojamiento = isAlojamientoTipo(item.servicio.tipo);
       const tarifa = tarifaByItemId.get(item.id) ?? null;
 
       const allowedColumns = columns.filter((column) => {
@@ -892,11 +1036,11 @@ export class CotizacionBuilderRepository {
           return column.tipo === CotizacionColumnaTipo.OPCIONALES;
         }
 
-        if (tipoServicio === "vuelo" || tipoServicio === "tren") {
+        if (tipoServicio === "vuelo" || tipoServicio === "tren" || tipoServicioCodigo === "vuelo" || tipoServicioCodigo === "tren") {
           return column.tipo === CotizacionColumnaTipo.TRANSPORTE;
         }
 
-        if (tipoServicio === "otro") {
+        if (tipoServicio === "otro" || tipoServicioCodigo === "otro") {
           return false;
         }
 
@@ -907,21 +1051,73 @@ export class CotizacionBuilderRepository {
         const key = `${item.id}-${column.id}`;
         const existingPrice = existingPricesByKey.get(key);
 
-        if (!existingPrice) {
+        if (existingPrice) {
+          continue;
+        }
+
+        if (isAlojamiento && !item.esOpcional) {
+          const categoria = mapHotelCategoryFromColumn(column.grupo);
+          const tipoHabitacion = mapRoomTypeFromColumn(column.nombre);
+
+          if (!categoria || !tipoHabitacion) {
+            pricesToCreate.push({
+              idCotizacionItem: item.id,
+              idCotizacionColumna: column.id,
+              precioNeto: null,
+              monedaCodigo: "USD",
+              precioEditadoManual: false
+            });
+
+            continue;
+          }
+
+          const { anio, mes } = getAccommodationMonth(item.fechaServicio);
+          const categoriaHab = getAccommodationRoomCategory(item.servicio.alojamiento);
+          const regimen = getAccommodationRegimen(item.servicio.alojamiento);
+
+          const alojamientoPrecio = await tx.alojamientoPrecioMes.findFirst({
+            where: {
+              idCiudad: item.servicio.idCiudad,
+              categoria,
+              categoriaHab,
+              regimen,
+              anio,
+              mes,
+              tipoHabitacion,
+              activo: true
+            },
+            select: {
+              precioUsd: true,
+              monedaCodigo: true
+            }
+          });
+
           pricesToCreate.push({
             idCotizacionItem: item.id,
             idCotizacionColumna: column.id,
-            precioNeto: tarifa?.precioNeto ?? null,
-            monedaCodigo: tarifa?.monedaCodigo ?? "USD",
+            precioNeto: alojamientoPrecio?.precioUsd
+              ? calculateAccommodationPrice({
+                  precioUsd: alojamientoPrecio.precioUsd,
+                  noches: item.alojamientoDetalle?.noches ?? 1,
+                  habitaciones: item.alojamientoDetalle?.habitaciones ?? 1,
+                  unidad: column.unidad,
+                  multiplicador: column.multiplicador
+                })
+              : null,
+            monedaCodigo: alojamientoPrecio?.monedaCodigo ?? "USD",
             precioEditadoManual: false
           });
 
           continue;
         }
 
-        if (existingPrice) {
-          continue;
-        }
+        pricesToCreate.push({
+          idCotizacionItem: item.id,
+          idCotizacionColumna: column.id,
+          precioNeto: tarifa?.precioNeto ?? null,
+          monedaCodigo: tarifa?.monedaCodigo ?? "USD",
+          precioEditadoManual: false
+        });
       }
     }
 

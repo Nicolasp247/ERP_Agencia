@@ -64,6 +64,10 @@ export type BuilderItemFormValues = {
   esOpcional: boolean;
   notaLinea?: string | null;
   idCotizacionColumnaManual?: number;
+  alojamiento?: {
+    noches: number;
+    habitaciones: number;
+  };
 };
 
 export type BuilderPriceFormValues = {

@@ -35,6 +35,13 @@ function getServicioName(servicio: any) {
   );
 }
 
+function isAlojamientoType(tipo: any) {
+  const nombre = String(tipo?.nombre ?? "").trim().toLowerCase();
+  const codigo = String(tipo?.codigo ?? "").trim().toLowerCase();
+
+  return nombre === "alojamiento" || codigo === "alojamiento";
+}
+
 function getColumnLabel(column: BuilderColumn) {
   return `${column.grupo} ${column.nombre}`.trim();
 }
@@ -63,6 +70,8 @@ export function AddServicePanel({
   const [fechaServicio, setFechaServicio] = useState(defaultDate || todayIso());
   const [esOpcional, setEsOpcional] = useState(false);
   const [notaLinea, setNotaLinea] = useState("");
+  const [alojamientoNoches, setAlojamientoNoches] = useState("1");
+  const [alojamientoHabitaciones, setAlojamientoHabitaciones] = useState("1");
 
   const continentesQuery = useQuery({
     queryKey: ["builder-continentes"],
@@ -105,6 +114,8 @@ export function AddServicePanel({
     [tiposQuery.data, idTipo]
   );
 
+  const isAlojamientoSelected = isAlojamientoType(selectedTipo);
+
   const isOtherSelected = isOtherServiceType(selectedTipo);
 
   const otherColumns = useMemo(
@@ -126,8 +137,9 @@ export function AddServicePanel({
   }, [idPais]);
 
   useEffect(() => {
-    setIdServicio("");
-  }, [idCiudad, idTipo]);
+    setAlojamientoNoches("1");
+    setAlojamientoHabitaciones("1");
+  }, [idTipo]);
 
   useEffect(() => {
     setIdCotizacionColumnaManual("");
@@ -149,7 +161,13 @@ export function AddServicePanel({
       idCotizacionColumnaManual:
         shouldShowManualColumnSelector && idCotizacionColumnaManual
           ? Number(idCotizacionColumnaManual)
-          : undefined
+          : undefined,
+      alojamiento: isAlojamientoSelected
+        ? {
+            noches: Number(alojamientoNoches || 1),
+            habitaciones: Number(alojamientoHabitaciones || 1)
+          }
+        : undefined
     });
   }
 
@@ -266,6 +284,32 @@ export function AddServicePanel({
             required
           />
         </label>
+
+        {isAlojamientoSelected ? (
+          <>
+            <label>
+              Noches
+              <input
+                min={1}
+                type="number"
+                value={alojamientoNoches}
+                onChange={(event) => setAlojamientoNoches(event.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Habitaciones
+              <input
+                min={1}
+                type="number"
+                value={alojamientoHabitaciones}
+                onChange={(event) => setAlojamientoHabitaciones(event.target.value)}
+                required
+              />
+            </label>
+          </>
+        ) : null}
 
         <label className="builder-checkbox-field">
           <input

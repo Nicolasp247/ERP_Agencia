@@ -17,7 +17,13 @@ export const cotizacionBuilderItemSchema = z.object({
   ordenDia: z.coerce.number().int().positive().optional(),
   esOpcional: z.coerce.boolean().default(false),
   notaLinea: z.string().trim().optional().nullable(),
-  idCotizacionColumnaManual: z.coerce.number().int().positive().optional()
+  idCotizacionColumnaManual: z.coerce.number().int().positive().optional(),
+  alojamiento: z
+    .object({
+      noches: z.coerce.number().int().positive(),
+      habitaciones: z.coerce.number().int().positive().default(1)
+    })
+    .optional()
 });
 
 export const cotizacionBuilderMoveItemSchema = z.object({
