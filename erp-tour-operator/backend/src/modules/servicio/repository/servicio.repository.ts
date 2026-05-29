@@ -9,6 +9,55 @@ export class ServicioRepository {
   private normalizarNombrePuntoTraslado(nombre: string) {
     return nombre.trim().replace(/\s+/g, " ").toLowerCase();
   }
+
+  private normalizarTextoBase(value: string | null | undefined) {
+    return String(value ?? "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  private isTipoAlojamiento(tipoCodigo: ServicioTipoCodigo) {
+    return tipoCodigo === "ALOJAMIENTO";
+  }
+
+  private async findAlojamientoBaseExistente(
+    tx: Prisma.TransactionClient,
+    data: ServicioInput
+  ) {
+    const serviciosCiudad = await tx.servicio.findMany({
+      where: {
+        idTipo: data.idTipo,
+        idProveedor: data.idProveedor,
+        idCiudad: data.idCiudad,
+        activo: true
+      },
+      select: {
+        id: true,
+        nombreWtravel: true
+      }
+    });
+
+    const nombreNuevo = this.normalizarTextoBase(data.nombreWtravel);
+
+    return serviciosCiudad.find((servicio) => {
+      return this.normalizarTextoBase(servicio.nombreWtravel) === nombreNuevo;
+    });
+  }
+
+  private throwServicioDuplicate(message: string) {
+    const error = new Error(message) as Error & {
+      statusCode?: number;
+      code?: string;
+    };
+
+    error.statusCode = 409;
+    error.code = "SERVICIO_DUPLICATE";
+
+    throw error;
+  }
   
   listTipos() {
     return prisma.tipoServicio.findMany({
@@ -188,6 +237,16 @@ export class ServicioRepository {
 
   async create(data: ServicioInput & { createdBy?: number | null }, tipoCodigo: ServicioTipoCodigo) {
     return prisma.$transaction(async (tx) => {
+      if (this.isTipoAlojamiento(tipoCodigo)) {
+        const alojamientoExistente = await this.findAlojamientoBaseExistente(tx, data);
+
+        if (alojamientoExistente) {
+          this.throwServicioDuplicate(
+            "Ya existe un servicio base de alojamiento para esa ciudad, proveedor y nombre interno. Para agregar categorías o precios, usa la matriz de precios de alojamiento."
+          );
+        }
+      }
+
       const service = await tx.servicio.create({
         data: {
           idTipo: data.idTipo,

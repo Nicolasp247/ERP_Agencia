@@ -71,7 +71,6 @@ export function AddServicePanel({
   const [esOpcional, setEsOpcional] = useState(false);
   const [notaLinea, setNotaLinea] = useState("");
   const [alojamientoNoches, setAlojamientoNoches] = useState("1");
-  const [alojamientoHabitaciones, setAlojamientoHabitaciones] = useState("1");
 
   const continentesQuery = useQuery({
     queryKey: ["builder-continentes"],
@@ -138,7 +137,6 @@ export function AddServicePanel({
 
   useEffect(() => {
     setAlojamientoNoches("1");
-    setAlojamientoHabitaciones("1");
   }, [idTipo]);
 
   useEffect(() => {
@@ -165,7 +163,7 @@ export function AddServicePanel({
       alojamiento: isAlojamientoSelected
         ? {
             noches: Number(alojamientoNoches || 1),
-            habitaciones: Number(alojamientoHabitaciones || 1)
+            habitaciones: 1
           }
         : undefined
     });
@@ -294,17 +292,6 @@ export function AddServicePanel({
                 type="number"
                 value={alojamientoNoches}
                 onChange={(event) => setAlojamientoNoches(event.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              Habitaciones
-              <input
-                min={1}
-                type="number"
-                value={alojamientoHabitaciones}
-                onChange={(event) => setAlojamientoHabitaciones(event.target.value)}
                 required
               />
             </label>

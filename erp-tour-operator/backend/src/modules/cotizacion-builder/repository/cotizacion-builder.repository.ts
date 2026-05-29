@@ -460,9 +460,16 @@ export class CotizacionBuilderRepository {
         tipoServicio === "alojamiento" || tipoServicioCodigo === "alojamiento";
 
       if (isAlojamiento) {
-        await tx.cotizacionItemAlojamiento.create({
-          data: {
+        await tx.cotizacionItemAlojamiento.upsert({
+          where: {
+            idCotizacionItem: createdItem.id
+          },
+          create: {
             idCotizacionItem: createdItem.id,
+            noches: data.alojamiento?.noches ?? 1,
+            habitaciones: data.alojamiento?.habitaciones ?? 1
+          },
+          update: {
             noches: data.alojamiento?.noches ?? 1,
             habitaciones: data.alojamiento?.habitaciones ?? 1
           }

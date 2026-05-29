@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/pages/servicio/components/ServicioFormView.tsx */
+
 import { Link } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
@@ -6,6 +8,7 @@ import { ServicioTourFields } from "@/pages/servicio/components/ServicioTourFiel
 import { ServicioTrasladoFields } from "@/pages/servicio/components/ServicioTrasladoFields";
 import { ServicioVueloFields } from "@/pages/servicio/components/ServicioVueloFields";
 import { ServicioTrenFields } from "@/pages/servicio/components/ServicioTrenFields";
+import { ServicioAlojamientoFields } from "@/pages/servicio/components/ServicioAlojamientoFields";
 import "@/pages/servicio/styles/servicio-form.css";
 
 type Props = {
@@ -128,14 +131,19 @@ export function ServicioFormView({
 
           <label>
             Nombre interno
-            <input {...form.register("nombreWtravel")} />
+            <input
+              {...form.register("nombreWtravel")}
+              disabled={tipoActual?.codigo === "ALOJAMIENTO"}
+              placeholder={tipoActual?.codigo === "ALOJAMIENTO" ? "Se genera automáticamente" : ""}
+            />
           </label>
 
-          {tipoActual?.codigo !== "TRASLADO" &&
-          tipoActual?.codigo !== "ENTRADA" &&
-          tipoActual?.codigo !== "VUELO" &&
-          tipoActual?.codigo !== "TREN" &&
-          tipoActual?.codigo !== "OTRO" ? (
+            {tipoActual?.codigo !== "TRASLADO" &&
+            tipoActual?.codigo !== "ENTRADA" &&
+            tipoActual?.codigo !== "VUELO" &&
+            tipoActual?.codigo !== "TREN" &&
+            tipoActual?.codigo !== "OTRO" &&
+            tipoActual?.codigo !== "ALOJAMIENTO" ? (
             <label>
               Tiempo de servicio
               <input {...form.register("tiempoServicio")} />
@@ -187,6 +195,10 @@ export function ServicioFormView({
           />
         )}
 
+        {tipoActual?.codigo === "ALOJAMIENTO" && (
+          <ServicioAlojamientoFields form={form} />
+        )}
+
         <label>
           Descripción
           <textarea {...form.register("descripcion")} rows={3} />
@@ -197,19 +209,6 @@ export function ServicioFormView({
         {errorMessage ? (
           <div className="servicio-form-alert" role="alert">
             {errorMessage}
-          </div>
-        ) : null}
-
-        {tipoActual?.codigo === "ALOJAMIENTO" ? (
-          <div className="grid-2">
-            <label>
-              Noches
-              <input {...form.register("alojamiento.noches")} type="number" />
-            </label>
-            <label>
-              Habitaciones
-              <input {...form.register("alojamiento.habitaciones")} type="number" />
-            </label>
           </div>
         ) : null}
 

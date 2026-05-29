@@ -670,7 +670,7 @@ model CotizacionItem {
   updatedAt            DateTime    @updatedAt @map("updated_at")
 
   cotizacion           Cotizacion            @relation(fields: [idCotizacion], references: [id])
-  servicio             Servicio              @relation(fields: [idServicio], references: [id])
+  servicio             Servicio                      @relation(fields: [idServicio], references: [id])
   precios              CotizacionItemPrecio[]
   alojamientoDetalle   CotizacionItemAlojamiento?
   reservaItems         ReservaItem[]
@@ -683,7 +683,7 @@ model CotizacionItem {
 
 model CotizacionItemAlojamiento {
   id               Int            @id @default(autoincrement())
-  idCotizacionItem Int            @unique @map("id_cotizacion_item")
+  idCotizacionItem Int            @unique(map: "uq_cotizacion_item_alojamiento_item") @map("id_cotizacion_item")
   noches           Int
   habitaciones     Int            @default(1)
 

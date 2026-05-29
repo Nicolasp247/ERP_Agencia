@@ -163,6 +163,10 @@ export function ServicioFormPage() {
     (item: any) => item.id === Number(idCiudad)
   );
 
+  const ciudadSeleccionada = (ciudadesQuery.data ?? []).find(
+    (item: any) => item.id === Number(idCiudad)
+  );
+
   useEffect(() => {
     if (servicioQuery.data) {
       const servicio = servicioQuery.data as any;
@@ -181,14 +185,13 @@ export function ServicioFormPage() {
         linkReserva: servicio.linkReserva ?? "",
         activo: servicio.activo,
 
-       alojamiento:
-        "desayuno" in detalle ||
-        "regimen" in detalle ||
-        "categoriaHab" in detalle ||
-        "categoriaHabOtro" in detalle ||
-        "proveedorHotel" in detalle
-          ? detalle
-          : undefined,
+        alojamiento:
+          "desayuno" in detalle ||
+          "regimen" in detalle ||
+          "regimenOtro" in detalle ||
+          "proveedorHotel" in detalle
+            ? detalle
+            : undefined,
 
         tour:
           "idTipoGuia" in detalle && "idIdioma" in detalle
@@ -255,6 +258,24 @@ export function ServicioFormPage() {
     }
   }, [tipoActual?.codigo, ciudadOrigenSeleccionada?.nombre, form]);
 
+  useEffect(() => {
+    if (tipoActual?.codigo !== "ALOJAMIENTO") {
+      return;
+    }
+
+    const ciudadNombre = ciudadSeleccionada?.nombre?.trim();
+
+    if (!ciudadNombre) {
+      form.setValue("nombreWtravel", "");
+      return;
+    }
+
+    form.setValue("nombreWtravel", `Alojamiento en ${ciudadNombre}`, {
+      shouldDirty: true,
+      shouldValidate: true
+    });
+  }, [tipoActual?.codigo, ciudadSeleccionada?.nombre, form]);
+
   const mutation = useMutation({
     mutationFn: (values: any) => {
       const payload = { ...values };
@@ -264,7 +285,8 @@ export function ServicioFormPage() {
         tipoActual?.codigo === "ENTRADA" ||
         tipoActual?.codigo === "VUELO" ||
         tipoActual?.codigo === "TREN" ||
-        tipoActual?.codigo === "OTRO"
+        tipoActual?.codigo === "OTRO" ||
+        tipoActual?.codigo === "ALOJAMIENTO"
       ) {
         payload.tiempoServicio = null;
       }
@@ -292,6 +314,20 @@ export function ServicioFormPage() {
         delete payload.traslado;
         delete payload.tren;
         delete payload.vuelo;
+      }
+
+      if (tipoActual?.codigo === "ALOJAMIENTO") {
+        delete payload.tour;
+        delete payload.traslado;
+        delete payload.tren;
+        delete payload.vuelo;
+
+        payload.alojamiento = {
+          desayuno: Boolean(payload.alojamiento?.desayuno),
+          regimen: payload.alojamiento?.regimen || null,
+          regimenOtro: payload.alojamiento?.regimenOtro || null,
+          proveedorHotel: payload.alojamiento?.proveedorHotel || null
+        };
       }
 
       return saveServicio(payload, editingId);

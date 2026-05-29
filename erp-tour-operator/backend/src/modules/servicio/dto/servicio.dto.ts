@@ -7,8 +7,6 @@ const alojamientoSchema = z.object({
     .optional()
     .nullable(),
   regimenOtro: z.string().max(80).optional().nullable(),
-  categoriaHab: z.enum(["ESTANDAR", "SUPERIOR", "SUITE", "OTRO"]).optional().nullable(),
-  categoriaHabOtro: z.string().max(80).optional().nullable(),
   proveedorHotel: z.string().max(10).optional().nullable()
 });
 

@@ -19,9 +19,13 @@ export const servicioFormSchema = z.object({
   activo: z.boolean().default(true),
   alojamiento: z
     .object({
-      noches: z.coerce.number().int().positive(),
-      habitaciones: z.coerce.number().int().positive(),
-      desayuno: z.boolean().default(true)
+      desayuno: z.boolean().default(true),
+      regimen: z
+        .enum(["SOLO_ALOJAMIENTO", "ALOJAMIENTO_DESAYUNO", "TODO_INCLUIDO", "OTRO"])
+        .optional()
+        .nullable(),
+      regimenOtro: optionalText,
+      proveedorHotel: optionalText
     })
     .optional(),
   tour: z
