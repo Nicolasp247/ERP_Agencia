@@ -71,6 +71,8 @@ export function AddServicePanel({
   const [esOpcional, setEsOpcional] = useState(false);
   const [notaLinea, setNotaLinea] = useState("");
   const [alojamientoNoches, setAlojamientoNoches] = useState("1");
+  const [alojamientoCategoriaHab, setAlojamientoCategoriaHab] = useState("ESTANDAR");
+  const [alojamientoRegimen, setAlojamientoRegimen] = useState("ALOJAMIENTO_DESAYUNO");
 
   const continentesQuery = useQuery({
     queryKey: ["builder-continentes"],
@@ -137,6 +139,8 @@ export function AddServicePanel({
 
   useEffect(() => {
     setAlojamientoNoches("1");
+    setAlojamientoCategoriaHab("ESTANDAR");
+    setAlojamientoRegimen("ALOJAMIENTO_DESAYUNO");
   }, [idTipo]);
 
   useEffect(() => {
@@ -163,7 +167,9 @@ export function AddServicePanel({
       alojamiento: isAlojamientoSelected
         ? {
             noches: Number(alojamientoNoches || 1),
-            habitaciones: 1
+            habitaciones: 1,
+            categoriaHab: alojamientoCategoriaHab,
+            regimen: alojamientoRegimen
           }
         : undefined
     });
@@ -294,6 +300,34 @@ export function AddServicePanel({
                 onChange={(event) => setAlojamientoNoches(event.target.value)}
                 required
               />
+            </label>
+
+            <label>
+              Categoría habitación
+              <select
+                value={alojamientoCategoriaHab}
+                onChange={(event) => setAlojamientoCategoriaHab(event.target.value)}
+                required
+              >
+                <option value="ESTANDAR">Estándar</option>
+                <option value="SUPERIOR">Superior</option>
+                <option value="SUITE">Suite</option>
+                <option value="OTRO">Otro</option>
+              </select>
+            </label>
+
+            <label>
+              Régimen
+              <select
+                value={alojamientoRegimen}
+                onChange={(event) => setAlojamientoRegimen(event.target.value)}
+                required
+              >
+                <option value="SOLO_ALOJAMIENTO">Solo alojamiento</option>
+                <option value="ALOJAMIENTO_DESAYUNO">Alojamiento y desayuno</option>
+                <option value="TODO_INCLUIDO">Todo incluido</option>
+                <option value="OTRO">Otro</option>
+              </select>
             </label>
           </>
         ) : null}

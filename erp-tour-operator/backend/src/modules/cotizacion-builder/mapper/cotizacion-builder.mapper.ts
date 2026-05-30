@@ -54,9 +54,7 @@ function labelCategoriaHabitacion(alojamiento: any) {
   }
 
   if (alojamiento.categoriaHab === "OTRO") {
-    return alojamiento.categoriaHabOtro
-      ? `habitación ${alojamiento.categoriaHabOtro}`
-      : "habitación";
+    return "habitación";
   }
 
   const labels: Record<string, string> = {
@@ -70,11 +68,7 @@ function labelCategoriaHabitacion(alojamiento: any) {
 
 function labelRegimen(alojamiento: any) {
   if (!alojamiento) {
-    return "";
-  }
-
-  if (alojamiento.regimen === "OTRO") {
-    return alojamiento.regimenOtro ?? "";
+    return "desayuno diario";
   }
 
   if (alojamiento.regimen === "SOLO_ALOJAMIENTO") {
@@ -89,11 +83,11 @@ function labelRegimen(alojamiento: any) {
     return "todo incluido";
   }
 
-  if (alojamiento.desayuno) {
-    return "desayuno diario";
+  if (alojamiento.regimen === "OTRO") {
+    return "régimen especial";
   }
 
-  return "";
+  return "desayuno diario";
 }
 
 function getServicioIncluidoAlojamiento(item: any) {
@@ -101,8 +95,8 @@ function getServicioIncluidoAlojamiento(item: any) {
   const habitaciones = Number(item.alojamientoDetalle?.habitaciones ?? 1);
 
   const nochesText = noches === 1 ? "1 noche" : `${noches} noches`;
-  const habitacionText = labelCategoriaHabitacion(item.servicio?.alojamiento);
-  const regimenText = labelRegimen(item.servicio?.alojamiento);
+  const habitacionText = labelCategoriaHabitacion(item.alojamientoDetalle);
+  const regimenText = labelRegimen(item.alojamientoDetalle);
 
   const habitacionFinalText =
     habitaciones > 1

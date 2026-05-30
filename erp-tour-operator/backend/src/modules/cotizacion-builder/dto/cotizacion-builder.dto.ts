@@ -21,7 +21,13 @@ export const cotizacionBuilderItemSchema = z.object({
   alojamiento: z
     .object({
       noches: z.coerce.number().int().positive(),
-      habitaciones: z.coerce.number().int().positive().default(1)
+      habitaciones: z.coerce.number().int().positive().default(1),
+      categoriaHab: z
+        .enum(["ESTANDAR", "SUPERIOR", "SUITE", "OTRO"])
+        .default("ESTANDAR"),
+      regimen: z
+        .enum(["SOLO_ALOJAMIENTO", "ALOJAMIENTO_DESAYUNO", "TODO_INCLUIDO", "OTRO"])
+        .default("ALOJAMIENTO_DESAYUNO")
     })
     .optional()
 });

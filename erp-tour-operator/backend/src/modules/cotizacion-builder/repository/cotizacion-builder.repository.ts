@@ -441,7 +441,9 @@ export class CotizacionBuilderRepository {
           data: {
             idCotizacionItem: createdItem.id,
             noches: data.alojamiento?.noches ?? 1,
-            habitaciones: data.alojamiento?.habitaciones ?? 1
+            habitaciones: data.alojamiento?.habitaciones ?? 1,
+            categoriaHab: data.alojamiento?.categoriaHab ?? "ESTANDAR",
+            regimen: data.alojamiento?.regimen ?? "ALOJAMIENTO_DESAYUNO"
           }
         });
       }
@@ -460,11 +462,15 @@ export class CotizacionBuilderRepository {
           create: {
             idCotizacionItem: createdItem.id,
             noches: data.alojamiento?.noches ?? 1,
-            habitaciones: data.alojamiento?.habitaciones ?? 1
+            habitaciones: data.alojamiento?.habitaciones ?? 1,
+            categoriaHab: data.alojamiento?.categoriaHab ?? "ESTANDAR",
+            regimen: data.alojamiento?.regimen ?? "ALOJAMIENTO_DESAYUNO"
           },
           update: {
             noches: data.alojamiento?.noches ?? 1,
-            habitaciones: data.alojamiento?.habitaciones ?? 1
+            habitaciones: data.alojamiento?.habitaciones ?? 1,
+            categoriaHab: data.alojamiento?.categoriaHab ?? "ESTANDAR",
+            regimen: data.alojamiento?.regimen ?? "ALOJAMIENTO_DESAYUNO"
           }
         });
       }
@@ -1071,8 +1077,8 @@ export class CotizacionBuilderRepository {
             continue;
           }
 
-          const categoriaHab = getAccommodationRoomCategory(item.servicio.alojamiento);
-          const regimen = getAccommodationRegimen(item.servicio.alojamiento);
+          const categoriaHab = item.alojamientoDetalle?.categoriaHab ?? "ESTANDAR";
+          const regimen = item.alojamientoDetalle?.regimen ?? "ALOJAMIENTO_DESAYUNO";
 
           const alojamientoPrecio = await tx.alojamientoPrecioMes.findFirst({
             where: {

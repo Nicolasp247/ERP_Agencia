@@ -67,6 +67,8 @@ export type BuilderItemFormValues = {
   alojamiento?: {
     noches: number;
     habitaciones: number;
+    categoriaHab?: string;
+    regimen?: string;
   };
 };
 

@@ -685,10 +685,14 @@ model CotizacionItem {
 }
 
 model CotizacionItemAlojamiento {
-  id               Int            @id @default(autoincrement())
-  idCotizacionItem Int            @unique(map: "uq_cotizacion_item_alojamiento_item") @map("id_cotizacion_item")
+  id               Int      @id @default(autoincrement())
+  idCotizacionItem Int      @unique(map: "uq_cotizacion_item_alojamiento_item") @map("id_cotizacion_item")
+
   noches           Int
-  habitaciones     Int            @default(1)
+  habitaciones     Int      @default(1)
+
+  categoriaHab     String   @default("ESTANDAR") @map("categoria_hab") @db.VarChar(40)
+  regimen          String   @default("ALOJAMIENTO_DESAYUNO") @db.VarChar(40)
 
   cotizacionItem   CotizacionItem @relation(fields: [idCotizacionItem], references: [id], onDelete: Cascade)
 
