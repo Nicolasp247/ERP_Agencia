@@ -44,9 +44,20 @@ export function toServicioListItem(
     tiempoServicio?: string | null;
     privado?: boolean;
     activo: boolean;
-    tipo: { nombre: string; codigo?: string | null };
-    proveedor: { nombreComercial: string };
-    ciudad: { nombre: string; pais: { nombre: string } | null };
+    tipo: { id: number; nombre: string; codigo?: string | null };
+    proveedor: { id: number; nombreComercial: string };
+    ciudad: {
+      id: number;
+      nombre: string;
+      pais: {
+        id: number;
+        nombre: string;
+        continente?: {
+          id: number;
+          nombre: string;
+        } | null;
+      } | null;
+    };
     tour?: any;
     traslado?: any;
     tren?: any;
@@ -86,14 +97,28 @@ export function toServicioListItem(
 
   return {
     id: record.id,
+
     nombreWtravel: record.nombreWtravel,
     tiempoServicio: record.tiempoServicio ?? null,
     privado: record.privado ?? false,
+
+    idTipo: record.tipo.id,
     tipo: record.tipo.nombre,
+    tipoNombre: record.tipo.nombre,
     tipoCodigo: record.tipo.codigo ?? null,
+
+    idProveedor: record.proveedor.id,
     proveedor: record.proveedor.nombreComercial,
+
+    idCiudad: record.ciudad.id,
     ciudad: record.ciudad.nombre,
+
+    idPais: record.ciudad.pais?.id ?? null,
     pais: record.ciudad.pais?.nombre ?? null,
+
+    idContinente: record.ciudad.pais?.continente?.id ?? null,
+    continente: record.ciudad.pais?.continente?.nombre ?? null,
+
     precioBase: tarifa?.precioNeto?.toString?.() ?? null,
     monedaCodigo: tarifa?.monedaCodigo ?? null,
     activo: record.activo,

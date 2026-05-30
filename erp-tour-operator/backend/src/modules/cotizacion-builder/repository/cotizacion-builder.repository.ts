@@ -121,13 +121,6 @@ function getAccommodationRegimen(alojamiento: any) {
   return "SOLO_ALOJAMIENTO";
 }
 
-function getAccommodationMonth(date: Date) {
-  return {
-    anio: date.getUTCFullYear(),
-    mes: date.getUTCMonth() + 1
-  };
-}
-
 function calculateAccommodationPrice({
   precioUsd,
   noches,
@@ -1078,7 +1071,6 @@ export class CotizacionBuilderRepository {
             continue;
           }
 
-          const { anio, mes } = getAccommodationMonth(item.fechaServicio);
           const categoriaHab = getAccommodationRoomCategory(item.servicio.alojamiento);
           const regimen = getAccommodationRegimen(item.servicio.alojamiento);
 
@@ -1088,11 +1080,23 @@ export class CotizacionBuilderRepository {
               categoria,
               categoriaHab,
               regimen,
-              anio,
-              mes,
               tipoHabitacion,
-              activo: true
+              activo: true,
+              fechaDesde: {
+                lte: item.fechaServicio
+              },
+              fechaHasta: {
+                gte: item.fechaServicio
+              }
             },
+            orderBy: [
+              {
+                fechaDesde: "desc"
+              },
+              {
+                id: "desc"
+              }
+            ],
             select: {
               precioUsd: true,
               monedaCodigo: true

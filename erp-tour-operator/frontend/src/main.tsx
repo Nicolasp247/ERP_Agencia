@@ -1,3 +1,5 @@
+/* <erp-tour-operator/frontend/src/main.tsx> */
+
 import ReactDOM from "react-dom/client";
 
 import { AppProviders } from "@/core/AppProviders";

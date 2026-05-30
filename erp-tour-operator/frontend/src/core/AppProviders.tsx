@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/core/AppProviders.tsx */
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { PropsWithChildren } from "react";
 

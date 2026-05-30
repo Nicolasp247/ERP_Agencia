@@ -135,7 +135,11 @@ export class ServicioRepository {
         proveedor: true,
         ciudad: {
           include: {
-            pais: true
+            pais: {
+              include: {
+                continente: true
+              }
+            }
           }
         },
         tour: {

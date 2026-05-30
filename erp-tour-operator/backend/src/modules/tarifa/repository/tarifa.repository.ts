@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/tarifa/repository/tarifa.repository.ts */
+
 import { prisma } from "@/core/db/prisma";
 import type { TarifaInput } from "@/modules/tarifa/dto/tarifa.dto";
 

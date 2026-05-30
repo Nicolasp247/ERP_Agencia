@@ -23,7 +23,7 @@ import { ReservasListPage } from "@/pages/ReservasListPage";
 import { ServicioDetailPage } from "@/pages/ServicioDetailPage";
 import { ServicioFormPage } from "@/pages/ServicioFormPage";
 import { ServiciosListPage } from "@/pages/ServiciosListPage";
-import { TarifasPage } from "@/pages/TarifasPage";
+import { TarifasPage } from "@/pages/tarifa/TarifasPage";
 
 export function AppRouter() {
   return (

@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/tarifa/types/tarifa.types.ts */
+
 export type TarifaListItem = {
   idServicio: number;
   servicio: string;

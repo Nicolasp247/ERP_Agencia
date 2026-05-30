@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/core/catalog-api.ts */
+
 import { api } from "@/services/http";
 import type { ApiResponse } from "@/types/api";
 

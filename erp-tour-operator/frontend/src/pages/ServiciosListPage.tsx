@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/pages/ServiciosListPage.tsx */
+
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 

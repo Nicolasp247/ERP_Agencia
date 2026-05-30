@@ -3,6 +3,7 @@
 import { Router } from "express";
 
 import { auditoriaRouter } from "@/modules/auditoria";
+import { alojamientoPrecioRouter } from "@/modules/alojamiento-precio";
 import { authRouter } from "@/modules/auth";
 import { clienteRouter } from "@/modules/cliente";
 import { clienteAgenteRouter } from "@/modules/cliente-agente";
@@ -28,6 +29,7 @@ apiRouter.get("/health", (_req, res) => {
   });
 });
 
+apiRouter.use("/alojamiento-precio", alojamientoPrecioRouter);
 apiRouter.use("/auth", authRouter);
 apiRouter.use("/auditoria", auditoriaRouter);
 apiRouter.use("/cliente-agente", clienteAgenteRouter);

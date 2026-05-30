@@ -486,23 +486,26 @@ model HotelPrecioMes {
 }
 
 model AlojamientoPrecioMes {
-  idCiudad          Int       @map("id_ciudad")
-  categoria         String    @db.VarChar(40)
-  categoriaHab      String    @map("categoria_hab") @db.VarChar(40)
-  regimen           String    @db.VarChar(40)
-  anio              Int
-  mes               Int
-  tipoHabitacion    String    @map("tipo_habitacion") @db.Char(3)
-  precioUsd         Decimal?  @map("precio_usd") @db.Decimal(10, 2)
-  monedaCodigo      String    @default("USD") @map("moneda_codigo") @db.Char(3)
-  activo            Boolean   @default(true)
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  ciudad            Ciudad    @relation(fields: [idCiudad], references: [id])
+  id             Int      @id @default(autoincrement())
+  idCiudad       Int      @map("id_ciudad")
+  categoria      String   @db.VarChar(40)
+  categoriaHab   String   @map("categoria_hab") @db.VarChar(40)
+  regimen        String   @db.VarChar(40)
+  fechaDesde     DateTime @map("fecha_desde") @db.Date
+  fechaHasta     DateTime @map("fecha_hasta") @db.Date
+  tipoHabitacion String   @map("tipo_habitacion") @db.Char(3)
+  precioUsd      Decimal? @map("precio_usd") @db.Decimal(10, 2)
+  monedaCodigo   String   @default("USD") @map("moneda_codigo") @db.Char(3)
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(3)
 
-  @@id([idCiudad, categoria, categoriaHab, regimen, anio, mes, tipoHabitacion])
-  @@index([idCiudad, anio, mes, categoria, categoriaHab, regimen, tipoHabitacion], map: "idx_aloj_precio_lookup")
-  @@index([idCiudad, categoria, categoriaHab, regimen, anio], map: "idx_aloj_precio_filtros")
+  ciudad         Ciudad   @relation(fields: [idCiudad], references: [id])
+
+  @@unique([idCiudad, categoria, categoriaHab, regimen, fechaDesde, fechaHasta, tipoHabitacion], map: "uq_alojamiento_precio_fecha")
+  @@index([idCiudad], map: "idx_aloj_precio_id_ciudad")
+  @@index([idCiudad, fechaDesde, fechaHasta, categoria, categoriaHab, regimen, tipoHabitacion], map: "idx_aloj_precio_lookup")
+  @@index([idCiudad, categoria, categoriaHab, regimen, fechaDesde], map: "idx_aloj_precio_filtros")
   @@map("alojamiento_precio_mes")
 }
 

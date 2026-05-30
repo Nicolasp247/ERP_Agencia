@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/tarifa/service/tarifa.service.ts */
+
 import { AppError } from "@/core/errors/app-error";
 import type { TarifaInput } from "@/modules/tarifa/dto/tarifa.dto";
 import { toTarifaListItem } from "@/modules/tarifa/mapper/tarifa.mapper";

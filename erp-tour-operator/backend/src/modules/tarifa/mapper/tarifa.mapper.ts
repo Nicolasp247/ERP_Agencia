@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/tarifa/mapper/tarifa.mapper.ts */
+
 function formatDateOnly(value: Date | string | null | undefined) {
   if (!value) return null;
 

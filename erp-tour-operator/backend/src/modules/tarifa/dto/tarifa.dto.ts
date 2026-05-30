@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/tarifa/dto/tarifa.dto.ts */
+
 import { z } from "zod";
 
 export const tarifaSchema = z
