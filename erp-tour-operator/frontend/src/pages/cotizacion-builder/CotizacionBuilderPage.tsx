@@ -204,6 +204,7 @@ export function CotizacionBuilderPage() {
         columns={builder.columns}
         rows={builder.rows}
         monedaCodigo={builder.expediente.monedaCodigo ?? "USD"}
+        totalPasajeros={builder.expediente.totalPasajeros ?? 1}
       />
     </div>
   );

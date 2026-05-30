@@ -1,0 +1,207 @@
+/* erp-tour-operator/frontend/src/styles/cotizacion-builder/table-precio.css */
+
+.builder-help-text {
+  margin-top: 0.35rem;
+  color: #6f7c80;
+  font-size: 0.92rem;
+}
+
+.builder-totals-table-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  margin-top: 1.5rem;
+}
+
+.builder-totals-table-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.builder-totals-table-block h4 {
+  margin: 0;
+  color: #061f25;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.builder-totals-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(23, 55, 61, 0.18);
+  border-radius: 1rem;
+  background: #fffefa;
+}
+
+.builder-totals-table {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.builder-totals-price-row td {
+  font-weight: 400;
+}
+
+.builder-total-price-value {
+  display: block;
+  color: #001f28;
+  font-size: 1.05rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.builder-totals-table th,
+.builder-totals-table td {
+  border: 1px solid rgba(23, 55, 61, 0.16);
+  padding: 0.85rem 1rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.builder-totals-table th {
+  background: #f3ead7;
+  color: #061f25;
+  font-weight: 900;
+}
+
+.builder-totals-table th:first-child,
+.builder-totals-table td:first-child {
+  width: 240px;
+  text-align: left;
+  font-weight: 800;
+  color: #17373d;
+  background: #fbf7ed;
+}
+
+.builder-totals-table td {
+  color: #17373d;
+  font-size: 0.95rem;
+}
+
+.builder-totals-table td strong {
+  display: block;
+  color: #001f28;
+  font-size: 1.02rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.builder-totals-table td span {
+  display: block;
+  margin-top: 0.2rem;
+  color: #61777d;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.builder-total-money {
+  display: block;
+  color: #001f28;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.builder-totals-bold-row td {
+  font-weight: 900;
+}
+
+.builder-totals-bold-row td strong {
+  font-size: 1.08rem;
+}
+
+.builder-totals-highlight-row td {
+  background: #eef5ef;
+}
+
+.builder-totals-highlight-row td:first-child {
+  background: #e5f0e8;
+}
+
+.builder-totals-highlight-row span {
+  margin-top: 0.35rem;
+}
+
+.builder-total-result-button strong {
+  display: block;
+  color: #001f28;
+  font-size: 1.45rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.builder-total-result-button span {
+  display: block;
+  margin-top: 0.2rem;
+  color: #61777d;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.builder-total-result-button:hover {
+  background: rgba(23, 55, 61, 0.08);
+}
+
+.builder-total-edit-input:focus {
+  border-color: #17373d;
+  outline: 2px solid rgba(23, 55, 61, 0.12);
+}
+
+.builder-totals-final-row td {
+  background: #fffefa !important;
+  font-weight: 400;
+}
+
+.builder-totals-final-row td:first-child {
+  background: #fbf7ed !important;
+  font-weight: 800;
+}
+
+.builder-total-final-value {
+  display: block;
+  color: #001f28;
+  font-size: 1.05rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.builder-total-result-button,
+.builder-total-edit-input {
+  width: 130px !important;
+  max-width: 130px !important;
+  min-width: 130px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
+}
+
+.builder-total-edit-input {
+  display: block;
+  border: 1px solid rgba(23, 55, 61, 0.28);
+  border-radius: 0.85rem;
+  padding: 0.45rem 0.55rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 900;
+  color: #061f25;
+  background: #fffefa;
+}
+
+.builder-total-result-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 0.85rem;
+  padding: 0.45rem 0.55rem;
+  background: transparent;
+  text-align: center;
+  cursor: pointer;
+}
