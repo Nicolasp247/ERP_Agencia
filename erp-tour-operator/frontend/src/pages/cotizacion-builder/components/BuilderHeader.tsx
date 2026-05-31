@@ -16,7 +16,6 @@ export function BuilderHeader({ expediente, version }: BuilderHeaderProps) {
 
       <div className="builder-header-inner">
         <div>
-          <p className="eyebrow">Constructor de cotización</p>
           <h3>{expediente.codigo}</h3>
           <p className="muted">
             {version?.versionLabel ?? "Cotización"} · Cliente:{" "}

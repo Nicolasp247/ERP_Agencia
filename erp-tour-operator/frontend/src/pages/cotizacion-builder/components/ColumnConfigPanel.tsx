@@ -19,6 +19,143 @@ import {
 import { ColumnCreateModal } from "./ColumnCreateModal";
 import { ColumnDeleteModal } from "./ColumnDeleteModal";
 
+type CommissionKey = "agente" | "wtravel" | "banco";
+
+type CommissionRule = {
+  label: string;
+  agente: number;
+  wtravel: number;
+  banco: number;
+};
+
+const TERRESTRE_COMMISSION: CommissionRule = {
+  label: "Terrestre",
+  agente: 12,
+  wtravel: 13,
+  banco: 5
+};
+
+const AEREA_COMMISSION: CommissionRule = {
+  label: "Aéreo / transporte",
+  agente: 5,
+  wtravel: 5,
+  banco: 5
+};
+
+function getCommissionTotal(rule: CommissionRule) {
+  return rule.agente + rule.wtravel + rule.banco;
+}
+
+function getCommissionFactor(rule: CommissionRule) {
+  return (100 - getCommissionTotal(rule)) / 100;
+}
+
+function EditablePercent({
+  value,
+  onChange
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftValue, setDraftValue] = useState(String(value));
+
+  function save() {
+    const parsed = Number(String(draftValue).replace(",", "."));
+    onChange(Number.isFinite(parsed) ? parsed : value);
+    setIsEditing(false);
+  }
+
+  if (isEditing) {
+    return (
+      <input
+        className="builder-commission-percent-input"
+        autoFocus
+        value={draftValue}
+        onChange={(event) => setDraftValue(event.target.value)}
+        onBlur={save}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            save();
+          }
+
+          if (event.key === "Escape") {
+            event.preventDefault();
+            setDraftValue(String(value));
+            setIsEditing(false);
+          }
+        }}
+      />
+    );
+  }
+
+  return (
+    <button
+      className="builder-commission-percent-button"
+      type="button"
+      onClick={() => {
+        setDraftValue(String(value));
+        setIsEditing(true);
+      }}
+      title="Editar porcentaje"
+    >
+      {value}%
+    </button>
+  );
+}
+
+function CommissionRuleCard({
+  rule,
+  onChange
+}: {
+  rule: CommissionRule;
+  onChange: (key: CommissionKey, value: number) => void;
+}) {
+  const total = getCommissionTotal(rule);
+  const factor = getCommissionFactor(rule);
+
+  return (
+    <article className="builder-commission-card">
+      <div className="builder-commission-card-header">
+        <span>{rule.label}</span>
+        <strong>{total}%</strong>
+      </div>
+
+      <div className="builder-commission-breakdown">
+        <div>
+          <span>Agente</span>
+          <EditablePercent
+            value={rule.agente}
+            onChange={(value) => onChange("agente", value)}
+          />
+        </div>
+
+        <div>
+          <span>WTravel</span>
+          <EditablePercent
+            value={rule.wtravel}
+            onChange={(value) => onChange("wtravel", value)}
+          />
+        </div>
+
+        <div>
+          <span>Banco</span>
+          <EditablePercent
+            value={rule.banco}
+            onChange={(value) => onChange("banco", value)}
+          />
+        </div>
+      </div>
+
+      <div className="builder-commission-factor">
+        <span>Factor usado</span>
+        <strong>{factor.toFixed(2)}</strong>
+      </div>
+    </article>
+  );
+}
+
 type PanelMode = "CREATE" | "DELETE" | null;
 
 type ColumnConfigPanelProps = {
@@ -35,12 +172,35 @@ export function ColumnConfigPanel({
   onDeleteColumn
 }: ColumnConfigPanelProps) {
   const [mode, setMode] = useState<PanelMode>(null);
-  const [commission, setCommission] = useState("0.7");
   const [formValues, setFormValues] = useState<InternalColumnForm>(defaultFormValues);
+  const [terrestreCommission, setTerrestreCommission] = useState<CommissionRule>(TERRESTRE_COMMISSION);
+  const [aereaCommission, setAereaCommission] = useState<CommissionRule>(AEREA_COMMISSION);
 
   function resetForm() {
     setFormValues(defaultFormValues);
     setMode(null);
+  }
+
+  function updateCommissionRule(
+    type: "TERRESTRE" | "AEREA",
+    key: CommissionKey,
+    value: number
+  ) {
+    const safeValue = Math.max(0, Math.min(99, value));
+
+    if (type === "TERRESTRE") {
+      setTerrestreCommission((current) => ({
+        ...current,
+        [key]: safeValue
+      }));
+
+      return;
+    }
+
+    setAereaCommission((current) => ({
+      ...current,
+      [key]: safeValue
+    }));
   }
 
   function openCreate() {
@@ -147,20 +307,23 @@ export function ColumnConfigPanel({
   return (
     <>
       <div className="builder-options-card">
-        <h3>Opciones generales:</h3>
-
-        <div className="builder-option-row">
-          <label className="builder-commission-field">
-            <strong>Comisión:</strong>
-            <input
-              inputMode="decimal"
-              onChange={(event) => setCommission(event.target.value)}
-              value={commission}
-            />
-          </label>
+        <div className="builder-options-title">
+          <h3>Opciones generales</h3>
         </div>
 
-        <div className="builder-option-row">
+        <div className="builder-commission-grid">
+          <CommissionRuleCard
+            rule={terrestreCommission}
+            onChange={(key, value) => updateCommissionRule("TERRESTRE", key, value)}
+          />
+
+          <CommissionRuleCard
+            rule={aereaCommission}
+            onChange={(key, value) => updateCommissionRule("AEREA", key, value)}
+          />
+        </div>
+
+        <div className="builder-option-row builder-option-row-table">
           <strong>Tabla:</strong>
 
           <div className="builder-option-actions">

@@ -5,6 +5,10 @@
     grid-template-columns: 1fr;
   }
 
+  .builder-commission-grid {
+    grid-template-columns: 1fr;
+  }
+
   .builder-modal-backdrop {
     align-items: start;
     padding: 1rem;
