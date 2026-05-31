@@ -690,7 +690,6 @@ model CotizacionItemAlojamiento {
 
   noches           Int
   habitaciones     Int      @default(1)
-
   categoriaHab     String   @default("ESTANDAR") @map("categoria_hab") @db.VarChar(40)
   regimen          String   @default("ALOJAMIENTO_DESAYUNO") @db.VarChar(40)
 

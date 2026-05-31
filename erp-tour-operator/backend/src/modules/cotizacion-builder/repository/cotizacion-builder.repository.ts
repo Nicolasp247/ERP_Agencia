@@ -92,7 +92,7 @@ function mapRoomTypeFromColumn(nombre: string) {
   if (value.includes("sencilla") || value.includes("single")) return "SGL";
   if (value.includes("doble")) return "DBL";
   if (value.includes("triple")) return "TPL";
-  if (value.includes("cuadruple") || value.includes("cuadruple")) return "CPL";
+  if (value.includes("cuadruple") || value.includes("cuádruple")) return "CPL";
 
   return null;
 }
@@ -108,10 +108,6 @@ function getAccommodationRoomCategory(alojamiento: any) {
 function getAccommodationRegimen(alojamiento: any) {
   if (alojamiento?.regimen && alojamiento.regimen !== "OTRO") {
     return alojamiento.regimen;
-  }
-
-  if (alojamiento?.regimen === "OTRO" && alojamiento.regimenOtro) {
-    return alojamiento.regimenOtro;
   }
 
   if (alojamiento?.desayuno) {
@@ -429,7 +425,10 @@ export class CotizacionBuilderRepository {
           fechaServicio: toMysqlDate(data.fechaServicio),
           ordenDia: data.ordenDia ?? Number(maxOrder._max.ordenDia ?? 0) + 1,
           esOpcional: data.esOpcional,
-          operadorMostrado: servicio.proveedor?.codigo ?? servicio.proveedor?.nombreComercial ?? null,
+          operadorMostrado:
+            servicio.proveedor?.codigo ??
+            servicio.proveedor?.nombreComercial ??
+            null,
           linkOperador: servicio.linkReserva ?? null,
           notaLinea: data.notaLinea?.trim() || null,
           precioMonedaCodigo: "USD"
@@ -440,33 +439,6 @@ export class CotizacionBuilderRepository {
         await tx.cotizacionItemAlojamiento.create({
           data: {
             idCotizacionItem: createdItem.id,
-            noches: data.alojamiento?.noches ?? 1,
-            habitaciones: data.alojamiento?.habitaciones ?? 1,
-            categoriaHab: data.alojamiento?.categoriaHab ?? "ESTANDAR",
-            regimen: data.alojamiento?.regimen ?? "ALOJAMIENTO_DESAYUNO"
-          }
-        });
-      }
-      
-      const tipoServicio = servicio.tipo.nombre.trim().toLowerCase();
-      const tipoServicioCodigo = servicio.tipo.codigo?.trim().toLowerCase() ?? "";
-
-      const isAlojamiento =
-        tipoServicio === "alojamiento" || tipoServicioCodigo === "alojamiento";
-
-      if (isAlojamiento) {
-        await tx.cotizacionItemAlojamiento.upsert({
-          where: {
-            idCotizacionItem: createdItem.id
-          },
-          create: {
-            idCotizacionItem: createdItem.id,
-            noches: data.alojamiento?.noches ?? 1,
-            habitaciones: data.alojamiento?.habitaciones ?? 1,
-            categoriaHab: data.alojamiento?.categoriaHab ?? "ESTANDAR",
-            regimen: data.alojamiento?.regimen ?? "ALOJAMIENTO_DESAYUNO"
-          },
-          update: {
             noches: data.alojamiento?.noches ?? 1,
             habitaciones: data.alojamiento?.habitaciones ?? 1,
             categoriaHab: data.alojamiento?.categoriaHab ?? "ESTANDAR",
@@ -685,13 +657,22 @@ export class CotizacionBuilderRepository {
         return null;
       }
 
+      const updateData: {
+        notaLinea: string | null;
+        tituloOverride?: string | null;
+      } = {
+        notaLinea: data.notaLinea?.trim() || null
+      };
+
+      if ("tituloOverride" in data) {
+        updateData.tituloOverride = data.tituloOverride?.trim() || null;
+      }
+
       await tx.cotizacionItem.update({
         where: {
           id: itemId
         },
-        data: {
-          notaLinea: data.notaLinea?.trim() || null
-        }
+        data: updateData
       });
 
       return tx.cotizacion.findUnique({
@@ -1042,7 +1023,12 @@ export class CotizacionBuilderRepository {
           return column.tipo === CotizacionColumnaTipo.OPCIONALES;
         }
 
-        if (tipoServicio === "vuelo" || tipoServicio === "tren" || tipoServicioCodigo === "vuelo" || tipoServicioCodigo === "tren") {
+        if (
+          tipoServicio === "vuelo" ||
+          tipoServicio === "tren" ||
+          tipoServicioCodigo === "vuelo" ||
+          tipoServicioCodigo === "tren"
+        ) {
           return column.tipo === CotizacionColumnaTipo.TRANSPORTE;
         }
 
@@ -1077,8 +1063,13 @@ export class CotizacionBuilderRepository {
             continue;
           }
 
-          const categoriaHab = item.alojamientoDetalle?.categoriaHab ?? "ESTANDAR";
-          const regimen = item.alojamientoDetalle?.regimen ?? "ALOJAMIENTO_DESAYUNO";
+          const categoriaHab =
+            item.alojamientoDetalle?.categoriaHab ??
+            getAccommodationRoomCategory(item.servicio.alojamiento);
+
+          const regimen =
+            item.alojamientoDetalle?.regimen ??
+            getAccommodationRegimen(item.servicio.alojamiento);
 
           const alojamientoPrecio = await tx.alojamientoPrecioMes.findFirst({
             where: {

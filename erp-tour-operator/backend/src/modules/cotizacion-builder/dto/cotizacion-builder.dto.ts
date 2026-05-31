@@ -46,7 +46,8 @@ export const cotizacionBuilderPriceSchema = z.object({
 });
 
 export const cotizacionBuilderNoteSchema = z.object({
-  notaLinea: z.string().trim().max(1000).nullable()
+  notaLinea: z.string().trim().max(1000).nullable(),
+  tituloOverride: z.string().trim().max(500).nullable().optional()
 });
 
 export type CotizacionBuilderColumnInput = z.infer<typeof cotizacionBuilderColumnSchema>;

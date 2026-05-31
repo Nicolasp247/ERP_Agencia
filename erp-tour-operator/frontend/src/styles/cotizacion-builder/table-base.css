@@ -32,17 +32,6 @@
   white-space: normal;
 }
 
-.builder-table td {
-  border-left: 1.25px solid #000;
-  border-right: 1.25px solid #000;
-  border-top: 0;
-  border-bottom: 0;
-  font-weight: 400;
-  padding: 0.45rem 0.35rem;
-  text-align: center;
-  vertical-align: middle;
-}
-
 .builder-table td:nth-child(3) {
   text-align: left;
 }
@@ -159,4 +148,22 @@
 .builder-row-optional,
 .builder-row-optional td {
   background: #fff8ea !important;
+}
+
+.builder-table td {
+  border-left: 1.25px solid #000;
+  border-right: 1.25px solid #000;
+  border-top: 0;
+  border-bottom: 0;
+  font-weight: 400;
+  padding: 0.45rem 0.35rem;
+  text-align: center;
+  vertical-align: middle;
+  overflow: hidden;
+}
+
+.builder-table td .builder-price-cell-button {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

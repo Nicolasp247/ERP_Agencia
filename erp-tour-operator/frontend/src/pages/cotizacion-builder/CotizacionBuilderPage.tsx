@@ -11,13 +11,13 @@ import {
   deleteCotizacionBuilderColumn,
   deleteCotizacionBuilderItem,
   getCotizacionBuilder,
-  updateCotizacionBuilderItemPrices,
   moveCotizacionBuilderItem,
+  updateCotizacionBuilderItemPrices,
   updateCotizacionBuilderItemNotes,
-  type BuilderNoteFormValues,
-  type BuilderMoveItemValues,
   type BuilderColumnFormValues,
   type BuilderItemFormValues,
+  type BuilderMoveItemValues,
+  type BuilderNoteFormValues,
   type BuilderPriceFormValues
 } from "@/modules/cotizacion-builder/cotizacion-builder-api";
 import { AddServicePanel } from "./components/AddServicePanel";
@@ -158,31 +158,31 @@ export function CotizacionBuilderPage() {
         }
         title="Servicios de la cotización"
       >
-        <CotizacionBuilderTable
-          columns={builder.columns}
-          rows={builder.rows}
-          onDeleteItem={(itemId) => deleteItemMutation.mutate(itemId)}
-          onMoveItem={(itemId, direction) =>
-            moveItemMutation.mutate({
-              itemId,
-              values: {
-                direction
-              }
-            })
-          }
-          onUpdateItemNotes={(itemId, values) =>
-            updateItemNotesMutation.mutate({
-              itemId,
-              values
-            })
-          }
-          onUpdateItemPrices={(itemId, values) =>
-            updateItemPricesMutation.mutate({
-              itemId,
-              values
-            })
-          }
-        />
+      <CotizacionBuilderTable
+        columns={builder.columns}
+        rows={builder.rows}
+        onDeleteItem={(itemId) => deleteItemMutation.mutate(itemId)}
+        onMoveItem={(itemId, direction) =>
+          moveItemMutation.mutate({
+            itemId,
+            values: {
+              direction
+            }
+          })
+        }
+        onUpdateItemNotes={(itemId, values) =>
+          updateItemNotesMutation.mutate({
+            itemId,
+            values
+          })
+        }
+        onUpdateItemPrices={(itemId, values) =>
+          updateItemPricesMutation.mutate({
+            itemId,
+            values
+          })
+        }
+      />
 
         {showAddService ? (
           <div className="builder-modal-backdrop">

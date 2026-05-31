@@ -81,6 +81,7 @@ export type BuilderPriceFormValues = {
 
 export type BuilderNoteFormValues = {
   notaLinea: string | null;
+  tituloOverride?: string | null;
 };
 
 export type BuilderMoveItemValues = {
