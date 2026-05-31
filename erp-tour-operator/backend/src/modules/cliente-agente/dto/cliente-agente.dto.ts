@@ -1,4 +1,12 @@
+/* erp-tour-operator/backend/src/modules/cliente-agente/dto/cliente-agente.dto.ts */
+
 import { z } from "zod";
+
+const clienteAgenteComisionSchema = z.object({
+  porcentajeAgente: z.coerce.number().min(0).max(99),
+  porcentajeWtravel: z.coerce.number().min(0).max(99),
+  porcentajeBancario: z.coerce.number().min(0).max(99)
+});
 
 export const clienteAgenteSchema = z.object({
   codigo: z.string().min(1).max(20),
@@ -11,6 +19,11 @@ export const clienteAgenteSchema = z.object({
   idPais: z.coerce.number().int().positive().optional().nullable(),
   idCiudad: z.coerce.number().int().positive().optional().nullable(),
   comisionBasePct: z.coerce.number().min(0).max(100).optional().nullable(),
+  comisiones: z.object({
+    terrestre: clienteAgenteComisionSchema.optional(),
+    aerea: clienteAgenteComisionSchema.optional()
+  })
+  .optional(),
   activo: z.boolean().optional()
 });
 

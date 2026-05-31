@@ -6,6 +6,7 @@ import type {
   CotizacionBuilderColumnShownPriceInput,
   CotizacionBuilderItemInput,
   CotizacionBuilderMoveItemInput,
+  CotizacionBuilderCommissionInput,
   CotizacionBuilderNoteInput,
   CotizacionBuilderPriceInput
 } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
@@ -21,6 +22,7 @@ export class CotizacionBuilderService {
     }
 
     await cotizacionBuilderRepository.ensureDefaultColumns(versionId);
+    await cotizacionBuilderRepository.ensureCommissionSnapshot(versionId);
 
     const record = await cotizacionBuilderRepository.findVersionById(versionId);
 
@@ -123,6 +125,20 @@ export class CotizacionBuilderService {
         404,
         "COTIZACION_COLUMN_NOT_FOUND",
         "Columna de cotización no encontrada"
+      );
+    }
+
+    return toCotizacionBuilderDetail(record);
+  }
+
+  async updateCommission(versionId: number, data: CotizacionBuilderCommissionInput) {
+    const record = await cotizacionBuilderRepository.updateCommission(versionId, data);
+
+    if (!record) {
+      throw new AppError(
+        404,
+        "COTIZACION_VERSION_NOT_FOUND",
+        "Versión de cotización no encontrada"
       );
     }
 

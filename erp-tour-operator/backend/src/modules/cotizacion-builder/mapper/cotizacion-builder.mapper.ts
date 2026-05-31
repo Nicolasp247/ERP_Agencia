@@ -171,6 +171,16 @@ export function toCotizacionBuilderDetail(record: any) {
         orden: column.orden
       })),
 
+    comisiones: (record.comisiones ?? []).map((commission: any) => ({
+      id: commission.id,
+      tipoComision: commission.tipoComision,
+      porcentajeAgente: Number(commission.porcentajeAgente),
+      porcentajeWtravel: Number(commission.porcentajeWtravel),
+      porcentajeBancario: Number(commission.porcentajeBancario),
+      porcentajeTotal: Number(commission.porcentajeTotal),
+      factorVenta: Number(commission.factorVenta)
+    })),
+
     rows: (record.items ?? []).map((item: any) => ({
       id: item.id,
       idServicio: item.idServicio,

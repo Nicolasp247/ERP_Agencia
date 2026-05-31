@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/cliente-agente/types/cliente-agente.types.ts */
+
 export type ClienteAgenteSummary = {
   id: number;
   codigo: string;

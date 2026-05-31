@@ -95,6 +95,13 @@ enum CotizacionColumnaTipo {
   OTRO
 }
 
+enum TipoComisionCotizacion {
+  TERRESTRE
+  AEREA
+  OPCIONALES
+  OTRO
+}
+
 enum CotizacionColumnaUnidad {
   POR_PERSONA
   POR_NINO
@@ -218,11 +225,54 @@ model ClienteAgente {
   expedientes       Expediente[]
   cotizaciones      Cotizacion[]
   reservas          Reserva[]
+  comisiones        ClienteAgenteComision[]
 
   @@index([razonSocial], map: "idx_cliente_agente_razon_social")
   @@index([activo], map: "idx_cliente_agente_activo")
   @@index([idPais], map: "idx_cliente_agente_pais")
   @@map("cliente_agente")
+}
+
+model ClienteAgenteComision {
+  id                  Int                   @id @default(autoincrement())
+  idClienteAgente     Int                   @map("id_cliente_agente")
+  tipoComision        TipoComisionCotizacion @map("tipo_comision")
+
+  porcentajeAgente    Decimal               @default(0.00) @map("porcentaje_agente") @db.Decimal(5, 2)
+  porcentajeWtravel   Decimal               @default(0.00) @map("porcentaje_wtravel") @db.Decimal(5, 2)
+  porcentajeBancario  Decimal               @default(0.00) @map("porcentaje_bancario") @db.Decimal(5, 2)
+
+  activo              Boolean               @default(true)
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+
+  clienteAgente       ClienteAgente         @relation(fields: [idClienteAgente], references: [id], onDelete: Cascade)
+
+  @@unique([idClienteAgente, tipoComision], map: "uq_cliente_agente_comision_tipo")
+  @@index([idClienteAgente], map: "idx_cliente_agente_comision_agente")
+  @@map("cliente_agente_comision")
+}
+
+model CotizacionComision {
+  id                  Int                   @id @default(autoincrement())
+  idCotizacion         Int                   @map("id_cotizacion")
+  tipoComision         TipoComisionCotizacion @map("tipo_comision")
+
+  porcentajeAgente     Decimal               @default(0.00) @map("porcentaje_agente") @db.Decimal(5, 2)
+  porcentajeWtravel    Decimal               @default(0.00) @map("porcentaje_wtravel") @db.Decimal(5, 2)
+  porcentajeBancario   Decimal               @default(0.00) @map("porcentaje_bancario") @db.Decimal(5, 2)
+
+  porcentajeTotal      Decimal               @default(0.00) @map("porcentaje_total") @db.Decimal(5, 2)
+  factorVenta          Decimal               @default(1.0000) @map("factor_venta") @db.Decimal(8, 4)
+
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+
+  cotizacion           Cotizacion            @relation(fields: [idCotizacion], references: [id], onDelete: Cascade)
+
+  @@unique([idCotizacion, tipoComision], map: "uq_cotizacion_comision_tipo")
+  @@index([idCotizacion], map: "idx_cotizacion_comision_cotizacion")
+  @@map("cotizacion_comision")
 }
 
 model Cliente {
@@ -640,6 +690,7 @@ model Cotizacion {
   cotizacionesDerivadas Cotizacion[]            @relation("CotizacionOrigen")
   items                 CotizacionItem[]
   columnas              CotizacionColumna[]
+  comisiones            CotizacionComision[]
   reserva               Reserva?
 
   @@index([estado, fechaViajePrincipal], map: "idx_cotizacion_estado_fecha")

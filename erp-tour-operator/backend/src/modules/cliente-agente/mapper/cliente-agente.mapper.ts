@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/cliente-agente/mapper/cliente-agente.mapper.ts */
+
 import { CotizacionEstado } from "@prisma/client";
 
 export function toClienteAgenteListItem(
@@ -71,6 +73,13 @@ export function toClienteAgenteDetail(
       estado: string;
       fechaViajePrincipal: Date;
     }>;
+    comisiones?: Array<{
+      tipoComision: string;
+      porcentajeAgente: { toString(): string };
+      porcentajeWtravel: { toString(): string };
+      porcentajeBancario: { toString(): string };
+      activo: boolean;
+    }>;
   }
 ) {
   return {
@@ -92,6 +101,13 @@ export function toClienteAgenteDetail(
         }
       : null,
     ciudad: record.ciudad,
+    comisiones: (record.comisiones ?? []).map((commission) => ({
+      tipoComision: commission.tipoComision,
+      porcentajeAgente: commission.porcentajeAgente.toString(),
+      porcentajeWtravel: commission.porcentajeWtravel.toString(),
+      porcentajeBancario: commission.porcentajeBancario.toString(),
+      activo: commission.activo
+    })),
     clientes: record.clientes,
     cotizaciones: record.cotizaciones,
     reservas: record.reservas

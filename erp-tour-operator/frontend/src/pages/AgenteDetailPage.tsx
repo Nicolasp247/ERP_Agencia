@@ -1,3 +1,5 @@
+/* erp-tour-operator/frontend/src/pages/AgenteDetailPage.tsx */
+
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 

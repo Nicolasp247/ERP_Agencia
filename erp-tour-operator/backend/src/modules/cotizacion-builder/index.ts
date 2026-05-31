@@ -24,6 +24,12 @@ export const cotizacionBuilderRouter = Router();
 
 cotizacionBuilderRouter.use(authenticate);
 
+cotizacionBuilderRouter.put(
+  "/:versionId/commission",
+  validateParams(cotizacionBuilderParamsSchema),
+  asyncHandler(cotizacionBuilderController.updateCommission)
+);
+
 cotizacionBuilderRouter.get(
   "/:versionId",
   validateParams(cotizacionBuilderParamsSchema),

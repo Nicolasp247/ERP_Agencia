@@ -7,6 +7,7 @@ import {
   cotizacionBuilderItemSchema,
   cotizacionBuilderMoveItemSchema,
   cotizacionBuilderColumnShownPriceSchema,
+  cotizacionBuilderCommissionSchema,
   cotizacionBuilderNoteSchema,
   cotizacionBuilderPriceSchema
 } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
@@ -71,6 +72,15 @@ export class CotizacionBuilderController {
   updateItemNotes = async (req: Request, res: Response) => {
     const body = cotizacionBuilderNoteSchema.parse(req.body);
     const data = await cotizacionBuilderService.updateItemNotes(Number(req.params.itemId), body);
+    res.json(ok(data));
+  };
+
+  updateCommission = async (req: Request, res: Response) => {
+    const body = cotizacionBuilderCommissionSchema.parse(req.body);
+    const data = await cotizacionBuilderService.updateCommission(
+      Number(req.params.versionId),
+      body
+    );
     res.json(ok(data));
   };
 }

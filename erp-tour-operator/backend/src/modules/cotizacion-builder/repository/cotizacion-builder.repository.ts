@@ -3,7 +3,8 @@
 import {
   CotizacionColumnaTipo,
   CotizacionColumnaUnidad,
-  Prisma
+  Prisma,
+  TipoComisionCotizacion
 } from "@prisma/client";
 
 import { prisma } from "@/core/db/prisma";
@@ -13,6 +14,7 @@ import type {
   CotizacionBuilderItemInput,
   CotizacionBuilderMoveItemInput,
   CotizacionBuilderNoteInput,
+  CotizacionBuilderCommissionInput,
   CotizacionBuilderPriceInput
 } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
 
@@ -50,6 +52,33 @@ const DEFAULT_COLUMNS = [
     orden: 4
   }
 ];
+
+const DEFAULT_COMMISSION_RULES = [
+  {
+    tipoComision: TipoComisionCotizacion.TERRESTRE,
+    porcentajeAgente: new Prisma.Decimal(12),
+    porcentajeWtravel: new Prisma.Decimal(13),
+    porcentajeBancario: new Prisma.Decimal(5)
+  },
+  {
+    tipoComision: TipoComisionCotizacion.AEREA,
+    porcentajeAgente: new Prisma.Decimal(5),
+    porcentajeWtravel: new Prisma.Decimal(5),
+    porcentajeBancario: new Prisma.Decimal(5)
+  }
+];
+
+function calculateCommissionTotal(
+  porcentajeAgente: Prisma.Decimal,
+  porcentajeWtravel: Prisma.Decimal,
+  porcentajeBancario: Prisma.Decimal
+) {
+  return porcentajeAgente.plus(porcentajeWtravel).plus(porcentajeBancario);
+}
+
+function calculateCommissionFactor(total: Prisma.Decimal) {
+  return new Prisma.Decimal(100).minus(total).div(100);
+}
 
 function toMysqlDate(value: string) {
   return new Date(`${value}T00:00:00.000Z`);
@@ -173,6 +202,11 @@ export class CotizacionBuilderRepository {
         orden: "asc" as const
       }
     },
+    comisiones: {
+      orderBy: {
+        tipoComision: "asc" as const
+      }
+    },
     items: {
       include: {
         servicio: {
@@ -241,6 +275,71 @@ export class CotizacionBuilderRepository {
     });
 
     await this.syncPriceMatrix(versionId);
+  }
+
+  async ensureCommissionSnapshot(versionId: number) {
+    return prisma.$transaction(async (tx) => {
+      const cotizacion = await tx.cotizacion.findUnique({
+        where: {
+          id: versionId
+        },
+        select: {
+          id: true,
+          idClienteAgente: true
+        }
+      });
+
+      if (!cotizacion) {
+        return null;
+      }
+
+      const existingCount = await tx.cotizacionComision.count({
+        where: {
+          idCotizacion: versionId
+        }
+      });
+
+      if (existingCount > 0) {
+        return cotizacion;
+      }
+
+      const agentRules = cotizacion.idClienteAgente
+        ? await tx.clienteAgenteComision.findMany({
+            where: {
+              idClienteAgente: cotizacion.idClienteAgente,
+              activo: true
+            }
+          })
+        : [];
+
+      const rulesToUse = agentRules.length > 0 ? agentRules : DEFAULT_COMMISSION_RULES;
+
+      await tx.cotizacionComision.createMany({
+        data: rulesToUse.map((rule) => {
+          const porcentajeAgente = new Prisma.Decimal(rule.porcentajeAgente);
+          const porcentajeWtravel = new Prisma.Decimal(rule.porcentajeWtravel);
+          const porcentajeBancario = new Prisma.Decimal(rule.porcentajeBancario);
+          const porcentajeTotal = calculateCommissionTotal(
+            porcentajeAgente,
+            porcentajeWtravel,
+            porcentajeBancario
+          );
+          const factorVenta = calculateCommissionFactor(porcentajeTotal);
+
+          return {
+            idCotizacion: versionId,
+            tipoComision: rule.tipoComision,
+            porcentajeAgente,
+            porcentajeWtravel,
+            porcentajeBancario,
+            porcentajeTotal,
+            factorVenta
+          };
+        })
+      });
+
+      return cotizacion;
+    });
   }
 
   async createColumn(versionId: number, data: CotizacionBuilderColumnInput) {
@@ -335,7 +434,7 @@ export class CotizacionBuilderRepository {
   }
 
   async updateColumnShownPrice(
-  columnId: number,
+    columnId: number,
     data: CotizacionBuilderColumnShownPriceInput
   ) {
     return prisma.$transaction(async (tx) => {
@@ -369,6 +468,65 @@ export class CotizacionBuilderRepository {
       return tx.cotizacion.findUnique({
         where: {
           id: currentColumn.idCotizacion
+        },
+        include: this.includeBuilderDetail
+      });
+    });
+  }
+
+    async updateCommission(versionId: number, data: CotizacionBuilderCommissionInput) {
+    return prisma.$transaction(async (tx) => {
+      const cotizacion = await tx.cotizacion.findUnique({
+        where: {
+          id: versionId
+        },
+        select: {
+          id: true
+        }
+      });
+
+      if (!cotizacion) {
+        return null;
+      }
+
+      const porcentajeAgente = new Prisma.Decimal(data.porcentajeAgente);
+      const porcentajeWtravel = new Prisma.Decimal(data.porcentajeWtravel);
+      const porcentajeBancario = new Prisma.Decimal(data.porcentajeBancario);
+      const porcentajeTotal = calculateCommissionTotal(
+        porcentajeAgente,
+        porcentajeWtravel,
+        porcentajeBancario
+      );
+      const factorVenta = calculateCommissionFactor(porcentajeTotal);
+
+      await tx.cotizacionComision.upsert({
+        where: {
+          idCotizacion_tipoComision: {
+            idCotizacion: versionId,
+            tipoComision: data.tipoComision
+          }
+        },
+        create: {
+          idCotizacion: versionId,
+          tipoComision: data.tipoComision,
+          porcentajeAgente,
+          porcentajeWtravel,
+          porcentajeBancario,
+          porcentajeTotal,
+          factorVenta
+        },
+        update: {
+          porcentajeAgente,
+          porcentajeWtravel,
+          porcentajeBancario,
+          porcentajeTotal,
+          factorVenta
+        }
+      });
+
+      return tx.cotizacion.findUnique({
+        where: {
+          id: versionId
         },
         include: this.includeBuilderDetail
       });
@@ -683,7 +841,7 @@ export class CotizacionBuilderRepository {
     });
   }
 
-  async updateItemNotes(itemId: number, data: CotizacionBuilderNoteInput) {
+  updateItemNotes(itemId: number, data: CotizacionBuilderNoteInput) {
     return prisma.$transaction(async (tx) => {
       const currentItem = await tx.cotizacionItem.findUnique({
         where: {
