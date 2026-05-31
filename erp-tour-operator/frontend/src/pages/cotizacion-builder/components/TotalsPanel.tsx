@@ -10,6 +10,13 @@ type TotalsPanelProps = {
   rows: BuilderRow[];
   monedaCodigo: string;
   totalPasajeros: number;
+  onUpdateColumnShownPrice: (
+    columnId: number,
+    values: {
+      precioMostradoFormula: string | null;
+      precioMostradoValor: number | null;
+    }
+  ) => void;
 };
 
 type CommissionRule = {
@@ -24,6 +31,7 @@ type SummaryColumn = {
   costo: number;
   precio: number;
   mostradoAutomatico: number;
+  mostradoFormula: string;
   mostrado: number;
   totalGrupo: number;
   unidadLabel: string;
@@ -118,6 +126,16 @@ function roundUpToNextFive(value: number) {
   return Math.ceil(value / 5) * 5;
 }
 
+function getDefaultShownFormula(column: BuilderColumn, mostradoAutomatico: number) {
+  const savedFormula = column.precioMostradoFormula?.trim();
+
+  if (savedFormula) {
+    return savedFormula.startsWith("=") ? savedFormula : `=${savedFormula}`;
+  }
+
+  return `=${mostradoAutomatico}`;
+}
+
 function normalizeFormulaExpression(value: string) {
   return value
     .replace(",", ".")
@@ -165,10 +183,9 @@ function buildSummaryColumn(
   const factor = getCommissionFactor(rule);
   const precio = factor > 0 ? costo / factor : costo;
   const mostradoAutomatico = roundUpToNextFive(precio);
-  const mostrado = evaluateFormula(
-    mostradoInputs[column.id] ?? String(mostradoAutomatico),
-    mostradoAutomatico
-  );
+  const mostradoFormula =
+    mostradoInputs[column.id] ?? getDefaultShownFormula(column, mostradoAutomatico);
+  const mostrado = evaluateFormula(mostradoFormula, mostradoAutomatico);
   const totalGrupo = mostrado * getTotalMultiplier(column, totalPasajeros);
 
   return {
@@ -177,6 +194,7 @@ function buildSummaryColumn(
     costo,
     precio,
     mostradoAutomatico,
+    mostradoFormula,
     mostrado,
     totalGrupo,
     unidadLabel: getUnitLabel(column)
@@ -187,7 +205,8 @@ export function TotalsPanel({
   columns,
   rows,
   monedaCodigo,
-  totalPasajeros
+  totalPasajeros,
+  onUpdateColumnShownPrice
 }: TotalsPanelProps) {
   const [mostradoInputs, setMostradoInputs] = useState<Record<number, string>>({});
   const [editingColumnId, setEditingColumnId] = useState<number | null>(null);
@@ -199,7 +218,7 @@ export function TotalsPanel({
   }, [columns, rows, totalPasajeros, mostradoInputs]);
 
   function getInputValue(item: SummaryColumn) {
-    return mostradoInputs[item.column.id] ?? `=${item.mostradoAutomatico}`;
+    return mostradoInputs[item.column.id] ?? item.mostradoFormula;
   }
 
   function updateMostrado(columnId: number, value: string) {
@@ -207,6 +226,34 @@ export function TotalsPanel({
       ...current,
       [columnId]: value
     }));
+  }
+
+  function cancelEditingMostrado(item: SummaryColumn) {
+    setMostradoInputs((current) => {
+      const next = { ...current };
+      delete next[item.column.id];
+      return next;
+    });
+
+    setEditingColumnId(null);
+  }
+
+  function saveEditingMostrado(item: SummaryColumn) {
+    const formula = getInputValue(item).trim() || `=${item.mostradoAutomatico}`;
+    const normalizedFormula = formula.startsWith("=") ? formula : `=${formula}`;
+    const value = evaluateFormula(normalizedFormula, item.mostradoAutomatico);
+
+    setMostradoInputs((current) => ({
+      ...current,
+      [item.column.id]: normalizedFormula
+    }));
+
+    onUpdateColumnShownPrice(item.column.id, {
+      precioMostradoFormula: normalizedFormula,
+      precioMostradoValor: value
+    });
+
+    setEditingColumnId(null);
   }
 
   return (
@@ -263,14 +310,16 @@ export function TotalsPanel({
                             value={getInputValue(item)}
                             autoFocus
                             onChange={(event) => updateMostrado(item.column.id, event.target.value)}
-                            onBlur={() => setEditingColumnId(null)}
+                            onBlur={() => saveEditingMostrado(item)}
                             onKeyDown={(event) => {
                               if (event.key === "Enter") {
-                                event.currentTarget.blur();
+                                event.preventDefault();
+                                saveEditingMostrado(item);
                               }
 
                               if (event.key === "Escape") {
-                                setEditingColumnId(null);
+                                event.preventDefault();
+                                cancelEditingMostrado(item);
                               }
                             }}
                             title="Puedes escribir una fórmula empezando con ="

@@ -9,6 +9,7 @@ import {
 import { prisma } from "@/core/db/prisma";
 import type {
   CotizacionBuilderColumnInput,
+  CotizacionBuilderColumnShownPriceInput,
   CotizacionBuilderItemInput,
   CotizacionBuilderMoveItemInput,
   CotizacionBuilderNoteInput,
@@ -323,6 +324,47 @@ export class CotizacionBuilderRepository {
       });
 
       await this.syncPriceMatrixWithClient(tx, currentColumn.idCotizacion);
+
+      return tx.cotizacion.findUnique({
+        where: {
+          id: currentColumn.idCotizacion
+        },
+        include: this.includeBuilderDetail
+      });
+    });
+  }
+
+  async updateColumnShownPrice(
+  columnId: number,
+    data: CotizacionBuilderColumnShownPriceInput
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const currentColumn = await tx.cotizacionColumna.findUnique({
+        where: {
+          id: columnId
+        },
+        select: {
+          id: true,
+          idCotizacion: true
+        }
+      });
+
+      if (!currentColumn) {
+        return null;
+      }
+
+      await tx.cotizacionColumna.update({
+        where: {
+          id: columnId
+        },
+        data: {
+          precioMostradoFormula: data.precioMostradoFormula?.trim() || null,
+          precioMostradoValor:
+            data.precioMostradoValor === null
+              ? null
+              : new Prisma.Decimal(data.precioMostradoValor)
+        }
+      });
 
       return tx.cotizacion.findUnique({
         where: {

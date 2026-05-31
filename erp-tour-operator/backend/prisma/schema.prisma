@@ -710,6 +710,9 @@ model CotizacionColumna {
 
   multiplicador Int                     @default(1)
 
+  precioMostradoFormula String?         @map("precio_mostrado_formula") @db.VarChar(120)
+  precioMostradoValor   Decimal?        @map("precio_mostrado_valor") @db.Decimal(10, 2)
+
   orden         Int                     @default(1)
   activo        Boolean                 @default(true)
 
@@ -723,7 +726,6 @@ model CotizacionColumna {
   @@index([idCotizacion, orden], map: "idx_cotizacion_columna_orden")
   @@map("cotizacion_columna")
 }
-
 model CotizacionItemPrecio {
   id                    Int                @id @default(autoincrement())
 

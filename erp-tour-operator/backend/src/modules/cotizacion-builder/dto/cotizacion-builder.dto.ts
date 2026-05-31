@@ -50,8 +50,14 @@ export const cotizacionBuilderNoteSchema = z.object({
   tituloOverride: z.string().trim().max(500).nullable().optional()
 });
 
+export const cotizacionBuilderColumnShownPriceSchema = z.object({
+  precioMostradoFormula: z.string().trim().max(120).nullable(),
+  precioMostradoValor: z.coerce.number().min(0).nullable()
+});
+
 export type CotizacionBuilderColumnInput = z.infer<typeof cotizacionBuilderColumnSchema>;
 export type CotizacionBuilderItemInput = z.infer<typeof cotizacionBuilderItemSchema>;
 export type CotizacionBuilderPriceInput = z.infer<typeof cotizacionBuilderPriceSchema>;
 export type CotizacionBuilderMoveItemInput = z.infer<typeof cotizacionBuilderMoveItemSchema>;
 export type CotizacionBuilderNoteInput = z.infer<typeof cotizacionBuilderNoteSchema>;
+export type CotizacionBuilderColumnShownPriceInput = z.infer<typeof cotizacionBuilderColumnShownPriceSchema>;

@@ -12,9 +12,11 @@ import {
   deleteCotizacionBuilderItem,
   getCotizacionBuilder,
   moveCotizacionBuilderItem,
+  updateCotizacionBuilderColumnShownPrice,
   updateCotizacionBuilderItemPrices,
   updateCotizacionBuilderItemNotes,
   type BuilderColumnFormValues,
+  type BuilderColumnShownPriceFormValues,
   type BuilderItemFormValues,
   type BuilderMoveItemValues,
   type BuilderNoteFormValues,
@@ -85,6 +87,19 @@ export function CotizacionBuilderPage() {
       itemId: number;
       values: BuilderNoteFormValues;
     }) => updateCotizacionBuilderItemNotes(itemId, values),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const updateColumnShownPriceMutation = useMutation({
+    mutationFn: ({
+      columnId,
+      values
+    }: {
+      columnId: number;
+      values: BuilderColumnShownPriceFormValues;
+    }) => updateCotizacionBuilderColumnShownPrice(columnId, values),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKey, data);
     }
@@ -205,6 +220,12 @@ export function CotizacionBuilderPage() {
         rows={builder.rows}
         monedaCodigo={builder.expediente.monedaCodigo ?? "USD"}
         totalPasajeros={builder.expediente.totalPasajeros ?? 1}
+        onUpdateColumnShownPrice={(columnId, values) =>
+          updateColumnShownPriceMutation.mutate({
+            columnId,
+            values
+          })
+        }
       />
     </div>
   );

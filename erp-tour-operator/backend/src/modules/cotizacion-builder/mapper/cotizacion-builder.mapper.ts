@@ -163,6 +163,11 @@ export function toCotizacionBuilderDetail(record: any) {
         tipo: column.tipo,
         unidad: column.unidad,
         multiplicador: column.multiplicador,
+        precioMostradoFormula: column.precioMostradoFormula ?? null,
+        precioMostradoValor:
+          column.precioMostradoValor === null || column.precioMostradoValor === undefined
+            ? null
+            : Number(column.precioMostradoValor),
         orden: column.orden
       })),
 

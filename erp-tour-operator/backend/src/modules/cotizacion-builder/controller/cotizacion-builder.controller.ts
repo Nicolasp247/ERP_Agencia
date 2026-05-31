@@ -6,6 +6,7 @@ import {
   cotizacionBuilderColumnSchema,
   cotizacionBuilderItemSchema,
   cotizacionBuilderMoveItemSchema,
+  cotizacionBuilderColumnShownPriceSchema,
   cotizacionBuilderNoteSchema,
   cotizacionBuilderPriceSchema
 } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
@@ -27,6 +28,15 @@ export class CotizacionBuilderController {
   updateColumn = async (req: Request, res: Response) => {
     const body = cotizacionBuilderColumnSchema.parse(req.body);
     const data = await cotizacionBuilderService.updateColumn(Number(req.params.columnId), body);
+    res.json(ok(data));
+  };
+
+  updateColumnShownPrice = async (req: Request, res: Response) => {
+    const body = cotizacionBuilderColumnShownPriceSchema.parse(req.body);
+    const data = await cotizacionBuilderService.updateColumnShownPrice(
+      Number(req.params.columnId),
+      body
+    );
     res.json(ok(data));
   };
 

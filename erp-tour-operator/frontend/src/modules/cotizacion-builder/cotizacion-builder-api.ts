@@ -57,6 +57,11 @@ export type BuilderColumnFormValues = {
   orden?: number;
 };
 
+export type BuilderColumnShownPriceFormValues = {
+  precioMostradoFormula: string | null;
+  precioMostradoValor: number | null;
+};
+
 export type BuilderItemFormValues = {
   idServicio: number;
   fechaServicio: string;
@@ -114,6 +119,18 @@ export async function updateCotizacionBuilderColumn(
 ) {
   const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
     `/cotizacion-builder/columns/${columnId}`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function updateCotizacionBuilderColumnShownPrice(
+  columnId: number,
+  values: BuilderColumnShownPriceFormValues
+) {
+  const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/columns/${columnId}/shown-price`,
     values
   );
 

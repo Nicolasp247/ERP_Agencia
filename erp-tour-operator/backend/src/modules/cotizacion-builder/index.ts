@@ -37,6 +37,12 @@ cotizacionBuilderRouter.post(
 );
 
 cotizacionBuilderRouter.put(
+  "/columns/:columnId/shown-price",
+  validateParams(cotizacionBuilderColumnParamsSchema),
+  asyncHandler(cotizacionBuilderController.updateColumnShownPrice)
+);
+
+cotizacionBuilderRouter.put(
   "/columns/:columnId",
   validateParams(cotizacionBuilderColumnParamsSchema),
   asyncHandler(cotizacionBuilderController.updateColumn)

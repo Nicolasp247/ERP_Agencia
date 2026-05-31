@@ -3,6 +3,7 @@
 import { AppError } from "@/core/errors/app-error";
 import type {
   CotizacionBuilderColumnInput,
+  CotizacionBuilderColumnShownPriceInput,
   CotizacionBuilderItemInput,
   CotizacionBuilderMoveItemInput,
   CotizacionBuilderNoteInput,
@@ -109,6 +110,20 @@ export class CotizacionBuilderService {
 
     if (!record) {
       throw new AppError(404, "COTIZACION_ITEM_NOT_FOUND", "Servicio de cotización no encontrado");
+    }
+
+    return toCotizacionBuilderDetail(record);
+  }
+
+  async updateColumnShownPrice(columnId: number, data: CotizacionBuilderColumnShownPriceInput) {
+    const record = await cotizacionBuilderRepository.updateColumnShownPrice(columnId, data);
+
+    if (!record) {
+      throw new AppError(
+        404,
+        "COTIZACION_COLUMN_NOT_FOUND",
+        "Columna de cotización no encontrada"
+      );
     }
 
     return toCotizacionBuilderDetail(record);

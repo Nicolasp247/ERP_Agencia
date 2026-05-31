@@ -15,6 +15,8 @@ export type BuilderColumn = {
   tipo: BuilderColumnType;
   unidad: BuilderPriceUnit;
   multiplicador: number;
+  precioMostradoFormula?: string | null;
+  precioMostradoValor?: number | null;
   orden: number;
 };
 
