@@ -5,6 +5,8 @@ import type { ApiResponse } from "@/types/api";
 import type {
   BuilderColumn,
   BuilderColumnType,
+  BuilderCommission,
+  BuilderCommissionType,
   BuilderPriceUnit,
   BuilderRow
 } from "@/pages/cotizacion-builder/types/cotizacion-builder.types";
@@ -45,6 +47,7 @@ export type CotizacionBuilderDetail = {
   };
 
   columns: BuilderColumn[];
+  comisiones: BuilderCommission[];
   rows: BuilderRow[];
 };
 
@@ -60,6 +63,13 @@ export type BuilderColumnFormValues = {
 export type BuilderColumnShownPriceFormValues = {
   precioMostradoFormula: string | null;
   precioMostradoValor: number | null;
+};
+
+export type BuilderCommissionFormValues = {
+  tipoComision: BuilderCommissionType;
+  porcentajeAgente: number;
+  porcentajeWtravel: number;
+  porcentajeBancario: number;
 };
 
 export type BuilderItemFormValues = {
@@ -131,6 +141,18 @@ export async function updateCotizacionBuilderColumnShownPrice(
 ) {
   const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
     `/cotizacion-builder/columns/${columnId}/shown-price`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function updateCotizacionBuilderCommission(
+  versionId: number,
+  values: BuilderCommissionFormValues
+) {
+  const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/${versionId}/commission`,
     values
   );
 

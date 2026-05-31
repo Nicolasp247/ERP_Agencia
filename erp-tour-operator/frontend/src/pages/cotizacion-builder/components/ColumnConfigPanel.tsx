@@ -18,32 +18,88 @@ import {
 } from "../helpers/column-options";
 import { ColumnCreateModal } from "./ColumnCreateModal";
 import { ColumnDeleteModal } from "./ColumnDeleteModal";
+import type {
+  BuilderCommission,
+  BuilderCommissionType
+} from "../types/cotizacion-builder.types";
 
-type CommissionKey = "agente" | "wtravel" | "banco";
+import type { BuilderCommissionFormValues } from "@/modules/cotizacion-builder/cotizacion-builder-api";
+
+type CommissionKey = "porcentajeAgente" | "porcentajeWtravel" | "porcentajeBancario";
 
 type CommissionRule = {
+  tipoComision: BuilderCommissionType;
   label: string;
-  agente: number;
-  wtravel: number;
-  banco: number;
+  porcentajeAgente: number;
+  porcentajeWtravel: number;
+  porcentajeBancario: number;
+  porcentajeTotal: number;
+  factorVenta: number;
 };
 
-const TERRESTRE_COMMISSION: CommissionRule = {
-  label: "Terrestre",
-  agente: 12,
-  wtravel: 13,
-  banco: 5
-};
+const DEFAULT_COMMISSIONS: CommissionRule[] = [
+  {
+    tipoComision: "TERRESTRE",
+    label: "Terrestre",
+    porcentajeAgente: 12,
+    porcentajeWtravel: 13,
+    porcentajeBancario: 5,
+    porcentajeTotal: 30,
+    factorVenta: 0.7
+  },
+  {
+    tipoComision: "AEREA",
+    label: "Aéreo / transporte",
+    porcentajeAgente: 5,
+    porcentajeWtravel: 5,
+    porcentajeBancario: 5,
+    porcentajeTotal: 15,
+    factorVenta: 0.85
+  }
+];
 
-const AEREA_COMMISSION: CommissionRule = {
-  label: "Aéreo / transporte",
-  agente: 5,
-  wtravel: 5,
-  banco: 5
-};
+function getCommissionLabel(tipoComision: BuilderCommissionType) {
+  if (tipoComision === "AEREA") return "Aéreo / transporte";
+  if (tipoComision === "TERRESTRE") return "Terrestre";
+  if (tipoComision === "OPCIONALES") return "Opcionales";
+  return "Otro";
+}
+
+function normalizeCommission(
+  commission: BuilderCommission | undefined,
+  fallback: CommissionRule
+): CommissionRule {
+  if (!commission) {
+    return fallback;
+  }
+
+  return {
+    tipoComision: commission.tipoComision,
+    label: getCommissionLabel(commission.tipoComision),
+    porcentajeAgente: commission.porcentajeAgente,
+    porcentajeWtravel: commission.porcentajeWtravel,
+    porcentajeBancario: commission.porcentajeBancario,
+    porcentajeTotal: commission.porcentajeTotal,
+    factorVenta: commission.factorVenta
+  };
+}
+
+function getCommissionByType(
+  comisiones: BuilderCommission[],
+  tipoComision: BuilderCommissionType
+) {
+  const fallback =
+    DEFAULT_COMMISSIONS.find((item) => item.tipoComision === tipoComision) ??
+    DEFAULT_COMMISSIONS[0];
+
+  return normalizeCommission(
+    comisiones.find((item) => item.tipoComision === tipoComision),
+    fallback
+  );
+}
 
 function getCommissionTotal(rule: CommissionRule) {
-  return rule.agente + rule.wtravel + rule.banco;
+  return rule.porcentajeAgente + rule.porcentajeWtravel + rule.porcentajeBancario;
 }
 
 function getCommissionFactor(rule: CommissionRule) {
@@ -112,50 +168,46 @@ function CommissionRuleCard({
   rule: CommissionRule;
   onChange: (key: CommissionKey, value: number) => void;
 }) {
-  const total = getCommissionTotal(rule);
-  const factor = getCommissionFactor(rule);
-
   return (
     <article className="builder-commission-card">
       <div className="builder-commission-card-header">
         <span>{rule.label}</span>
-        <strong>{total}%</strong>
+        <strong>{rule.porcentajeTotal}%</strong>
       </div>
 
       <div className="builder-commission-breakdown">
         <div>
           <span>Agente</span>
           <EditablePercent
-            value={rule.agente}
-            onChange={(value) => onChange("agente", value)}
+            value={rule.porcentajeAgente}
+            onChange={(value) => onChange("porcentajeAgente", value)}
           />
         </div>
 
         <div>
           <span>WTravel</span>
           <EditablePercent
-            value={rule.wtravel}
-            onChange={(value) => onChange("wtravel", value)}
+            value={rule.porcentajeWtravel}
+            onChange={(value) => onChange("porcentajeWtravel", value)}
           />
         </div>
 
         <div>
           <span>Banco</span>
           <EditablePercent
-            value={rule.banco}
-            onChange={(value) => onChange("banco", value)}
+            value={rule.porcentajeBancario}
+            onChange={(value) => onChange("porcentajeBancario", value)}
           />
         </div>
       </div>
 
       <div className="builder-commission-factor">
         <span>Factor usado</span>
-        <strong>{factor.toFixed(2)}</strong>
+        <strong>{Number(rule.factorVenta).toFixed(2)}</strong>
       </div>
     </article>
   );
 }
-
 type PanelMode = "CREATE" | "DELETE" | null;
 
 type ColumnConfigPanelProps = {
@@ -163,18 +215,23 @@ type ColumnConfigPanelProps = {
   isSaving?: boolean;
   onCreateColumn: (values: BuilderColumnFormValues) => void;
   onDeleteColumn: (columnId: number) => void;
+  comisiones: BuilderCommission[];
+  onUpdateCommission: (values: BuilderCommissionFormValues) => void;
 };
 
 export function ColumnConfigPanel({
   columns,
   isSaving = false,
   onCreateColumn,
-  onDeleteColumn
+  onDeleteColumn,
+  comisiones,
+  onUpdateCommission 
 }: ColumnConfigPanelProps) {
   const [mode, setMode] = useState<PanelMode>(null);
   const [formValues, setFormValues] = useState<InternalColumnForm>(defaultFormValues);
-  const [terrestreCommission, setTerrestreCommission] = useState<CommissionRule>(TERRESTRE_COMMISSION);
-  const [aereaCommission, setAereaCommission] = useState<CommissionRule>(AEREA_COMMISSION);
+  const terrestreCommission = getCommissionByType(comisiones, "TERRESTRE");
+  const aereaCommission = getCommissionByType(comisiones, "AEREA");
+
 
   function resetForm() {
     setFormValues(defaultFormValues);
@@ -182,25 +239,21 @@ export function ColumnConfigPanel({
   }
 
   function updateCommissionRule(
-    type: "TERRESTRE" | "AEREA",
+    rule: CommissionRule,
     key: CommissionKey,
     value: number
   ) {
     const safeValue = Math.max(0, Math.min(99, value));
 
-    if (type === "TERRESTRE") {
-      setTerrestreCommission((current) => ({
-        ...current,
-        [key]: safeValue
-      }));
-
-      return;
-    }
-
-    setAereaCommission((current) => ({
-      ...current,
-      [key]: safeValue
-    }));
+    onUpdateCommission({
+      tipoComision: rule.tipoComision,
+      porcentajeAgente:
+        key === "porcentajeAgente" ? safeValue : rule.porcentajeAgente,
+      porcentajeWtravel:
+        key === "porcentajeWtravel" ? safeValue : rule.porcentajeWtravel,
+      porcentajeBancario:
+        key === "porcentajeBancario" ? safeValue : rule.porcentajeBancario
+    });
   }
 
   function openCreate() {
@@ -314,12 +367,12 @@ export function ColumnConfigPanel({
         <div className="builder-commission-grid">
           <CommissionRuleCard
             rule={terrestreCommission}
-            onChange={(key, value) => updateCommissionRule("TERRESTRE", key, value)}
+            onChange={(key, value) => updateCommissionRule(terrestreCommission, key, value)}
           />
 
           <CommissionRuleCard
             rule={aereaCommission}
-            onChange={(key, value) => updateCommissionRule("AEREA", key, value)}
+            onChange={(key, value) => updateCommissionRule(aereaCommission, key, value)}
           />
         </div>
 

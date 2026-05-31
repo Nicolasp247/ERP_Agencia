@@ -2,6 +2,18 @@
 
 export type BuilderColumnType = "TERRESTRE" | "TRANSPORTE" | "OPCIONALES" | "OTRO";
 
+export type BuilderCommissionType = "TERRESTRE" | "AEREA" | "OPCIONALES" | "OTRO";
+
+export type BuilderCommission = {
+  id: number;
+  tipoComision: BuilderCommissionType;
+  porcentajeAgente: number;
+  porcentajeWtravel: number;
+  porcentajeBancario: number;
+  porcentajeTotal: number;
+  factorVenta: number;
+};
+
 export type BuilderPriceUnit =
   | "POR_PERSONA"
   | "POR_NINO"

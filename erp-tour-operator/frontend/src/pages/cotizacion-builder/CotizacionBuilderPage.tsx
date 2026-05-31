@@ -15,6 +15,8 @@ import {
   updateCotizacionBuilderColumnShownPrice,
   updateCotizacionBuilderItemPrices,
   updateCotizacionBuilderItemNotes,
+  updateCotizacionBuilderCommission,
+  type BuilderCommissionFormValues,
   type BuilderColumnFormValues,
   type BuilderColumnShownPriceFormValues,
   type BuilderItemFormValues,
@@ -105,6 +107,19 @@ export function CotizacionBuilderPage() {
     }
   });
 
+  const updateCommissionMutation = useMutation({
+    mutationFn: ({
+      versionId,
+      values
+    }: {
+      versionId: number;
+      values: BuilderCommissionFormValues;
+    }) => updateCotizacionBuilderCommission(versionId, values),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
   const deleteItemMutation = useMutation({
     mutationFn: deleteCotizacionBuilderItem,
     onSuccess: (data) => {
@@ -153,12 +168,18 @@ export function CotizacionBuilderPage() {
       <div className="builder-top-grid">
         <BuilderHeader expediente={builder.expediente} version={builder.version} />
 
-        <ColumnConfigPanel
-          columns={builder.columns}
-          isSaving={isSavingColumn}
-          onCreateColumn={(values) => createColumnMutation.mutate(values)}
-          onDeleteColumn={(columnId) => deleteColumnMutation.mutate(columnId)}
-        />
+      <ColumnConfigPanel
+        columns={builder.columns}
+        comisiones={builder.comisiones ?? []}
+        onCreateColumn={(values) => createColumnMutation.mutate(values)}
+        onDeleteColumn={(columnId) => deleteColumnMutation.mutate(columnId)}
+        onUpdateCommission={(values) =>
+          updateCommissionMutation.mutate({
+            versionId: builder.version.id,
+            values
+          })
+        }
+      />
       </div>
 
       <PageSection
@@ -217,6 +238,7 @@ export function CotizacionBuilderPage() {
 
       <TotalsPanel
         columns={builder.columns}
+        comisiones={builder.comisiones ?? []}
         rows={builder.rows}
         monedaCodigo={builder.expediente.monedaCodigo ?? "USD"}
         totalPasajeros={builder.expediente.totalPasajeros ?? 1}

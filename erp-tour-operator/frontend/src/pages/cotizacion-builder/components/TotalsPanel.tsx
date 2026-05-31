@@ -2,12 +2,18 @@
 
 import { useMemo, useState } from "react";
 
-import type { BuilderColumn, BuilderRow } from "../types/cotizacion-builder.types";
+import type {
+  BuilderColumn,
+  BuilderCommission,
+  BuilderCommissionType,
+  BuilderRow
+} from "../types/cotizacion-builder.types";
 import { calculateColumnTotal, getColumnLabel } from "../helpers/builder-calculations";
 
 type TotalsPanelProps = {
   columns: BuilderColumn[];
   rows: BuilderRow[];
+  comisiones: BuilderCommission[];
   monedaCodigo: string;
   totalPasajeros: number;
   onUpdateColumnShownPrice: (
@@ -20,9 +26,8 @@ type TotalsPanelProps = {
 };
 
 type CommissionRule = {
-  agente: number;
-  empresa: number;
-  bancario: number;
+  tipoComision: BuilderCommissionType;
+  factorVenta: number;
 };
 
 type SummaryColumn = {
@@ -35,18 +40,6 @@ type SummaryColumn = {
   mostrado: number;
   totalGrupo: number;
   unidadLabel: string;
-};
-
-const TERRESTRE_COMMISSION: CommissionRule = {
-  agente: 12,
-  empresa: 13,
-  bancario: 5
-};
-
-const AEREA_COMMISSION: CommissionRule = {
-  agente: 5,
-  empresa: 5,
-  bancario: 5
 };
 
 function normalizeText(value: string | null | undefined) {
@@ -63,14 +56,6 @@ function formatMoneyNoDecimals(value: number, monedaCodigo: string) {
   return `${Math.round(value)} ${monedaCodigo}`;
 }
 
-function getCommissionTotal(rule: CommissionRule) {
-  return rule.agente + rule.empresa + rule.bancario;
-}
-
-function getCommissionFactor(rule: CommissionRule) {
-  return (100 - getCommissionTotal(rule)) / 100;
-}
-
 function isAirColumn(column: BuilderColumn) {
   const tipo = normalizeText(column.tipo);
   const label = normalizeText(getColumnLabel(column));
@@ -85,8 +70,40 @@ function isAirColumn(column: BuilderColumn) {
   );
 }
 
-function getCommissionRule(column: BuilderColumn) {
-  return isAirColumn(column) ? AEREA_COMMISSION : TERRESTRE_COMMISSION;
+function getDefaultCommission(tipoComision: BuilderCommissionType): CommissionRule {
+  if (tipoComision === "AEREA") {
+    return {
+      tipoComision: "AEREA",
+      factorVenta: 0.85
+    };
+  }
+
+  return {
+    tipoComision: "TERRESTRE",
+    factorVenta: 0.7
+  };
+}
+
+function getCommissionRule(
+  column: BuilderColumn,
+  comisiones: BuilderCommission[]
+): CommissionRule {
+  const tipoComision: BuilderCommissionType = isAirColumn(column)
+    ? "AEREA"
+    : "TERRESTRE";
+
+  const commission = comisiones.find(
+    (item) => item.tipoComision === tipoComision
+  );
+
+  if (!commission) {
+    return getDefaultCommission(tipoComision);
+  }
+
+  return {
+    tipoComision,
+    factorVenta: Number(commission.factorVenta || 1)
+  };
 }
 
 function getUnitLabel(column: BuilderColumn) {
@@ -174,13 +191,14 @@ function evaluateFormula(value: string, fallback: number) {
 
 function buildSummaryColumn(
   column: BuilderColumn,
+  comisiones: BuilderCommission[],
   rows: BuilderRow[],
   totalPasajeros: number,
   mostradoInputs: Record<number, string>
 ): SummaryColumn {
   const costo = calculateColumnTotal(rows, column.id);
-  const rule = getCommissionRule(column);
-  const factor = getCommissionFactor(rule);
+  const rule = getCommissionRule(column, comisiones);
+  const factor = Number(rule.factorVenta || 1);
   const precio = factor > 0 ? costo / factor : costo;
   const mostradoAutomatico = roundUpToNextFive(precio);
   const mostradoFormula =
@@ -203,6 +221,7 @@ function buildSummaryColumn(
 
 export function TotalsPanel({
   columns,
+  comisiones,
   rows,
   monedaCodigo,
   totalPasajeros,
@@ -213,9 +232,9 @@ export function TotalsPanel({
 
   const summaries = useMemo(() => {
     return columns.map((column) =>
-      buildSummaryColumn(column, rows, totalPasajeros, mostradoInputs)
+      buildSummaryColumn(column, comisiones, rows, totalPasajeros, mostradoInputs)
     );
-  }, [columns, rows, totalPasajeros, mostradoInputs]);
+  }, [columns, comisiones, rows, totalPasajeros, mostradoInputs]);
 
   function getInputValue(item: SummaryColumn) {
     return mostradoInputs[item.column.id] ?? item.mostradoFormula;
