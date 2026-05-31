@@ -12,8 +12,8 @@ import { calculateColumnTotal, getColumnLabel } from "../helpers/builder-calcula
 
 type TotalsPanelProps = {
   columns: BuilderColumn[];
-  rows: BuilderRow[];
   comisiones: BuilderCommission[];
+  rows: BuilderRow[];
   monedaCodigo: string;
   totalPasajeros: number;
   onUpdateColumnShownPrice: (
@@ -40,6 +40,7 @@ type SummaryColumn = {
   mostrado: number;
   totalGrupo: number;
   unidadLabel: string;
+  mostradoEsMenorAlPrecio: boolean;
 };
 
 function normalizeText(value: string | null | undefined) {
@@ -205,6 +206,7 @@ function buildSummaryColumn(
     mostradoInputs[column.id] ?? getDefaultShownFormula(column, mostradoAutomatico);
   const mostrado = evaluateFormula(mostradoFormula, mostradoAutomatico);
   const totalGrupo = mostrado * getTotalMultiplier(column, totalPasajeros);
+  const mostradoEsMenorAlPrecio = mostrado + 0.01 < precio;
 
   return {
     column,
@@ -215,7 +217,8 @@ function buildSummaryColumn(
     mostradoFormula,
     mostrado,
     totalGrupo,
-    unidadLabel: getUnitLabel(column)
+    unidadLabel: getUnitLabel(column),
+    mostradoEsMenorAlPrecio
   };
 }
 
@@ -229,12 +232,16 @@ export function TotalsPanel({
 }: TotalsPanelProps) {
   const [mostradoInputs, setMostradoInputs] = useState<Record<number, string>>({});
   const [editingColumnId, setEditingColumnId] = useState<number | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const summaries = useMemo(() => {
     return columns.map((column) =>
       buildSummaryColumn(column, comisiones, rows, totalPasajeros, mostradoInputs)
     );
   }, [columns, comisiones, rows, totalPasajeros, mostradoInputs]);
+
+  const outdatedSummaries = summaries.filter((item) => item.mostradoEsMenorAlPrecio);
+  const hasOutdatedShownPrices = outdatedSummaries.length > 0;
 
   function getInputValue(item: SummaryColumn) {
     return mostradoInputs[item.column.id] ?? item.mostradoFormula;
@@ -275,11 +282,66 @@ export function TotalsPanel({
     setEditingColumnId(null);
   }
 
+  function updateOutdatedShownPrices() {
+    if (!hasOutdatedShownPrices) {
+      return;
+    }
+
+    const nextInputs: Record<number, string> = {};
+
+    outdatedSummaries.forEach((item) => {
+      const newShownValue = roundUpToNextFive(item.precio);
+      const newFormula = `=${newShownValue}`;
+
+      nextInputs[item.column.id] = newFormula;
+
+      onUpdateColumnShownPrice(item.column.id, {
+        precioMostradoFormula: newFormula,
+        precioMostradoValor: newShownValue
+      });
+    });
+
+    setMostradoInputs((current) => ({
+      ...current,
+      ...nextInputs
+    }));
+
+    setStatusMessage("Precios mostrados actualizados. Favor revisar.");
+    window.setTimeout(() => {
+      setStatusMessage(null);
+    }, 3500);
+  }
+
   return (
     <div className="builder-card">
       <div className="builder-totals-table-layout">
         <div className="builder-totals-table-block">
-          <h4>Totales de cotización</h4>
+          <div className="builder-totals-heading-row">
+            <h4>Totales de cotización</h4>
+
+            {hasOutdatedShownPrices ? (
+              <button
+                className="builder-totals-warning-action"
+                type="button"
+                onClick={updateOutdatedShownPrices}
+              >
+                Actualizar mostrados
+              </button>
+            ) : null}
+          </div>
+
+          {hasOutdatedShownPrices ? (
+            <div className="builder-totals-warning">
+              Hay valores de “Mostrado al pasajero” por debajo del precio calculado.
+            </div>
+          ) : null}
+
+          {statusMessage ? (
+            <div className="builder-totals-status">
+              {statusMessage}
+            </div>
+          ) : null}
+
           <div className="builder-totals-table-wrapper">
             <table className="builder-totals-table">
               <thead>
@@ -322,7 +384,7 @@ export function TotalsPanel({
                     const isEditing = editingColumnId === item.column.id;
 
                     return (
-                      <td key={item.column.id}>
+                      <td key={item.column.id} className={ item.mostradoEsMenorAlPrecio ? "builder-total-shown-warning-cell" : undefined }>
                         {isEditing ? (
                           <input
                             className="builder-total-edit-input"
@@ -345,13 +407,20 @@ export function TotalsPanel({
                           />
                         ) : (
                           <button
-                            className="builder-total-result-button"
+                            className={
+                              item.mostradoEsMenorAlPrecio
+                                ? "builder-total-result-button builder-total-result-button-warning"
+                                : "builder-total-result-button"
+                            }
                             type="button"
                             onClick={() => setEditingColumnId(item.column.id)}
                             title={`Fórmula: ${getInputValue(item)}`}
                           >
                             <strong>{formatMoneyNoDecimals(item.mostrado, monedaCodigo)}</strong>
                             <span>{item.unidadLabel}</span>
+                            {item.mostradoEsMenorAlPrecio ? (
+                              <em>Menor al precio</em>
+                            ) : null}
                           </button>
                         )}
                       </td>
