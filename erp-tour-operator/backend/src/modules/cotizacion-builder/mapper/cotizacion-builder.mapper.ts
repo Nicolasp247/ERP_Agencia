@@ -207,6 +207,10 @@ export function toCotizacionBuilderDetail(record: any) {
         precioNeto: precio.precioNeto === null || precio.precioNeto === undefined
           ? null
           : Number(precio.precioNeto)
+      })),
+      hotelesPrevistos: (item.hotelesPrevistos ?? []).map((hotel: any) => ({
+        columnId: hotel.idCotizacionColumna,
+        textoHotel: hotel.textoHotel ?? ""
       }))
     }))
   };

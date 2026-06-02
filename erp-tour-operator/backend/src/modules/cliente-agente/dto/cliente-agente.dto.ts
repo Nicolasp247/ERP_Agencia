@@ -3,9 +3,9 @@
 import { z } from "zod";
 
 const clienteAgenteComisionSchema = z.object({
-  porcentajeAgente: z.coerce.number().min(0).max(99),
-  porcentajeWtravel: z.coerce.number().min(0).max(99),
-  porcentajeBancario: z.coerce.number().min(0).max(99)
+  porcentajeAgente: z.coerce.number().min(0).max(100),
+  porcentajeWtravel: z.coerce.number().min(0).max(100),
+  porcentajeBancario: z.coerce.number().min(0).max(100)
 });
 
 export const clienteAgenteSchema = z.object({

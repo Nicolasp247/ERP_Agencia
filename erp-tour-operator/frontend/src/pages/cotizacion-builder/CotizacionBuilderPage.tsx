@@ -13,6 +13,7 @@ import {
   getCotizacionBuilder,
   moveCotizacionBuilderItem,
   updateCotizacionBuilderColumnShownPrice,
+  updateCotizacionBuilderItemHotels,
   updateCotizacionBuilderItemPrices,
   updateCotizacionBuilderItemNotes,
   updateCotizacionBuilderCommission,
@@ -29,6 +30,7 @@ import { BuilderHeader } from "./components/BuilderHeader";
 import { ColumnConfigPanel } from "./components/ColumnConfigPanel";
 import { CotizacionBuilderTable } from "./components/CotizacionBuilderTable";
 import { TotalsPanel } from "./components/TotalsPanel";
+import { HotelPreviewTable } from "@/pages/cotizacion-builder/components/HotelPreviewTable";
 
 export function CotizacionBuilderPage() {
   const params = useParams();
@@ -91,6 +93,24 @@ export function CotizacionBuilderPage() {
     }) => updateCotizacionBuilderItemNotes(itemId, values),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const updateItemHotelsMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      payload
+    }: {
+      itemId: number;
+      payload: {
+        hotels: Array<{
+          columnId: number;
+          textoHotel: string;
+        }>;
+      };
+    }) => updateCotizacionBuilderItemHotels(itemId, payload),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["cotizacion-builder", versionId], data);
     }
   });
 
@@ -168,18 +188,18 @@ export function CotizacionBuilderPage() {
       <div className="builder-top-grid">
         <BuilderHeader expediente={builder.expediente} version={builder.version} />
 
-      <ColumnConfigPanel
-        columns={builder.columns}
-        comisiones={builder.comisiones ?? []}
-        onCreateColumn={(values) => createColumnMutation.mutate(values)}
-        onDeleteColumn={(columnId) => deleteColumnMutation.mutate(columnId)}
-        onUpdateCommission={(values) =>
-          updateCommissionMutation.mutate({
-            versionId: builder.version.id,
-            values
-          })
-        }
-      />
+        <ColumnConfigPanel
+          columns={builder.columns}
+          comisiones={builder.comisiones ?? []}
+          onCreateColumn={(values) => createColumnMutation.mutate(values)}
+          onDeleteColumn={(columnId) => deleteColumnMutation.mutate(columnId)}
+          onUpdateCommission={(values) =>
+            updateCommissionMutation.mutate({
+              versionId: builder.version.id,
+              values
+            })
+          }
+        />
       </div>
 
       <PageSection
@@ -194,31 +214,31 @@ export function CotizacionBuilderPage() {
         }
         title="Servicios de la cotización"
       >
-      <CotizacionBuilderTable
-        columns={builder.columns}
-        rows={builder.rows}
-        onDeleteItem={(itemId) => deleteItemMutation.mutate(itemId)}
-        onMoveItem={(itemId, direction) =>
-          moveItemMutation.mutate({
-            itemId,
-            values: {
-              direction
-            }
-          })
-        }
-        onUpdateItemNotes={(itemId, values) =>
-          updateItemNotesMutation.mutate({
-            itemId,
-            values
-          })
-        }
-        onUpdateItemPrices={(itemId, values) =>
-          updateItemPricesMutation.mutate({
-            itemId,
-            values
-          })
-        }
-      />
+        <CotizacionBuilderTable
+          columns={builder.columns}
+          rows={builder.rows}
+          onDeleteItem={(itemId) => deleteItemMutation.mutate(itemId)}
+          onMoveItem={(itemId, direction) =>
+            moveItemMutation.mutate({
+              itemId,
+              values: {
+                direction
+              }
+            })
+          }
+          onUpdateItemNotes={(itemId, values) =>
+            updateItemNotesMutation.mutate({
+              itemId,
+              values
+            })
+          }
+          onUpdateItemPrices={(itemId, values) =>
+            updateItemPricesMutation.mutate({
+              itemId,
+              values
+            })
+          }
+        />
 
         {showAddService ? (
           <div className="builder-modal-backdrop">
@@ -234,6 +254,19 @@ export function CotizacionBuilderPage() {
             </div>
           </div>
         ) : null}
+      </PageSection>
+      
+      <PageSection title="Hoteles previstos o similares">       
+        <HotelPreviewTable
+          columns={builder.columns}
+          rows={builder.rows}
+          onUpdateItemHotels={(itemId, payload) =>
+            updateItemHotelsMutation.mutate({
+              itemId,
+              payload
+            })
+          }
+        />
       </PageSection>
 
       <TotalsPanel

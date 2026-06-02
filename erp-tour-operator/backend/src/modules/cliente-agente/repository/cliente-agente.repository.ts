@@ -113,6 +113,11 @@ export class ClienteAgenteRepository {
           orderBy: {
             fechaViajePrincipal: "desc"
           }
+        },
+        comisiones: {
+          orderBy: {
+            tipoComision: "asc"
+          }
         }
       }
     });
@@ -169,30 +174,32 @@ export class ClienteAgenteRepository {
         }
       });
 
-      for (const commission of getDefaultAgentCommissions(data)) {
-        await tx.clienteAgenteComision.upsert({
-          where: {
-            idClienteAgente_tipoComision: {
-              idClienteAgente: id,
-              tipoComision: commission.tipoComision
-            }
-          },
-          create: {
-            idClienteAgente: id,
-            tipoComision: commission.tipoComision,
-            porcentajeAgente: commission.porcentajeAgente,
-            porcentajeWtravel: commission.porcentajeWtravel,
-            porcentajeBancario: commission.porcentajeBancario,
-            activo: true
-          },
-          update: {
-            porcentajeAgente: commission.porcentajeAgente,
-            porcentajeWtravel: commission.porcentajeWtravel,
-            porcentajeBancario: commission.porcentajeBancario,
-            activo: true
+        if (comisiones) {
+          for (const commission of getDefaultAgentCommissions(data)) {
+            await tx.clienteAgenteComision.upsert({
+              where: {
+                idClienteAgente_tipoComision: {
+                  idClienteAgente: id,
+                  tipoComision: commission.tipoComision
+                }
+              },
+              create: {
+                idClienteAgente: id,
+                tipoComision: commission.tipoComision,
+                porcentajeAgente: commission.porcentajeAgente,
+                porcentajeWtravel: commission.porcentajeWtravel,
+                porcentajeBancario: commission.porcentajeBancario,
+                activo: true
+              },
+              update: {
+                porcentajeAgente: commission.porcentajeAgente,
+                porcentajeWtravel: commission.porcentajeWtravel,
+                porcentajeBancario: commission.porcentajeBancario,
+                activo: true
+              }
+            });
           }
-        });
-      }
+        }
 
       return updated;
     });

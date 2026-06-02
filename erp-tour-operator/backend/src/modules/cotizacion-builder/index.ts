@@ -30,6 +30,12 @@ cotizacionBuilderRouter.put(
   asyncHandler(cotizacionBuilderController.updateCommission)
 );
 
+cotizacionBuilderRouter.put(
+  "/items/:itemId/hotels",
+  validateParams(cotizacionBuilderItemParamsSchema),
+  asyncHandler(cotizacionBuilderController.updateItemHotels)
+);
+
 cotizacionBuilderRouter.get(
   "/:versionId",
   validateParams(cotizacionBuilderParamsSchema),

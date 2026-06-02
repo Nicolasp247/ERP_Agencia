@@ -17,6 +17,13 @@ export function toClienteAgenteListItem(
     clientes: { id: number }[];
     cotizaciones: { estado: CotizacionEstado }[];
     reservas: { id: number }[];
+    comisiones?: Array<{
+      tipoComision: string;
+      porcentajeAgente: { toString(): string };
+      porcentajeWtravel: { toString(): string };
+      porcentajeBancario: { toString(): string };
+      activo: boolean;
+    }>;
   }
 ) {
   return {
@@ -33,7 +40,14 @@ export function toClienteAgenteListItem(
     cantidadClientes: record.clientes.length,
     cantidadCotizacionesActivas: record.cotizaciones.filter((item) => item.estado === CotizacionEstado.ACTIVA)
       .length,
-    cantidadReservas: record.reservas.length
+    cantidadReservas: record.reservas.length,
+    comisiones: (record.comisiones ?? []).map((commission) => ({
+      tipoComision: commission.tipoComision,
+      porcentajeAgente: commission.porcentajeAgente.toString(),
+      porcentajeWtravel: commission.porcentajeWtravel.toString(),
+      porcentajeBancario: commission.porcentajeBancario.toString(),
+      activo: commission.activo
+    }))
   };
 }
 

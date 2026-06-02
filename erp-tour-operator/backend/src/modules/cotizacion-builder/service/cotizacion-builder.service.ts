@@ -4,6 +4,7 @@ import { AppError } from "@/core/errors/app-error";
 import type {
   CotizacionBuilderColumnInput,
   CotizacionBuilderColumnShownPriceInput,
+  CotizacionBuilderHotelPreviewInput,
   CotizacionBuilderItemInput,
   CotizacionBuilderMoveItemInput,
   CotizacionBuilderCommissionInput,
@@ -102,6 +103,24 @@ export class CotizacionBuilderService {
 
     if (!record) {
       throw new AppError(404, "COTIZACION_ITEM_NOT_FOUND", "Servicio de cotización no encontrado");
+    }
+
+    return toCotizacionBuilderDetail(record);
+  }
+
+  async updateItemHotels(itemId: number, data: CotizacionBuilderHotelPreviewInput) {
+    const record = await cotizacionBuilderRepository.updateItemHotels(itemId, data);
+
+    if (!record) {
+      throw new AppError(404, "COTIZACION_ITEM_NOT_FOUND", "Servicio de cotización no encontrado");
+    }
+
+    if (record === "ITEM_NOT_ACCOMMODATION") {
+      throw new AppError(
+        400,
+        "COTIZACION_ITEM_NOT_ACCOMMODATION",
+        "Solo los servicios de alojamiento pueden tener hoteles previstos"
+      );
     }
 
     return toCotizacionBuilderDetail(record);

@@ -37,6 +37,11 @@ export type BuilderRowPrice = {
   precioNeto: number | null;
 };
 
+export type BuilderHotelPreview = {
+  columnId: number;
+  textoHotel: string;
+};
+
 export type BuilderRow = {
   id: number;
   idServicio: number;
@@ -53,4 +58,5 @@ export type BuilderRow = {
   ciudadNombre: string | null;
   paisNombre: string | null;
   precios: BuilderRowPrice[];
+  hotelesPrevistos: BuilderHotelPreview[];
 };

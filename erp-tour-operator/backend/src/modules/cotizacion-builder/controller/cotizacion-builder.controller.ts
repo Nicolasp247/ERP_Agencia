@@ -4,6 +4,7 @@ import type { Request, Response } from "express";
 
 import {
   cotizacionBuilderColumnSchema,
+  cotizacionBuilderHotelPreviewSchema,
   cotizacionBuilderItemSchema,
   cotizacionBuilderMoveItemSchema,
   cotizacionBuilderColumnShownPriceSchema,
@@ -66,6 +67,15 @@ export class CotizacionBuilderController {
   moveItem = async (req: Request, res: Response) => {
     const body = cotizacionBuilderMoveItemSchema.parse(req.body);
     const data = await cotizacionBuilderService.moveItem(Number(req.params.itemId), body);
+    res.json(ok(data));
+  };
+
+  updateItemHotels = async (req: Request, res: Response) => {
+    const body = cotizacionBuilderHotelPreviewSchema.parse(req.body);
+    const data = await cotizacionBuilderService.updateItemHotels(
+      Number(req.params.itemId),
+      body
+    );
     res.json(ok(data));
   };
 

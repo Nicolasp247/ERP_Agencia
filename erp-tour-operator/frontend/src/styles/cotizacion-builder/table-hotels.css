@@ -1,0 +1,124 @@
+/* erp-tour-operator/frontend/src/styles/cotizacion-builder/table-hotels.css */
+
+.builder-hotels-section {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.4rem;
+}
+
+.builder-hotels-heading {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.builder-hotels-heading h3 {
+  margin: 0;
+  color: #061f25;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.builder-hotels-heading p {
+  margin: 0;
+  color: #61777d;
+  font-size: 0.92rem;
+}
+
+.builder-hotels-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(23, 55, 61, 0.18);
+  border-radius: 1rem;
+  background: #fffefa;
+}
+
+.builder-hotels-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.builder-hotels-table th,
+.builder-hotels-table td {
+  border: 1px solid rgba(23, 55, 61, 0.16);
+  padding: 0.75rem 0.8rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.builder-hotels-table th {
+  background: #f3ead7;
+  color: #061f25;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.builder-hotels-table th:first-child,
+.builder-hotels-table td:first-child {
+  width: 180px;
+}
+
+.builder-hotels-table th:nth-child(2),
+.builder-hotels-table td:nth-child(2) {
+  width: 280px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.builder-hotels-table td:nth-child(2) strong,
+.builder-hotels-table td:nth-child(2) span {
+  display: block;
+}
+
+.builder-hotels-table td:nth-child(2) strong {
+  color: #061f25;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.builder-hotels-table td:nth-child(2) span {
+  margin-top: 0.2rem;
+  color: #61777d;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.builder-hotel-input {
+  width: 100%;
+  min-height: 38px;
+  box-sizing: border-box;
+  border: 1px solid #d8d2c2;
+  border-radius: 12px;
+  padding: 0.5rem 0.65rem;
+  background: #fffef9;
+  color: #172026;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.builder-hotel-input:focus {
+  border-color: #17373d;
+  outline: 2px solid rgba(23, 55, 61, 0.12);
+}
+
+.builder-hotels-table td:nth-child(2) {
+  display: table-cell;
+}
+
+.builder-hotels-table td:nth-child(2) strong,
+.builder-hotels-table td:nth-child(2) span {
+  display: block;
+  text-align: center;
+}
+
+.builder-hotels-table td:nth-child(2) strong {
+  margin-bottom: 0.25rem;
+}
+
+.builder-hotels-table td {
+  vertical-align: middle !important;
+}
+
+.builder-hotels-table input {
+  text-align: center;
+}

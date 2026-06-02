@@ -99,6 +99,20 @@ export type BuilderNoteFormValues = {
   tituloOverride?: string | null;
 };
 
+export type BuilderHotelPreviewFormValues = {
+  hotels: Array<{
+    columnId: number;
+    textoHotel: string;
+  }>;
+};
+
+export type UpdateItemHotelsPayload = {
+  hotels: Array<{
+    columnId: number;
+    textoHotel: string;
+  }>;
+};
+
 export type BuilderMoveItemValues = {
   direction: "UP" | "DOWN";
 };
@@ -217,6 +231,18 @@ export async function updateCotizacionBuilderItemNotes(
 ) {
   const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
     `/cotizacion-builder/items/${itemId}/notes`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function updateCotizacionBuilderItemHotels(
+  itemId: number,
+  values: BuilderHotelPreviewFormValues
+) {
+  const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/items/${itemId}/hotels`,
     values
   );
 

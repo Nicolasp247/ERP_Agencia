@@ -71,6 +71,15 @@ export const cotizacionBuilderCommissionSchema = z.object({
   }
 );
 
+export const cotizacionBuilderHotelPreviewSchema = z.object({
+  hotels: z.array(
+    z.object({
+      columnId: z.coerce.number().int().positive(),
+      textoHotel: z.string().trim().max(500).nullable().optional()
+    })
+  )
+});
+
 export type CotizacionBuilderColumnInput = z.infer<typeof cotizacionBuilderColumnSchema>;
 export type CotizacionBuilderItemInput = z.infer<typeof cotizacionBuilderItemSchema>;
 export type CotizacionBuilderPriceInput = z.infer<typeof cotizacionBuilderPriceSchema>;
@@ -78,3 +87,4 @@ export type CotizacionBuilderMoveItemInput = z.infer<typeof cotizacionBuilderMov
 export type CotizacionBuilderNoteInput = z.infer<typeof cotizacionBuilderNoteSchema>;
 export type CotizacionBuilderColumnShownPriceInput = z.infer<typeof cotizacionBuilderColumnShownPriceSchema>;
 export type CotizacionBuilderCommissionInput = z.infer<typeof cotizacionBuilderCommissionSchema>;
+export type CotizacionBuilderHotelPreviewInput = z.infer<typeof cotizacionBuilderHotelPreviewSchema>;

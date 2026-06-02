@@ -727,6 +727,7 @@ model CotizacionItem {
   servicio             Servicio                      @relation(fields: [idServicio], references: [id])
   precios              CotizacionItemPrecio[]
   alojamientoDetalle   CotizacionItemAlojamiento?
+  hotelesPrevistos     CotizacionItemHotelPrevisto[]
   reservaItems         ReservaItem[]
 
   @@index([idCotizacion, ordenDia], map: "idx_cot_item_cotizacion_orden")
@@ -770,13 +771,15 @@ model CotizacionColumna {
   createdAt     DateTime                @default(now()) @map("created_at")
   updatedAt     DateTime                @updatedAt @map("updated_at")
 
-  cotizacion    Cotizacion              @relation(fields: [idCotizacion], references: [id])
-  precios       CotizacionItemPrecio[]
+  cotizacion        Cotizacion                    @relation(fields: [idCotizacion], references: [id])
+  precios           CotizacionItemPrecio[]
+  hotelesPrevistos  CotizacionItemHotelPrevisto[]
 
   @@index([idCotizacion], map: "idx_cotizacion_columna_cotizacion")
   @@index([idCotizacion, orden], map: "idx_cotizacion_columna_orden")
   @@map("cotizacion_columna")
 }
+
 model CotizacionItemPrecio {
   id                    Int                @id @default(autoincrement())
 
@@ -799,6 +802,25 @@ model CotizacionItemPrecio {
   @@index([idCotizacionItem], map: "idx_cot_item_precio_item")
   @@index([idCotizacionColumna], map: "idx_cot_item_precio_columna")
   @@map("cotizacion_item_precio")
+}
+
+model CotizacionItemHotelPrevisto {
+  id                   Int      @id @default(autoincrement())
+  idCotizacionItem     Int      @map("id_cotizacion_item")
+  idCotizacionColumna  Int      @map("id_cotizacion_columna")
+
+  textoHotel           String   @map("texto_hotel") @db.Text
+
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  cotizacionItem        CotizacionItem    @relation(fields: [idCotizacionItem], references: [id], onDelete: Cascade)
+  cotizacionColumna     CotizacionColumna @relation(fields: [idCotizacionColumna], references: [id], onDelete: Cascade)
+
+  @@unique([idCotizacionItem, idCotizacionColumna], map: "uq_cot_item_hotel_columna")
+  @@index([idCotizacionItem], map: "idx_cot_item_hotel_item")
+  @@index([idCotizacionColumna], map: "idx_cot_item_hotel_columna")
+  @@map("cotizacion_item_hotel_previsto")
 }
 
 model Reserva {

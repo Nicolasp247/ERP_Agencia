@@ -1,4 +1,4 @@
-/* erp-tour-operator/frontend/src/pages/AgenteDetailPage.tsx */
+/* erp-tour-operator/frontend/src/pages/agentes/AgenteDetailPage.tsx */
 
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
@@ -12,6 +12,18 @@ function formatDate(value?: string | Date | null) {
   }
 
   return new Date(value).toLocaleDateString();
+}
+
+function formatPct(value?: string | number | null) {
+  if (value === undefined || value === null || value === "") {
+    return "N/D";
+  }
+
+  return `${Number(value).toFixed(2)}%`;
+}
+
+function findCommission(agente: any, tipoComision: "TERRESTRE" | "AEREA") {
+  return agente.comisiones?.find((commission: any) => commission.tipoComision === tipoComision);
 }
 
 export function AgenteDetailPage() {
@@ -103,6 +115,37 @@ export function AgenteDetailPage() {
         <div style={{ marginTop: "1rem" }}>
           <strong>Dirección</strong>
           <p>{agente.direccion ?? "N/D"}</p>
+        </div>
+
+                <div className="stack" style={{ marginTop: "1.5rem" }}>
+          <h3>Comisiones base</h3>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Agente</th>
+                <th>WTravel</th>
+                <th>Bancario</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(["TERRESTRE", "AEREA"] as const).map((tipoComision) => {
+                const commission = findCommission(agente, tipoComision);
+
+                return (
+                  <tr key={tipoComision}>
+                    <td>{tipoComision === "TERRESTRE" ? "Terrestre" : "Aérea"}</td>
+                    <td>{formatPct(commission?.porcentajeAgente)}</td>
+                    <td>{formatPct(commission?.porcentajeWtravel)}</td>
+                    <td>{formatPct(commission?.porcentajeBancario)}</td>
+                    <td>{commission?.activo === false ? "Inactiva" : "Activa"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </PageSection>
 
