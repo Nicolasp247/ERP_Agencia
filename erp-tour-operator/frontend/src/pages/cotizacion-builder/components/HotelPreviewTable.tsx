@@ -27,19 +27,24 @@ function formatDateRange(startDate: string, endDate?: string | null) {
 
   const formatter = new Intl.DateTimeFormat("es-CO", {
     day: "2-digit",
-    month: "short",
+    month: "long",
     year: "numeric"
   });
 
+  const formattedStart = formatter.format(start);
+
   if (!end || startDate === endDate) {
-    return formatter.format(start);
+    return formattedStart;
   }
 
-  return `${formatter.format(start)} - ${formatter.format(end)}`;
+  return `Del ${formattedStart}\n al ${formatter.format(end)}`;
 }
 
 function getColumnLabel(column: BuilderColumn) {
-  return `${column.grupo} ${column.nombre}`.trim();
+  return `${column.grupo} ${column.nombre}`
+    .replaceAll("*", " estrellas")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function getHotelValue(row: BuilderRow, columnId: number) {

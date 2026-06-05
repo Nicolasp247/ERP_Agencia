@@ -1,0 +1,93 @@
+/* erp-tour-operator/frontend/src/styles/cotizacion-builder/table-optionals.css */
+
+.builder-optionals-section {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.4rem;
+
+  padding: 1.4rem 1.5rem 1.6rem;
+  border-radius: 1.4rem;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(23, 55, 61, 0.08);
+}
+
+.builder-optionals-heading {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.builder-optionals-heading h3 {
+  margin: 0;
+  color: #061f25;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.builder-optionals-heading p {
+  margin: 0;
+  color: #61777d;
+  font-size: 0.92rem;
+}
+
+.builder-optionals-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(23, 55, 61, 0.18);
+  border-radius: 1rem;
+  background: #fffefa;
+}
+
+.builder-optionals-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.builder-optionals-table th,
+.builder-optionals-table td {
+  border: 1px solid rgba(23, 55, 61, 0.09);
+  padding: 0.75rem 0.85rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.builder-optionals-table th {
+  background: #f3ead7;
+  color: #061f25;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.builder-optionals-table th:first-child,
+.builder-optionals-table td:first-child {
+  width: 48%;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Todas las filas del cuadro de opcionales quedan blancas */
+.builder-optionals-table td,
+.builder-optionals-table td:first-child {
+  background: #fff !important;
+}
+
+.builder-optionals-table td:first-child {
+  color: #17373d;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.builder-optionals-table td strong {
+  display: block;
+  color: #061f25;
+  font-size: 0.92rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.builder-optional-empty {
+  color: #8b9699;
+  font-size: 0.92rem;
+  font-weight: 500;
+}

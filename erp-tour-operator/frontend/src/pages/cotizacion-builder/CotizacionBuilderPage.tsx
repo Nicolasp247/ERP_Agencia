@@ -31,6 +31,7 @@ import { ColumnConfigPanel } from "./components/ColumnConfigPanel";
 import { CotizacionBuilderTable } from "./components/CotizacionBuilderTable";
 import { TotalsPanel } from "./components/TotalsPanel";
 import { HotelPreviewTable } from "@/pages/cotizacion-builder/components/HotelPreviewTable";
+import { OptionalServicesTable } from "@/pages/cotizacion-builder/components/OptionalServicesTable";
 
 export function CotizacionBuilderPage() {
   const params = useParams();
@@ -282,6 +283,13 @@ export function CotizacionBuilderPage() {
           })
         }
       />
+
+      <OptionalServicesTable
+        columns={builder.columns}
+        rows={builder.rows}
+        monedaCodigo={builder.expediente.monedaCodigo ?? "USD"}
+      />
+
     </div>
   );
 }
