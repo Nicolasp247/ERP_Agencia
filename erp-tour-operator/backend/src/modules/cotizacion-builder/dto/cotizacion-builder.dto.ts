@@ -55,6 +55,10 @@ export const cotizacionBuilderColumnShownPriceSchema = z.object({
   precioMostradoValor: z.coerce.number().min(0).nullable()
 });
 
+export const cotizacionBuilderFreeNotesSchema = z.object({
+  notasLibres: z.string().max(10000).nullable()
+});
+
 export const cotizacionBuilderCommissionSchema = z.object({
   tipoComision: z.enum(["TERRESTRE", "AEREA", "OPCIONALES", "OTRO"]),
   porcentajeAgente: z.coerce.number().min(0).max(99),
@@ -88,3 +92,4 @@ export type CotizacionBuilderNoteInput = z.infer<typeof cotizacionBuilderNoteSch
 export type CotizacionBuilderColumnShownPriceInput = z.infer<typeof cotizacionBuilderColumnShownPriceSchema>;
 export type CotizacionBuilderCommissionInput = z.infer<typeof cotizacionBuilderCommissionSchema>;
 export type CotizacionBuilderHotelPreviewInput = z.infer<typeof cotizacionBuilderHotelPreviewSchema>;
+export type CotizacionBuilderFreeNotesInput = z.infer<typeof cotizacionBuilderFreeNotesSchema>;

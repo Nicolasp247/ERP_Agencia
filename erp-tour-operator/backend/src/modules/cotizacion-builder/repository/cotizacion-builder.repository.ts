@@ -9,6 +9,7 @@ import type {
   CotizacionBuilderMoveItemInput,
   CotizacionBuilderNoteInput,
   CotizacionBuilderCommissionInput,
+  CotizacionBuilderFreeNotesInput,
   CotizacionBuilderPriceInput
 } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
 import { cotizacionBuilderColumnsRepository } from "@/modules/cotizacion-builder/repository/cotizacion-builder-columns.repository";
@@ -21,6 +22,37 @@ import { cotizacionBuilderSyncRepository } from "@/modules/cotizacion-builder/re
 
 export class CotizacionBuilderRepository {
   findVersionById(versionId: number) {
+    return prisma.cotizacion.findUnique({
+      where: {
+        id: versionId
+      },
+      include: includeBuilderDetail
+    });
+  }
+
+  async updateFreeNotes(versionId: number, data: CotizacionBuilderFreeNotesInput) {
+    const currentVersion = await prisma.cotizacion.findUnique({
+      where: {
+        id: versionId
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!currentVersion) {
+      return null;
+    }
+
+    await prisma.cotizacion.update({
+      where: {
+        id: versionId
+      },
+      data: {
+        nota: data.notasLibres?.trim() || null
+      }
+    });
+
     return prisma.cotizacion.findUnique({
       where: {
         id: versionId

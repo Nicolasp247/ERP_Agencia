@@ -21,6 +21,7 @@ export type CotizacionBuilderDetail = {
     estadoVersion: string;
     nombreCotizacion: string;
     monedaCodigo: string;
+    notasLibres: string | null;
   };
 
   expediente: {
@@ -104,6 +105,10 @@ export type BuilderHotelPreviewFormValues = {
     columnId: number;
     textoHotel: string;
   }>;
+};
+
+export type BuilderFreeNotesFormValues = {
+  notasLibres: string | null;
 };
 
 export type UpdateItemHotelsPayload = {
@@ -243,6 +248,18 @@ export async function updateCotizacionBuilderItemHotels(
 ) {
   const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
     `/cotizacion-builder/items/${itemId}/hotels`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function updateCotizacionBuilderFreeNotes(
+  versionId: number,
+  values: BuilderFreeNotesFormValues
+) {
+  const response = await api.put<ApiResponse<CotizacionBuilderDetail>>(
+    `/cotizacion-builder/${versionId}/free-notes`,
     values
   );
 

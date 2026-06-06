@@ -138,7 +138,8 @@ export function toCotizacionBuilderDetail(record: any) {
       versionLabel: buildVersionLabel(record.versionCodigo),
       estadoVersion: record.estadoVersion,
       nombreCotizacion: record.nombreCotizacion,
-      monedaCodigo: record.monedaCodigo
+      monedaCodigo: record.monedaCodigo,
+      notasLibres: record.nota ?? ""
     },
 
     expediente: {

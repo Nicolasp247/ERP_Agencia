@@ -9,6 +9,7 @@ import type {
   CotizacionBuilderMoveItemInput,
   CotizacionBuilderCommissionInput,
   CotizacionBuilderNoteInput,
+  CotizacionBuilderFreeNotesInput,
   CotizacionBuilderPriceInput
 } from "@/modules/cotizacion-builder/dto/cotizacion-builder.dto";
 import { toCotizacionBuilderDetail } from "@/modules/cotizacion-builder/mapper/cotizacion-builder.mapper";
@@ -144,6 +145,20 @@ export class CotizacionBuilderService {
         404,
         "COTIZACION_COLUMN_NOT_FOUND",
         "Columna de cotización no encontrada"
+      );
+    }
+
+    return toCotizacionBuilderDetail(record);
+  }
+
+  async updateFreeNotes(versionId: number, data: CotizacionBuilderFreeNotesInput) {
+    const record = await cotizacionBuilderRepository.updateFreeNotes(versionId, data);
+
+    if (!record) {
+      throw new AppError(
+        404,
+        "COTIZACION_VERSION_NOT_FOUND",
+        "Versión de cotización no encontrada"
       );
     }
 

@@ -31,6 +31,12 @@ cotizacionBuilderRouter.put(
 );
 
 cotizacionBuilderRouter.put(
+  "/:versionId/free-notes",
+  validateParams(cotizacionBuilderParamsSchema),
+  asyncHandler(cotizacionBuilderController.updateFreeNotes)
+);
+
+cotizacionBuilderRouter.put(
   "/items/:itemId/hotels",
   validateParams(cotizacionBuilderItemParamsSchema),
   asyncHandler(cotizacionBuilderController.updateItemHotels)

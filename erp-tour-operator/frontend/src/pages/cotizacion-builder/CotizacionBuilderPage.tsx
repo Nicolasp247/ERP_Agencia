@@ -17,6 +17,8 @@ import {
   updateCotizacionBuilderItemPrices,
   updateCotizacionBuilderItemNotes,
   updateCotizacionBuilderCommission,
+  updateCotizacionBuilderFreeNotes,
+  type BuilderFreeNotesFormValues,
   type BuilderCommissionFormValues,
   type BuilderColumnFormValues,
   type BuilderColumnShownPriceFormValues,
@@ -32,6 +34,7 @@ import { CotizacionBuilderTable } from "./components/CotizacionBuilderTable";
 import { TotalsPanel } from "./components/TotalsPanel";
 import { HotelPreviewTable } from "@/pages/cotizacion-builder/components/HotelPreviewTable";
 import { OptionalServicesTable } from "@/pages/cotizacion-builder/components/OptionalServicesTable";
+import { FreeNotesPanel } from "@/pages/cotizacion-builder/components/FreeNotesPanel";
 
 export function CotizacionBuilderPage() {
   const params = useParams();
@@ -136,6 +139,19 @@ export function CotizacionBuilderPage() {
       versionId: number;
       values: BuilderCommissionFormValues;
     }) => updateCotizacionBuilderCommission(versionId, values),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const updateFreeNotesMutation = useMutation({
+    mutationFn: ({
+      versionId,
+      values
+    }: {
+      versionId: number;
+      values: BuilderFreeNotesFormValues;
+    }) => updateCotizacionBuilderFreeNotes(versionId, values),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKey, data);
     }
@@ -288,6 +304,19 @@ export function CotizacionBuilderPage() {
         columns={builder.columns}
         rows={builder.rows}
         monedaCodigo={builder.expediente.monedaCodigo ?? "USD"}
+      />
+
+      <FreeNotesPanel
+        initialValue={builder.version.notasLibres ?? ""}
+        isSaving={updateFreeNotesMutation.isPending}
+        onSave={(value) =>
+          updateFreeNotesMutation.mutate({
+            versionId: builder.version.id,
+            values: {
+              notasLibres: value
+            }
+          })
+        }
       />
 
     </div>
