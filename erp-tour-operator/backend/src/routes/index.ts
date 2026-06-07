@@ -35,8 +35,6 @@ apiRouter.use("/auditoria", auditoriaRouter);
 apiRouter.use("/cliente-agente", clienteAgenteRouter);
 apiRouter.use("/cliente", clienteRouter);
 apiRouter.use("/expedientes", expedienteRouter);
-// Alias temporal mientras migramos el frontend viejo
-apiRouter.use("/cotizacion", expedienteRouter);
 apiRouter.use("/cotizacion-builder", cotizacionBuilderRouter);
 apiRouter.use("/documento", documentoRouter);
 apiRouter.use("/geo", geoRouter);
