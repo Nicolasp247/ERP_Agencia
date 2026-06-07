@@ -34,6 +34,12 @@ expedienteRouter.post(
   asyncHandler(expedienteController.create)
 );
 
+expedienteRouter.post(
+  "/:id/itinerarios",
+  validateParams(expedienteIdParamSchema),
+  asyncHandler(expedienteController.createItineraryVersion)
+);
+
 expedienteRouter.put(
   "/:id",
   validateParams(expedienteIdParamSchema),

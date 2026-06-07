@@ -83,6 +83,39 @@ export class ExpedienteService {
     return toExpedienteDetail(record);
   }
 
+  async createItineraryVersion(id: number, userId?: number) {
+    const current = await expedienteRepository.findById(id);
+
+    if (!current) {
+      throw new AppError(404, "EXPEDIENTE_NOT_FOUND", "Expediente no encontrado");
+    }
+
+    if (current.estado !== ExpedienteEstado.COTIZACION) {
+      throw new AppError(
+        409,
+        "EXPEDIENTE_NO_PERMITE_ITINERARIOS",
+        "Solo se pueden crear nuevos itinerarios en expedientes en cotización"
+      );
+    }
+
+    const updated = await expedienteRepository.createItineraryVersion(id, userId ?? null);
+
+    if (!updated) {
+      throw new AppError(404, "EXPEDIENTE_NOT_FOUND", "Expediente no encontrado");
+    }
+
+    await auditoriaService.record({
+      entidad: "expediente",
+      entidadId: updated.id,
+      accion: "ITINERARIO_CREADO",
+      valorAnterior: current,
+      valorNuevo: updated,
+      idUsuario: userId ?? null
+    });
+
+    return toExpedienteDetail(updated);
+  }
+
   async update(id: number, input: ExpedienteInput, userId?: number) {
     const current = await expedienteRepository.findById(id);
 

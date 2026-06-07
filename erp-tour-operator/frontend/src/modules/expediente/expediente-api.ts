@@ -71,3 +71,8 @@ export async function convertExpedientes(id: number) {
   const response = await api.post<ApiResponse<Record<string, unknown>>>(`/expedientes/${id}/convert-to-reserva`);
   return response.data.data;
 }
+
+export async function createExpedienteItinerary(id: number) {
+  const response = await api.post<ApiResponse<Record<string, unknown>>>(`/expedientes/${id}/itinerarios`);
+  return response.data.data;
+}

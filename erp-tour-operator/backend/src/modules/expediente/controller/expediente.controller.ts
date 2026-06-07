@@ -5,6 +5,7 @@ import type { Request, Response } from "express";
 import { ok } from "@/core/utils/api-response";
 import { expedienteService } from "@/modules/expediente/service/expediente.service";
 import { reservaService } from "@/modules/reserva/service/reserva.service";
+import { getRequestUserId } from "@/core/utils/request-user";
 
 function getUserId(req: Request): number | undefined {
   return (req as Request & { user?: { id?: number } }).user?.id;
@@ -23,6 +24,11 @@ class ExpedienteController {
 
   create = async (req: Request, res: Response) => {
     const data = await expedienteService.create(req.body, getUserId(req));
+    res.status(201).json(ok(data));
+  };
+
+  createItineraryVersion = async (req: Request, res: Response) => {
+    const data = await expedienteService.createItineraryVersion(Number(req.params.id), getRequestUserId(req));
     res.status(201).json(ok(data));
   };
 

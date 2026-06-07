@@ -1,7 +1,7 @@
 /* erp-tour-operator/frontend/src/pages/expediente/ExpedienteDetailPage.tsx */
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
 import {
@@ -10,7 +10,11 @@ import {
   formatExpedienteEstado,
   formatVersionEstado
 } from "@/modules/expediente/expediente-labels";
-import { discardExpedientes, getExpedientes } from "@/modules/expediente/expediente-api";
+import {
+  createExpedienteItinerary,
+  discardExpedientes,
+  getExpedientes
+} from "@/modules/expediente/expediente-api";
 import { formatDateShortEs } from "@/utils/date-format";
 
 function formatValue(value: unknown) {
@@ -24,6 +28,7 @@ function formatValue(value: unknown) {
 export function ExpedienteDetailPage() {
   const params = useParams();
   const id = Number(params.id);
+  const navigate = useNavigate();
 
   const query = useQuery({
     queryKey: ["expediente", id],
@@ -34,6 +39,26 @@ export function ExpedienteDetailPage() {
   const discardMutation = useMutation({
     mutationFn: () => discardExpedientes(id),
     onSuccess: () => void query.refetch()
+  });
+
+  const createItineraryMutation = useMutation({
+    mutationFn: () => createExpedienteItinerary(id),
+    onSuccess: (updatedExpediente: any) => {
+      const cotizaciones = Array.isArray(updatedExpediente?.cotizaciones)
+        ? updatedExpediente.cotizaciones
+        : [];
+
+      const newestVersion = [...cotizaciones].sort(
+        (a, b) => Number(b.versionNumero ?? 0) - Number(a.versionNumero ?? 0)
+      )[0];
+
+      if (newestVersion?.id) {
+        navigate(`/expedientes/${id}/versiones/${newestVersion.id}/construir`);
+        return;
+      }
+
+      void query.refetch();
+    }
   });
 
   const expediente = query.data as any;
@@ -165,8 +190,13 @@ export function ExpedienteDetailPage() {
 
       <PageSection
         action={
-          <button className="primary-button" type="button">
-            Crear nuevo itinerario
+          <button
+            className="primary-button"
+            disabled={createItineraryMutation.isPending}
+            onClick={() => createItineraryMutation.mutate()}
+            type="button"
+          >
+            {createItineraryMutation.isPending ? "Creando..." : "Crear nuevo itinerario"}
           </button>
         }
         title="Versiones de cotización"

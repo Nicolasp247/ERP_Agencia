@@ -1,6 +1,6 @@
 /* erp-tour-operator/backend/src/modules/expediente/repository/cotizacion.repository.ts */
 
-import { ExpedienteEstado } from "@prisma/client";
+import { CotizacionVersionEstado, ExpedienteEstado } from "@prisma/client";
 
 import { prisma as prismaClient } from "@/core/db/prisma";
 import type { ExpedienteFilters, ExpedienteInput } from "@/modules/expediente/dto/expediente.dto";
@@ -27,6 +27,19 @@ function getYearMonthCode(value: Date | string) {
 
 function normalizeName(value: string) {
   return value.trim().replace(/\s+/g, " ");
+}
+
+function buildVersionCode(versionNumber: number) {
+  let number = versionNumber;
+  let code = "";
+
+  while (number > 0) {
+    number -= 1;
+    code = String.fromCharCode(65 + (number % 26)) + code;
+    number = Math.floor(number / 26);
+  }
+
+  return code;
 }
 
 function buildBaseExpedienteCode(params: {
@@ -224,6 +237,93 @@ export class ExpedienteRepository {
           nota: data.nota ?? null,
           createdBy: data.createdBy ?? null,
           updatedBy: data.createdBy ?? null
+        }
+      });
+
+      return tx.expediente.findUniqueOrThrow({
+        where: {
+          id: expediente.id
+        },
+        include: {
+          cliente: {
+            select: {
+              id: true,
+              nombreCompleto: true
+            }
+          },
+          clienteAgente: {
+            select: {
+              id: true,
+              razonSocial: true
+            }
+          },
+          destinoPrincipal: true,
+          cotizaciones: {
+            orderBy: {
+              versionNumero: "asc"
+            }
+          }
+        }
+      });
+    });
+  }
+
+  createItineraryVersion(idExpediente: number, userId?: number | null) {
+    return prismaClient.$transaction(async (tx) => {
+      const expediente = await tx.expediente.findUnique({
+        where: {
+          id: idExpediente
+        },
+        include: {
+          cotizaciones: {
+            orderBy: {
+              versionNumero: "desc"
+            },
+            take: 1
+          }
+        }
+      });
+
+      if (!expediente) {
+        return null;
+      }
+
+      const ultimaCotizacion = expediente.cotizaciones[0] ?? null;
+      const nextVersionNumber = (ultimaCotizacion?.versionNumero ?? 0) + 1;
+      const nextVersionCode = buildVersionCode(nextVersionNumber);
+
+      await tx.cotizacion.create({
+        data: {
+          idExpediente: expediente.id,
+          versionNumero: nextVersionNumber,
+          versionCodigo: nextVersionCode,
+          estadoVersion: CotizacionVersionEstado.BORRADOR,
+
+          idCliente: expediente.idCliente,
+          idClienteAgente: expediente.idClienteAgente ?? null,
+          nombreCotizacion: `${expediente.codigo} - Cotización ${nextVersionCode}`,
+
+          fechaViajePrincipal: expediente.fechaViajePrincipal,
+          idDestinoPrincipal: expediente.idDestinoPrincipal ?? null,
+
+          categoriaViaje: ultimaCotizacion?.categoriaViaje ?? null,
+          monedaCodigo: expediente.monedaCodigo,
+
+          presupuestoEstimado: ultimaCotizacion?.presupuestoEstimado ?? null,
+          presupuestoTipo: ultimaCotizacion?.presupuestoTipo ?? null,
+          comisionPctAplicada: ultimaCotizacion?.comisionPctAplicada ?? null,
+          margenAplicadoValor: ultimaCotizacion?.margenAplicadoValor ?? null,
+
+          adultos65: expediente.adultos65,
+          adultos1964: expediente.adultos1964,
+          jovenes1218: expediente.jovenes1218,
+          ninos311: expediente.ninos311,
+          infantes02: expediente.infantes02,
+          totalPasajeros: expediente.totalPasajeros,
+
+          nota: expediente.observacionesCliente ?? null,
+          createdBy: userId ?? null,
+          updatedBy: userId ?? null
         }
       });
 
