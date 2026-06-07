@@ -7,18 +7,18 @@ import { PageSection } from "@/components/PageSection";
 import {
   getExpedienteEstadoClass,
   formatExpedienteEstado
-} from "@/modules/cotizacion/cotizacion-labels";
-import { discardCotizacion, listCotizaciones } from "@/modules/cotizacion/cotizacion-api";
+} from "@/modules/expediente/expediente-labels";
+import { discardExpedientes, listExpedientes } from "@/modules/expediente/expediente-api";
 import { formatDateShortEs } from "@/utils/date-format";
 
 export function ExpedientesListPage() {
   const query = useQuery({
     queryKey: ["expedientes"],
-    queryFn: () => listCotizaciones({ estado: "COTIZACION" })
+    queryFn: () => listExpedientes({ estado: "COTIZACION" })
   });
 
   const discardMutation = useMutation({
-    mutationFn: discardCotizacion,
+    mutationFn: discardExpedientes,
     onSuccess: () => void query.refetch()
   });
 

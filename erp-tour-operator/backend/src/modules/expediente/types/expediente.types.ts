@@ -1,6 +1,6 @@
-/* erp-tour-operator/backend/src/modules/cotizacion/types/cotizacion.types.ts */
+/* erp-tour-operator/backend/src/modules/expediente/types/expediente.types.ts */
 
-export type CotizacionTotales = {
+export type ExpedienteTotales = {
   totalCostoIncluidos: number;
   totalCostoOpcionales: number;
   totalVentaIncluidos: number;

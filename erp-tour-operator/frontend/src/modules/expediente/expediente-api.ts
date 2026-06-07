@@ -1,14 +1,14 @@
-/* erp-tour-operator/frontend/src/modules/cotizacion/cotizacion-api.ts */
+/* erp-tour-operator/frontend/src/modules/expediente/expediente-api.ts */
 
 import { z } from "zod";
 
 import { api } from "@/services/http";
 import type { ApiResponse } from "@/types/api";
 
-export const cotizacionFormSchema = z.object({
+export const expedienteFormSchema = z.object({
   idCliente: z.coerce.number().int().positive(),
   idClienteAgente: z.coerce.number().optional().nullable(),
-  nombreCotizacion: z.string().min(1),
+  nombreExpediente: z.string().min(1),
   fechaViajePrincipal: z.string().min(1),
   idDestinoPrincipal: z.coerce.number().optional().nullable(),
   categoriaViaje: z.string().optional().nullable(),
@@ -27,19 +27,19 @@ export const cotizacionFormSchema = z.object({
   notasInternas: z.string().optional().nullable()
 });
 
-export type CotizacionFormValues = z.infer<typeof cotizacionFormSchema>;
+export type ExpedienteFormValues = z.infer<typeof expedienteFormSchema>;
 
-export async function listCotizaciones(params?: Record<string, unknown>) {
-  const response = await api.get<ApiResponse<Array<Record<string, unknown>>>>("/cotizacion", { params });
+export async function listExpedientes(params?: Record<string, unknown>) {
+  const response = await api.get<ApiResponse<Array<Record<string, unknown>>>>("/expedientes", { params });
   return response.data.data;
 }
 
-export async function getCotizacion(id: number) {
-  const response = await api.get<ApiResponse<Record<string, unknown>>>(`/cotizacion/${id}`);
+export async function getExpedientes(id: number) {
+  const response = await api.get<ApiResponse<Record<string, unknown>>>(`/expedientes/${id}`);
   return response.data.data;
 }
 
-export async function saveCotizacion(values: CotizacionFormValues, id?: number) {
+export async function saveExpedientes(values: ExpedienteFormValues, id?: number) {
   const payload = {
     ...values,
     idClienteAgente: values.idClienteAgente || null,
@@ -54,20 +54,20 @@ export async function saveCotizacion(values: CotizacionFormValues, id?: number) 
   };
 
   if (id) {
-    const response = await api.put<ApiResponse<Record<string, unknown>>>(`/cotizacion/${id}`, payload);
+    const response = await api.put<ApiResponse<Record<string, unknown>>>(`/expedientes/${id}`, payload);
     return response.data.data;
   }
 
-  const response = await api.post<ApiResponse<Record<string, unknown>>>("/cotizacion", payload);
+  const response = await api.post<ApiResponse<Record<string, unknown>>>("/expedientes", payload);
   return response.data.data;
 }
 
-export async function discardCotizacion(id: number) {
-  const response = await api.post<ApiResponse<Record<string, unknown>>>(`/cotizacion/${id}/discard`);
+export async function discardExpedientes(id: number) {
+  const response = await api.post<ApiResponse<Record<string, unknown>>>(`/expedientes/${id}/discard`);
   return response.data.data;
 }
 
-export async function convertCotizacion(id: number) {
-  const response = await api.post<ApiResponse<Record<string, unknown>>>(`/cotizacion/${id}/convert-to-reserva`);
+export async function convertExpedientes(id: number) {
+  const response = await api.post<ApiResponse<Record<string, unknown>>>(`/expedientes/${id}/convert-to-reserva`);
   return response.data.data;
 }

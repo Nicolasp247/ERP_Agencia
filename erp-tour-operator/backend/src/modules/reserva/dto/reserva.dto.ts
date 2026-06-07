@@ -1,3 +1,4 @@
+/* erp-tour-operator/backend/src/modules/reserva/dto/reserva.dto.ts */
 import { z } from "zod";
 
 export const reservaFilterSchema = z.object({

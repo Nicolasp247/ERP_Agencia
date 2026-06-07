@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/reserva/tests/reserva.snapshot.test.ts */
+
 import { buildReservaItemSnapshot } from "@/modules/reserva/service/reserva.snapshot";
 import { buildReservaCode, calculateReservaEstado } from "@/modules/reserva/service/reserva-state";
 
@@ -17,7 +19,7 @@ describe("reserva snapshot", () => {
       precioMonedaCodigo: "EUR",
       servicio: {
         nombreWtravel: "Excursión a Toledo",
-        tour: { idioma: "Español" },
+        tour: { idioma: { nombre: "Español" } },
         boletoEntrada: null,
         tren: null,
         vuelo: null

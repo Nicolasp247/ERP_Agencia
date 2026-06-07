@@ -1,4 +1,4 @@
-/* erp-tour-operator/frontend/src/modules/cotizacion/cotizacion-labels.ts */
+/* erp-tour-operator/frontend/src/modules/expediente/expediente-labels.ts */
 
 export function formatExpedienteEstado(value?: string | null) {
   const labels: Record<string, string> = {

@@ -1,6 +1,6 @@
-/* erp-tour-operator/backend/src/modules/cotizacion/service/cotizacion.calculator.ts */
+/* erp-tour-operator/backend/src/modules/expediente/service/expediente.calculator.ts */
 
-import type { CotizacionTotales } from "@/modules/cotizacion/types/cotizacion.types";
+import type { ExpedienteTotales } from "@/modules/expediente/types/expediente.types";
 
 export function sumPassengerGroups(input: {
   adultos65: number;
@@ -12,14 +12,14 @@ export function sumPassengerGroups(input: {
   return input.adultos65 + input.adultos1964 + input.jovenes1218 + input.ninos311 + input.infantes02;
 }
 
-export function calculateCotizacionTotals(
+export function calculateExpedienteTotals(
   items: Array<{
     esOpcional: boolean;
     precioSugerido: number | null | undefined;
     precioVenta: number | null | undefined;
   }>,
   totalPasajeros: number
-): CotizacionTotales {
+): ExpedienteTotales {
   const totals = items.reduce(
     (acc, item) => {
       const costo = item.precioSugerido ?? 0;
@@ -50,7 +50,7 @@ export function calculateCotizacionTotals(
   };
 }
 
-export function buildCotizacionCode(id: number) {
+export function buildExpedienteCode(id: number) {
   return `COT-${id}`;
 }
 

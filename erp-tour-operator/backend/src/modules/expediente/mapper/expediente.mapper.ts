@@ -1,4 +1,4 @@
-/* erp-tour-operator/backend/src/modules/cotizacion/mapper/cotizacion.mapper.ts */
+/* erp-tour-operator/backend/src/modules/expediente/mapper/expediente.mapper.ts */
 
 function formatDateOnly(value: Date | string | null | undefined) {
   if (!value) return null;
@@ -20,7 +20,7 @@ export function buildVersionLabel(versionCodigo?: string | null) {
   return `Cotización ${versionCodigo ?? "A"}`;
 }
 
-function toCotizacionVersionItem(record: any) {
+function toExpedienteVersionItem(record: any) {
   return {
     id: record.id,
     idExpediente: record.idExpediente,
@@ -50,7 +50,7 @@ export function toExpedienteListItem(record: any) {
     cliente: record.cliente,
     clienteAgente: record.clienteAgente,
     destinoPrincipal: record.destinoPrincipal,
-    versionPrincipal: versionPrincipal ? toCotizacionVersionItem(versionPrincipal) : null,
+    versionPrincipal: versionPrincipal ? toExpedienteVersionItem(versionPrincipal) : null,
     createdAt: record.createdAt
   };
 }
@@ -75,7 +75,7 @@ export function toExpedienteDetail(record: any) {
     cliente: record.cliente,
     clienteAgente: record.clienteAgente,
     destinoPrincipal: record.destinoPrincipal,
-    cotizaciones: (record.cotizaciones ?? []).map(toCotizacionVersionItem),
+    cotizaciones: (record.cotizaciones ?? []).map(toExpedienteVersionItem),
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
   };

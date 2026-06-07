@@ -10,7 +10,7 @@ import { PageSection } from "@/components/PageSection";
 import { fetchContinentes } from "@/core/catalog-api";
 import { listAgentes } from "@/modules/cliente-agente/cliente-agente-api";
 import { listClientes } from "@/modules/cliente/cliente-api";
-import { cotizacionFormSchema, getCotizacion, saveCotizacion } from "@/modules/cotizacion/cotizacion-api";
+import { expedienteFormSchema, getExpedientes, saveExpedientes } from "@/modules/expediente/expediente-api";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -27,12 +27,12 @@ export function ExpedienteFormPage() {
 
   const cotizacionQuery = useQuery({
     queryKey: ["cotizacion", editingId],
-    queryFn: () => getCotizacion(editingId!),
+    queryFn: () => getExpedientes(editingId!),
     enabled: Boolean(editingId)
   });
 
   const form = useForm<any>({
-    resolver: zodResolver(cotizacionFormSchema),
+    resolver: zodResolver(expedienteFormSchema),
     defaultValues: {
       nombreCotizacion: "",
       fechaViajePrincipal: today(),
@@ -93,7 +93,7 @@ export function ExpedienteFormPage() {
   }, [cotizacionQuery.data, form]);
 
   const mutation = useMutation({
-    mutationFn: (values: any) => saveCotizacion(values, editingId),
+    mutationFn: (values: any) => saveExpedientes(values, editingId),
     onSuccess: (data: any) => navigate(`/expedientes/${data.id}`)
   });
 

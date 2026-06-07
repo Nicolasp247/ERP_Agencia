@@ -10,7 +10,7 @@ import {
   createCotizacionBuilderItem,
   deleteCotizacionBuilderColumn,
   deleteCotizacionBuilderItem,
-  getCotizacionBuilder,
+  getExpedientesBuilder,
   moveCotizacionBuilderItem,
   updateCotizacionBuilderColumnShownPrice,
   updateCotizacionBuilderItemHotels,
@@ -46,7 +46,7 @@ export function CotizacionBuilderPage() {
 
   const query = useQuery({
     queryKey,
-    queryFn: () => getCotizacionBuilder(versionId),
+    queryFn: () => getExpedientesBuilder(versionId),
     enabled: Number.isFinite(versionId)
   });
 

@@ -1,9 +1,9 @@
-/* erp-tour-operator/backend/src/modules/cotizacion/repository/cotizacion.repository.ts */
+/* erp-tour-operator/backend/src/modules/expediente/repository/cotizacion.repository.ts */
 
 import { ExpedienteEstado } from "@prisma/client";
 
 import { prisma as prismaClient } from "@/core/db/prisma";
-import type { CotizacionFilters, CotizacionInput } from "@/modules/cotizacion/dto/cotizacion.dto";
+import type { ExpedienteFilters, ExpedienteInput } from "@/modules/expediente/dto/expediente.dto";
 
 function toDateOnly(value: Date | string | null | undefined) {
   if (!value) {
@@ -95,8 +95,8 @@ async function resolveAgenciaCodigo(tx: any, idClienteAgente?: number | null) {
   return agente?.codigo || "WT";
 }
 
-export class CotizacionRepository {
-  list(filters: CotizacionFilters) {
+export class ExpedienteRepository {
+  list(filters: ExpedienteFilters) {
     return prismaClient.expediente.findMany({
       where: {
         estado: filters.estado as ExpedienteEstado | undefined,
@@ -163,7 +163,7 @@ export class CotizacionRepository {
     });
   }
 
-  createExpedienteWithCotizacionA(data: CotizacionInput & { createdBy?: number | null }) {
+  createExpedienteWithCotizacionA(data: ExpedienteInput & { createdBy?: number | null }) {
     return prismaClient.$transaction(async (tx) => {
       const nombreBase = normalizeName(data.nombreCotizacion);
       const agenciaCodigo = await resolveAgenciaCodigo(tx, data.idClienteAgente ?? null);
@@ -255,7 +255,7 @@ export class CotizacionRepository {
     });
   }
 
-  updateExpediente(id: number, data: CotizacionInput & { updatedBy?: number | null }) {
+  updateExpediente(id: number, data: ExpedienteInput & { updatedBy?: number | null }) {
     return prismaClient.$transaction(async (tx) => {
       const nombreBase = normalizeName(data.nombreCotizacion);
       const agenciaCodigo = await resolveAgenciaCodigo(tx, data.idClienteAgente ?? null);
@@ -266,7 +266,7 @@ export class CotizacionRepository {
         nombreBase,
         excludeId: id
       });
-      await tx.expediente.update({
+      await tx.cotizacion.update({
         where: { id },
         data: {
           idCliente: data.idCliente,
@@ -353,4 +353,4 @@ export class CotizacionRepository {
   }
 }
 
-export const cotizacionRepository = new CotizacionRepository();
+export const expedienteRepository = new ExpedienteRepository();

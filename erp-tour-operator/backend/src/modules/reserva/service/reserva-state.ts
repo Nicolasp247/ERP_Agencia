@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/reserva/service/reserva-state.ts */
+
 import { ReservaItemEstado } from "@prisma/client";
 
 import type { ReservaEstadoCalculado } from "@/modules/reserva/types/reserva.types";

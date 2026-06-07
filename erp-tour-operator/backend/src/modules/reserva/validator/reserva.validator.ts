@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/reserva/validator/reserva.validator.ts */
+
 export {
   reservaCancelSchema,
   reservaConfirmacionItemSchema,

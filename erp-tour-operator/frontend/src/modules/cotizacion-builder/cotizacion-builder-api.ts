@@ -122,7 +122,7 @@ export type BuilderMoveItemValues = {
   direction: "UP" | "DOWN";
 };
 
-export async function getCotizacionBuilder(versionId: number) {
+export async function getExpedientesBuilder(versionId: number) {
   const response = await api.get<ApiResponse<CotizacionBuilderDetail>>(
     `/cotizacion-builder/${versionId}`
   );

@@ -1,7 +1,10 @@
+/* erp-tour-operator/backend/src/modules/auth/controller/auth.controller.ts */
+
 import type { Request, Response } from "express";
 
 import { ok } from "@/core/utils/api-response";
 import { authService } from "@/modules/auth/service/auth.service";
+import { getRequestUserId } from "@/core/utils/request-user";
 
 export class AuthController {
   login = async (req: Request, res: Response) => {
@@ -10,7 +13,9 @@ export class AuthController {
   };
 
   me = async (req: Request, res: Response) => {
-    const data = await authService.me(req.user!.id);
+    const userId = getRequestUserId(req);
+
+    const data = await authService.me(userId!);
     res.json(ok(data));
   };
 

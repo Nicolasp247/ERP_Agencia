@@ -1,8 +1,11 @@
+/* erp-tour-operator/backend/src/modules/servicio/controller/servicio.controller.ts */
+
 import type { Request, Response } from "express";
 
 import { ok } from "@/core/utils/api-response";
 import { servicioService } from "@/modules/servicio/service/servicio.service";
 import type { ServicioFilters } from "../dto/servicio.dto";
+import { getRequestUserId } from "@/core/utils/request-user";
 
 export class ServicioController {
   listTipos = async (_req: Request, res: Response) => {
@@ -35,12 +38,12 @@ export class ServicioController {
   };
 
   create = async (req: Request, res: Response) => {
-    const data = await servicioService.create(req.body, req.user?.id);
+    const data = await servicioService.create(req.body, getRequestUserId(req));
     res.status(201).json(ok(data));
   };
 
   update = async (req: Request, res: Response) => {
-    const data = await servicioService.update(Number(req.params.id), req.body, req.user?.id);
+    const data = await servicioService.update(Number(req.params.id), req.body, getRequestUserId(req));
     res.json(ok(data));
   };
 
@@ -48,7 +51,7 @@ export class ServicioController {
     const data = await servicioService.updateEstado(
       Number(req.params.id),
       Boolean(req.body.activo),
-      req.user?.id
+      getRequestUserId(req)
     );
 
     res.json(ok(data));

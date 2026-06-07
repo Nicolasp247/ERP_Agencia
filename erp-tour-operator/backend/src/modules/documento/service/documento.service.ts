@@ -1,7 +1,9 @@
+/* erp-tour-operator/backend/src/modules/documento/service/documento.service.ts */
+
 import PDFDocument from "pdfkit";
 
 import { AppError } from "@/core/errors/app-error";
-import { cotizacionRepository } from "@/modules/cotizacion/repository/cotizacion.repository";
+import { prisma } from "@/core/db/prisma";
 import { reservaRepository } from "@/modules/reserva/repository/reserva.repository";
 import type { PdfDocument } from "@/modules/documento/types/documento.types";
 
@@ -37,7 +39,43 @@ function buildPdf(title: string, lines: string[], fileName: string): Promise<Pdf
 
 export class DocumentoService {
   async generateCotizacionPdf(id: number) {
-    const cotizacion = await cotizacionRepository.findById(id);
+    const cotizacion = await prisma.cotizacion.findUnique({
+      where: { id },
+      include: {
+        cliente: {
+          select: {
+            nombreCompleto: true
+          }
+        },
+        clienteAgente: {
+          select: {
+            razonSocial: true
+          }
+        },
+        destinoPrincipal: {
+          select: {
+            nombre: true
+          }
+        },
+        items: {
+          include: {
+            servicio: {
+              select: {
+                nombreWtravel: true
+              }
+            }
+          },
+          orderBy: [
+            {
+              fechaServicio: "asc"
+            },
+            {
+              ordenDia: "asc"
+            }
+          ]
+        }
+      }
+    });
 
     if (!cotizacion) {
       throw new AppError(404, "COTIZACION_NOT_FOUND", "Cotización no encontrada");
@@ -45,6 +83,7 @@ export class DocumentoService {
 
     const lines = [
       `Codigo: COT-${cotizacion.id}`,
+      `Version: ${cotizacion.versionCodigo}`,
       `Nombre: ${cotizacion.nombreCotizacion}`,
       `Cliente: ${cotizacion.cliente.nombreCompleto}`,
       `Agencia: ${cotizacion.clienteAgente?.razonSocial ?? "N/A"}`,
@@ -58,7 +97,11 @@ export class DocumentoService {
 
     cotizacion.items.forEach((item) => {
       lines.push(
-        `${formatDate(item.fechaServicio)} | Dia ${item.ordenDia} | ${item.tituloOverride ?? item.servicio.nombreWtravel} | ${item.precioVenta?.toString() ?? "N/D"} ${item.precioMonedaCodigo}${item.esOpcional ? " | OPCIONAL" : ""}`
+        `${formatDate(item.fechaServicio)} | Dia ${item.ordenDia} | ${
+          item.tituloOverride ?? item.servicio.nombreWtravel
+        } | ${item.precioVenta?.toString() ?? "N/D"} ${item.precioMonedaCodigo}${
+          item.esOpcional ? " | OPCIONAL" : ""
+        }`
       );
     });
 
@@ -84,7 +127,11 @@ export class DocumentoService {
 
     reserva.items.forEach((item) => {
       lines.push(
-        `${formatDate(item.fechaServicio)} | Dia ${item.ordenDia} | ${item.tituloSnapshot ?? item.servicio.nombreWtravel} | Confirmacion: ${item.numeroConfirmacion ?? "Pendiente"} | Costo final: ${item.costoFinal?.toString() ?? "N/D"} ${item.monedaCodigo}`
+        `${formatDate(item.fechaServicio)} | Dia ${item.ordenDia} | ${
+          item.tituloSnapshot ?? item.servicio.nombreWtravel
+        } | Confirmacion: ${item.numeroConfirmacion ?? "Pendiente"} | Costo final: ${
+          item.costoFinal?.toString() ?? "N/D"
+        } ${item.monedaCodigo}`
       );
     });
 
@@ -114,7 +161,9 @@ export class DocumentoService {
 
     confirmacion.items.forEach((item) => {
       lines.push(
-        `Item ${item.idReservaItem} | Venta confirmada: ${item.precioVentaConfirmado.toString()} | Opcional vendido: ${item.esOpcionalVendido ? "SI" : "NO"}`
+        `Item ${item.idReservaItem} | Venta confirmada: ${item.precioVentaConfirmado.toString()} | Opcional vendido: ${
+          item.esOpcionalVendido ? "SI" : "NO"
+        }`
       );
     });
 

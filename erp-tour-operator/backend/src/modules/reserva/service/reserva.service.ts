@@ -1,10 +1,10 @@
+/* erp-tour-operator/backend/src/modules/reserva/service/reserva.service.ts */
+
 import { Prisma, ReservaItemEstado, ReservaEstado } from "@prisma/client";
 
 import { prisma } from "@/core/db/prisma";
 import { AppError } from "@/core/errors/app-error";
 import { auditoriaService } from "@/modules/auditoria/service/auditoria.service";
-import { cotizacionRepository } from "@/modules/cotizacion/repository/cotizacion.repository";
-import { cotizacionRepository as quoteRepository } from "@/modules/cotizacion/repository/cotizacion.repository";
 import { toReservaDetail, toReservaListItem } from "@/modules/reserva/mapper/reserva.mapper";
 import { reservaRepository } from "@/modules/reserva/repository/reserva.repository";
 import { buildReservaItemSnapshot } from "@/modules/reserva/service/reserva.snapshot";

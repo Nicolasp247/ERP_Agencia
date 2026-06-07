@@ -9,8 +9,8 @@ import {
   getVersionEstadoClass,
   formatExpedienteEstado,
   formatVersionEstado
-} from "@/modules/cotizacion/cotizacion-labels";
-import { discardCotizacion, getCotizacion } from "@/modules/cotizacion/cotizacion-api";
+} from "@/modules/expediente/expediente-labels";
+import { discardExpedientes, getExpedientes } from "@/modules/expediente/expediente-api";
 import { formatDateShortEs } from "@/utils/date-format";
 
 function formatValue(value: unknown) {
@@ -27,12 +27,12 @@ export function ExpedienteDetailPage() {
 
   const query = useQuery({
     queryKey: ["expediente", id],
-    queryFn: () => getCotizacion(id),
+    queryFn: () => getExpedientes(id),
     enabled: Number.isFinite(id)
   });
 
   const discardMutation = useMutation({
-    mutationFn: () => discardCotizacion(id),
+    mutationFn: () => discardExpedientes(id),
     onSuccess: () => void query.refetch()
   });
 

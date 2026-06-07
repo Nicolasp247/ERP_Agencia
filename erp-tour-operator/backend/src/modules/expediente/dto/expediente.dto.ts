@@ -1,8 +1,8 @@
-/* erp-tour-operator/backend/src/modules/cotizacion/dto/cotizacion.dto.ts */
+/* erp-tour-operator/backend/src/modules/expediente/dto/expediente.dto.ts */
 
 import { z } from "zod";
 
-export const cotizacionSchema = z.object({
+export const expedienteSchema = z.object({
   idCliente: z.coerce.number().int().positive(),
   idClienteAgente: z.coerce.number().int().positive().optional().nullable(),
   nombreCotizacion: z.string().min(1).max(255),
@@ -24,7 +24,7 @@ export const cotizacionSchema = z.object({
   notasInternas: z.string().optional().nullable()
 });
 
-export const cotizacionFilterSchema = z.object({
+export const expedienteFilterSchema = z.object({
   estado: z.enum(["COTIZACION", "CONFIRMACION", "DESCARTADO", "YA_VIAJARON"]).optional(),
   idCliente: z.coerce.number().int().positive().optional(),
   idClienteAgente: z.coerce.number().int().positive().optional(),
@@ -32,9 +32,9 @@ export const cotizacionFilterSchema = z.object({
   year: z.coerce.number().int().min(2000).max(2100).optional()
 });
 
-export const cotizacionIdParamSchema = z.object({
+export const expedienteIdParamSchema = z.object({
   id: z.coerce.number().int().positive()
 });
 
-export type CotizacionInput = z.infer<typeof cotizacionSchema>;
-export type CotizacionFilters = z.infer<typeof cotizacionFilterSchema>;
+export type ExpedienteInput = z.infer<typeof expedienteSchema>;
+export type ExpedienteFilters = z.infer<typeof expedienteFilterSchema>;

@@ -1,3 +1,5 @@
+/* erp-tour-operator/backend/src/modules/reserva/mapper/reserva.mapper.ts */
+
 export function toReservaListItem(
   record: {
     id: number;

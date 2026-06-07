@@ -1,18 +1,18 @@
-/* erp-tour-operator/backend/src/modules/cotizacion/service/cotizacion.service.ts */
+/* erp-tour-operator/backend/src/modules/expediente/service/expediente.service.ts */
 
 import { ExpedienteEstado } from "@prisma/client";
 
 import { prisma } from "@/core/db/prisma";
 import { AppError } from "@/core/errors/app-error";
 import { auditoriaService } from "@/modules/auditoria/service/auditoria.service";
-import type { CotizacionFilters, CotizacionInput } from "@/modules/cotizacion/dto/cotizacion.dto";
-import { toExpedienteDetail, toExpedienteListItem } from "@/modules/cotizacion/mapper/cotizacion.mapper";
-import { cotizacionRepository } from "@/modules/cotizacion/repository/cotizacion.repository";
-import { sumPassengerGroups } from "@/modules/cotizacion/service/cotizacion.calculator";
+import type { ExpedienteFilters, ExpedienteInput } from "@/modules/expediente/dto/expediente.dto";
+import { toExpedienteDetail, toExpedienteListItem } from "@/modules/expediente/mapper/expediente.mapper";
+import { expedienteRepository } from "@/modules/expediente/repository/expediente.repository";
+import { sumPassengerGroups } from "@/modules/expediente/service/expediente.calculator";
 
-export class CotizacionService {
-  async list(filters: CotizacionFilters) {
-    const records = await cotizacionRepository.list({
+export class ExpedienteService {
+  async list(filters: ExpedienteFilters) {
+    const records = await expedienteRepository.list({
       estado: filters.estado ?? "COTIZACION",
       ...filters
     });
@@ -21,7 +21,7 @@ export class CotizacionService {
   }
 
   async getById(id: number) {
-    const record = await cotizacionRepository.findById(id);
+    const record = await expedienteRepository.findById(id);
 
     if (!record) {
       throw new AppError(404, "EXPEDIENTE_NOT_FOUND", "Expediente no encontrado");
@@ -30,7 +30,7 @@ export class CotizacionService {
     return toExpedienteDetail(record);
   }
 
-  private async validateHeader(input: CotizacionInput) {
+  private async validateHeader(input: ExpedienteInput) {
     const totalCalculado = sumPassengerGroups(input);
 
     if (totalCalculado !== input.totalPasajeros) {
@@ -64,10 +64,10 @@ export class CotizacionService {
     }
   }
 
-  async create(input: CotizacionInput, userId?: number) {
+  async create(input: ExpedienteInput, userId?: number) {
     await this.validateHeader(input);
 
-    const record = await cotizacionRepository.createExpedienteWithCotizacionA({
+    const record = await expedienteRepository.createExpedienteWithCotizacionA({
       ...input,
       createdBy: userId ?? null
     });
@@ -83,8 +83,8 @@ export class CotizacionService {
     return toExpedienteDetail(record);
   }
 
-  async update(id: number, input: CotizacionInput, userId?: number) {
-    const current = await cotizacionRepository.findById(id);
+  async update(id: number, input: ExpedienteInput, userId?: number) {
+    const current = await expedienteRepository.findById(id);
 
     if (!current) {
       throw new AppError(404, "EXPEDIENTE_NOT_FOUND", "Expediente no encontrado");
@@ -96,7 +96,7 @@ export class CotizacionService {
 
     await this.validateHeader(input);
 
-    const updated = await cotizacionRepository.updateExpediente(id, {
+    const updated = await expedienteRepository.updateExpediente(id, {
       ...input,
       updatedBy: userId ?? null
     });
@@ -114,7 +114,7 @@ export class CotizacionService {
   }
 
   async discard(id: number, userId?: number) {
-    const current = await cotizacionRepository.findById(id);
+    const current = await expedienteRepository.findById(id);
 
     if (!current) {
       throw new AppError(404, "EXPEDIENTE_NOT_FOUND", "Expediente no encontrado");
@@ -124,7 +124,7 @@ export class CotizacionService {
       throw new AppError(409, "EXPEDIENTE_NO_DESCARTABLE", "Solo se pueden descartar expedientes activos");
     }
 
-    const updated = await cotizacionRepository.markDiscarded(id, userId ?? null);
+    const updated = await expedienteRepository.markDiscarded(id, userId ?? null);
 
     await auditoriaService.record({
       entidad: "expediente",
@@ -139,4 +139,4 @@ export class CotizacionService {
   }
 }
 
-export const cotizacionService = new CotizacionService();
+export const expedienteService = new ExpedienteService();
