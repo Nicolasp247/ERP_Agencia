@@ -116,6 +116,46 @@ export class ExpedienteService {
     return toExpedienteDetail(updated);
   }
 
+  async duplicateItineraryVersion(versionId: number, userId?: number) {
+    const version = await prisma.cotizacion.findUnique({
+      where: {
+        id: versionId
+      },
+      include: {
+        expediente: true
+      }
+    });
+
+    if (!version) {
+      throw new AppError(404, "COTIZACION_VERSION_NOT_FOUND", "Versión de cotización no encontrada");
+    }
+
+    if (version.expediente.estado !== ExpedienteEstado.COTIZACION) {
+      throw new AppError(
+        409,
+        "EXPEDIENTE_NO_PERMITE_DUPLICAR",
+        "Solo se pueden duplicar versiones de expedientes en cotización"
+      );
+    }
+
+    const updated = await expedienteRepository.duplicateItineraryVersion(versionId, userId ?? null);
+
+    if (!updated) {
+      throw new AppError(404, "COTIZACION_VERSION_NOT_FOUND", "Versión de cotización no encontrada");
+    }
+
+    await auditoriaService.record({
+      entidad: "expediente",
+      entidadId: updated.id,
+      accion: "ITINERARIO_DUPLICADO",
+      valorAnterior: version,
+      valorNuevo: updated,
+      idUsuario: userId ?? null
+    });
+
+    return toExpedienteDetail(updated);
+  }
+
   async update(id: number, input: ExpedienteInput, userId?: number) {
     const current = await expedienteRepository.findById(id);
 

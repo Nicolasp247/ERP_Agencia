@@ -355,6 +355,230 @@ export class ExpedienteRepository {
     });
   }
 
+
+  duplicateItineraryVersion(versionId: number, userId?: number | null) {
+    return prismaClient.$transaction(async (tx) => {
+      const original = await tx.cotizacion.findUnique({
+        where: {
+          id: versionId
+        },
+        include: {
+          expediente: true,
+          columnas: {
+            orderBy: {
+              orden: "asc"
+            }
+          },
+          comisiones: true,
+          items: {
+            include: {
+              alojamientoDetalle: true,
+              precios: true,
+              hotelesPrevistos: true
+            },
+            orderBy: [
+              {
+                fechaServicio: "asc"
+              },
+              {
+                ordenDia: "asc"
+              }
+            ]
+          }
+        }
+      });
+
+      if (!original) {
+        return null;
+      }
+
+      const latestVersion = await tx.cotizacion.aggregate({
+        where: {
+          idExpediente: original.idExpediente
+        },
+        _max: {
+          versionNumero: true
+        }
+      });
+
+      const nextVersionNumber = (latestVersion._max.versionNumero ?? 0) + 1;
+      const nextVersionCode = buildVersionCode(nextVersionNumber);
+
+      const newVersion = await tx.cotizacion.create({
+        data: {
+          idExpediente: original.idExpediente,
+          versionNumero: nextVersionNumber,
+          versionCodigo: nextVersionCode,
+          estadoVersion: CotizacionVersionEstado.BORRADOR,
+          origenCotizacionId: original.id,
+
+          idCliente: original.idCliente,
+          idClienteAgente: original.idClienteAgente,
+          nombreCotizacion: `${original.expediente.codigo} - Cotización ${nextVersionCode}`,
+
+          estado: original.estado,
+          fechaViajePrincipal: original.fechaViajePrincipal,
+          idDestinoPrincipal: original.idDestinoPrincipal,
+
+          categoriaViaje: original.categoriaViaje,
+          monedaCodigo: original.monedaCodigo,
+
+          presupuestoEstimado: original.presupuestoEstimado,
+          presupuestoTipo: original.presupuestoTipo,
+          comisionPctAplicada: original.comisionPctAplicada,
+          margenAplicadoValor: original.margenAplicadoValor,
+
+          adultos65: original.adultos65,
+          adultos1964: original.adultos1964,
+          jovenes1218: original.jovenes1218,
+          ninos311: original.ninos311,
+          infantes02: original.infantes02,
+          totalPasajeros: original.totalPasajeros,
+
+          nota: original.nota,
+
+          createdBy: userId ?? null,
+          updatedBy: userId ?? null
+        }
+      });
+
+      const columnIdMap = new Map<number, number>();
+      const itemIdMap = new Map<number, number>();
+
+      for (const column of original.columnas) {
+        const newColumn = await tx.cotizacionColumna.create({
+          data: {
+            idCotizacion: newVersion.id,
+            grupo: column.grupo,
+            nombre: column.nombre,
+            tipo: column.tipo,
+            unidad: column.unidad,
+            multiplicador: column.multiplicador,
+            precioMostradoFormula: column.precioMostradoFormula,
+            precioMostradoValor: column.precioMostradoValor,
+            orden: column.orden,
+            activo: column.activo
+          }
+        });
+
+        columnIdMap.set(column.id, newColumn.id);
+      }
+
+      for (const commission of original.comisiones) {
+        await tx.cotizacionComision.create({
+          data: {
+            idCotizacion: newVersion.id,
+            tipoComision: commission.tipoComision,
+            porcentajeAgente: commission.porcentajeAgente,
+            porcentajeWtravel: commission.porcentajeWtravel,
+            porcentajeBancario: commission.porcentajeBancario,
+            porcentajeTotal: commission.porcentajeTotal,
+            factorVenta: commission.factorVenta
+          }
+        });
+      }
+
+      for (const item of original.items) {
+        const newItem = await tx.cotizacionItem.create({
+          data: {
+            idCotizacion: newVersion.id,
+            idServicio: item.idServicio,
+            fechaServicio: item.fechaServicio,
+            ordenDia: item.ordenDia,
+            esOpcional: item.esOpcional,
+
+            operadorMostrado: item.operadorMostrado,
+            linkOperador: item.linkOperador,
+            tituloOverride: item.tituloOverride,
+            claseOverride: item.claseOverride,
+            idiomaOverride: item.idiomaOverride,
+            notaLinea: item.notaLinea,
+
+            precioSugerido: item.precioSugerido,
+            precioVenta: item.precioVenta,
+            precioMonedaCodigo: item.precioMonedaCodigo,
+            precioEditadoManual: item.precioEditadoManual
+          }
+        });
+
+        itemIdMap.set(item.id, newItem.id);
+
+        if (item.alojamientoDetalle) {
+          await tx.cotizacionItemAlojamiento.create({
+            data: {
+              idCotizacionItem: newItem.id,
+              noches: item.alojamientoDetalle.noches,
+              habitaciones: item.alojamientoDetalle.habitaciones,
+              categoriaHab: item.alojamientoDetalle.categoriaHab,
+              regimen: item.alojamientoDetalle.regimen
+            }
+          });
+        }
+
+        for (const price of item.precios) {
+          const newColumnId = columnIdMap.get(price.idCotizacionColumna);
+
+          if (!newColumnId) {
+            continue;
+          }
+
+          await tx.cotizacionItemPrecio.create({
+            data: {
+              idCotizacionItem: newItem.id,
+              idCotizacionColumna: newColumnId,
+              precioNeto: price.precioNeto,
+              monedaCodigo: price.monedaCodigo,
+              precioEditadoManual: price.precioEditadoManual,
+              observaciones: price.observaciones
+            }
+          });
+        }
+
+        for (const hotel of item.hotelesPrevistos) {
+          const newColumnId = columnIdMap.get(hotel.idCotizacionColumna);
+
+          if (!newColumnId) {
+            continue;
+          }
+
+          await tx.cotizacionItemHotelPrevisto.create({
+            data: {
+              idCotizacionItem: newItem.id,
+              idCotizacionColumna: newColumnId,
+              textoHotel: hotel.textoHotel
+            }
+          });
+        }
+      }
+
+      return tx.expediente.findUniqueOrThrow({
+        where: {
+          id: original.idExpediente
+        },
+        include: {
+          cliente: {
+            select: {
+              id: true,
+              nombreCompleto: true
+            }
+          },
+          clienteAgente: {
+            select: {
+              id: true,
+              razonSocial: true
+            }
+          },
+          destinoPrincipal: true,
+          cotizaciones: {
+            orderBy: {
+              versionNumero: "asc"
+            }
+          }
+        }
+      });
+    });
+  }
+
   updateExpediente(id: number, data: ExpedienteInput & { updatedBy?: number | null }) {
     return prismaClient.$transaction(async (tx) => {
       const nombreBase = normalizeName(data.nombreCotizacion);

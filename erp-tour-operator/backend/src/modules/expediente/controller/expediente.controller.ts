@@ -32,6 +32,11 @@ class ExpedienteController {
     res.status(201).json(ok(data));
   };
 
+  duplicateItineraryVersion = async (req: Request, res: Response) => {
+    const data = await expedienteService.duplicateItineraryVersion(Number(req.params.versionId), getUserId(req));
+    res.status(201).json(ok(data));
+  };
+
   update = async (req: Request, res: Response) => {
     const data = await expedienteService.update(Number(req.params.id), req.body, getUserId(req));
     res.json(ok(data));

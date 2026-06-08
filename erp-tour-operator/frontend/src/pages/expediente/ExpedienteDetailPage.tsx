@@ -13,6 +13,7 @@ import {
 import {
   createExpedienteItinerary,
   discardExpedientes,
+  duplicateExpedienteVersion,
   getExpedientes
 } from "@/modules/expediente/expediente-api";
 import { formatDateShortEs } from "@/utils/date-format";
@@ -43,6 +44,26 @@ export function ExpedienteDetailPage() {
 
   const createItineraryMutation = useMutation({
     mutationFn: () => createExpedienteItinerary(id),
+    onSuccess: (updatedExpediente: any) => {
+      const cotizaciones = Array.isArray(updatedExpediente?.cotizaciones)
+        ? updatedExpediente.cotizaciones
+        : [];
+
+      const newestVersion = [...cotizaciones].sort(
+        (a, b) => Number(b.versionNumero ?? 0) - Number(a.versionNumero ?? 0)
+      )[0];
+
+      if (newestVersion?.id) {
+        navigate(`/expedientes/${id}/versiones/${newestVersion.id}/construir`);
+        return;
+      }
+
+      void query.refetch();
+    }
+  });
+
+  const duplicateVersionMutation = useMutation({
+    mutationFn: (versionId: number) => duplicateExpedienteVersion(versionId),
     onSuccess: (updatedExpediente: any) => {
       const cotizaciones = Array.isArray(updatedExpediente?.cotizaciones)
         ? updatedExpediente.cotizaciones
@@ -229,17 +250,22 @@ export function ExpedienteDetailPage() {
                   <td>{formatDateShortEs(version.createdAt)}</td>
 
                   <td>
-                    <div className="toolbar">
-                      <Link
-                        className="link-button"
-                        to={`/expedientes/${expediente.id}/versiones/${version.id}/construir`}
-                      >
-                        Construir
-                      </Link>
+                    <div className="version-actions">
+                    <Link
+                      className="version-action-button version-action-button--build"
+                      to={`/expedientes/${id}/versiones/${version.id}/construir`}
+                    >
+                      Construir
+                    </Link>
 
-                      <button className="link-button" type="button">
-                        Duplicar
-                      </button>
+                    <button
+                      className="version-action-button version-action-button--duplicate"
+                      disabled={duplicateVersionMutation.isPending}
+                      onClick={() => duplicateVersionMutation.mutate(version.id)}
+                      type="button"
+                    >
+                      {duplicateVersionMutation.isPending ? "Duplicando..." : "Duplicar"}
+                    </button>
                     </div>
                   </td>
                 </tr>

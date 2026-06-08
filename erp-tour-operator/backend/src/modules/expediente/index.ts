@@ -22,6 +22,11 @@ expedienteRouter.get(
   asyncHandler(expedienteController.list)
 );
 
+expedienteRouter.post(
+  "/versiones/:versionId/duplicar",
+  asyncHandler(expedienteController.duplicateItineraryVersion)
+);
+
 expedienteRouter.get(
   "/:id",
   validateParams(expedienteIdParamSchema),
