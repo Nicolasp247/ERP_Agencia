@@ -1,6 +1,6 @@
 /* erp-tour-operator/backend/src/modules/expediente/service/expediente.service.ts */
 
-import { ExpedienteEstado } from "@prisma/client";
+import { CotizacionVersionEstado, ExpedienteEstado } from "@prisma/client";
 
 import { prisma } from "@/core/db/prisma";
 import { AppError } from "@/core/errors/app-error";
@@ -155,6 +155,84 @@ export class ExpedienteService {
 
     return toExpedienteDetail(updated);
   }
+
+  async deleteItineraryVersion(versionId: number, userId?: number) {
+    const version = await prisma.cotizacion.findUnique({
+      where: {
+        id: versionId
+      },
+      include: {
+        expediente: true,
+        reserva: {
+          select: {
+            id: true
+          }
+        }
+      }
+    });
+
+    if (!version) {
+      throw new AppError(404, "COTIZACION_VERSION_NOT_FOUND", "Versión de cotización no encontrada");
+    }
+
+    if (version.expediente.estado !== ExpedienteEstado.COTIZACION) {
+      throw new AppError(
+        409,
+        "EXPEDIENTE_NO_PERMITE_ELIMINAR_VERSIONES",
+        "Solo se pueden eliminar versiones de expedientes en cotización"
+      );
+    }
+
+    if (
+      version.estadoVersion === CotizacionVersionEstado.ACEPTADA ||
+      version.estadoVersion === CotizacionVersionEstado.CONVERTIDA_CONFIRMACION
+    ) {
+      throw new AppError(
+        409,
+        "COTIZACION_VERSION_NO_ELIMINABLE",
+        "No se puede eliminar una versión aceptada o convertida en confirmación"
+      );
+    }
+
+    if (version.reserva) {
+      throw new AppError(
+        409,
+        "COTIZACION_VERSION_CON_RESERVA",
+        "No se puede eliminar una versión que ya tiene reserva asociada"
+      );
+    }
+
+    const totalVersions = await prisma.cotizacion.count({
+      where: {
+        idExpediente: version.idExpediente
+      }
+    });
+
+    if (totalVersions <= 1) {
+      throw new AppError(
+        409,
+        "EXPEDIENTE_DEBE_TENER_UNA_VERSION",
+        "El expediente debe conservar al menos una versión de cotización"
+      );
+    }
+
+    const updated = await expedienteRepository.deleteItineraryVersion(versionId);
+
+    if (!updated) {
+      throw new AppError(404, "COTIZACION_VERSION_NOT_FOUND", "Versión de cotización no encontrada");
+    }
+
+    await auditoriaService.record({
+      entidad: "expediente",
+      entidadId: updated.id,
+      accion: "ITINERARIO_ELIMINADO",
+      valorAnterior: version,
+      valorNuevo: updated,
+      idUsuario: userId ?? null
+    });
+
+    return toExpedienteDetail(updated);
+  }  
 
   async update(id: number, input: ExpedienteInput, userId?: number) {
     const current = await expedienteRepository.findById(id);

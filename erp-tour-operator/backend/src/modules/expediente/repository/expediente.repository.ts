@@ -579,6 +579,161 @@ export class ExpedienteRepository {
     });
   }
 
+  deleteItineraryVersion(versionId: number) {
+    return prismaClient.$transaction(async (tx) => {
+      const version = await tx.cotizacion.findUnique({
+        where: {
+          id: versionId
+        },
+        select: {
+          id: true,
+          idExpediente: true
+        }
+      });
+
+      if (!version) {
+        return null;
+      }
+
+      const items = await tx.cotizacionItem.findMany({
+        where: {
+          idCotizacion: versionId
+        },
+        select: {
+          id: true
+        }
+      });
+
+      const columns = await tx.cotizacionColumna.findMany({
+        where: {
+          idCotizacion: versionId
+        },
+        select: {
+          id: true
+        }
+      });
+
+      const itemIds = items.map((item) => item.id);
+      const columnIds = columns.map((column) => column.id);
+
+      const hotelWhere: Array<Record<string, unknown>> = [];
+      const priceWhere: Array<Record<string, unknown>> = [];
+
+      if (itemIds.length > 0) {
+        hotelWhere.push({
+          idCotizacionItem: {
+            in: itemIds
+          }
+        });
+
+        priceWhere.push({
+          idCotizacionItem: {
+            in: itemIds
+          }
+        });
+      }
+
+      if (columnIds.length > 0) {
+        hotelWhere.push({
+          idCotizacionColumna: {
+            in: columnIds
+          }
+        });
+
+        priceWhere.push({
+          idCotizacionColumna: {
+            in: columnIds
+          }
+        });
+      }
+
+      if (hotelWhere.length > 0) {
+        await tx.cotizacionItemHotelPrevisto.deleteMany({
+          where: {
+            OR: hotelWhere
+          }
+        });
+      }
+
+      if (priceWhere.length > 0) {
+        await tx.cotizacionItemPrecio.deleteMany({
+          where: {
+            OR: priceWhere
+          }
+        });
+      }
+
+      if (itemIds.length > 0) {
+        await tx.cotizacionItemAlojamiento.deleteMany({
+          where: {
+            idCotizacionItem: {
+              in: itemIds
+            }
+          }
+        });
+      }
+
+      await tx.cotizacionComision.deleteMany({
+        where: {
+          idCotizacion: versionId
+        }
+      });
+
+      await tx.cotizacionItem.deleteMany({
+        where: {
+          idCotizacion: versionId
+        }
+      });
+
+      await tx.cotizacionColumna.deleteMany({
+        where: {
+          idCotizacion: versionId
+        }
+      });
+
+      await tx.cotizacion.updateMany({
+        where: {
+          origenCotizacionId: versionId
+        },
+        data: {
+          origenCotizacionId: null
+        }
+      });
+
+      await tx.cotizacion.delete({
+        where: {
+          id: versionId
+        }
+      });
+
+      return tx.expediente.findUniqueOrThrow({
+        where: {
+          id: version.idExpediente
+        },
+        include: {
+          cliente: {
+            select: {
+              id: true,
+              nombreCompleto: true
+            }
+          },
+          clienteAgente: {
+            select: {
+              id: true,
+              razonSocial: true
+            }
+          },
+          destinoPrincipal: true,
+          cotizaciones: {
+            orderBy: {
+              versionNumero: "asc"
+            }
+          }
+        }
+      });
+    });
+  }
+
   updateExpediente(id: number, data: ExpedienteInput & { updatedBy?: number | null }) {
     return prismaClient.$transaction(async (tx) => {
       const nombreBase = normalizeName(data.nombreCotizacion);

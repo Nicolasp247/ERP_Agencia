@@ -12,6 +12,7 @@ import {
 } from "@/modules/expediente/expediente-labels";
 import {
   createExpedienteItinerary,
+  deleteExpedienteVersion,
   discardExpedientes,
   duplicateExpedienteVersion,
   getExpedientes
@@ -80,6 +81,11 @@ export function ExpedienteDetailPage() {
 
       void query.refetch();
     }
+  });
+
+  const deleteVersionMutation = useMutation({
+    mutationFn: (versionId: number) => deleteExpedienteVersion(versionId),
+    onSuccess: () => void query.refetch()
   });
 
   const expediente = query.data as any;
@@ -223,13 +229,13 @@ export function ExpedienteDetailPage() {
         title="Versiones de cotización"
       >
         {expediente.cotizaciones?.length ? (
-          <table>
+          <table className="expediente-versions-table">
             <thead>
               <tr>
                 <th>Versión</th>
                 <th>Estado</th>
                 <th>Fecha creación</th>
-                <th>Acciones</th>
+                <th>Acciones</th> 
               </tr>
             </thead>
 
@@ -251,21 +257,45 @@ export function ExpedienteDetailPage() {
 
                   <td>
                     <div className="version-actions">
-                    <Link
-                      className="version-action-button version-action-button--build"
-                      to={`/expedientes/${id}/versiones/${version.id}/construir`}
-                    >
-                      Construir
-                    </Link>
+                      <Link
+                        className="version-action-button version-action-button--build"
+                        to={`/expedientes/${expediente.id}/versiones/${version.id}/construir`}
+                      >
+                        Construir
+                      </Link>
 
-                    <button
-                      className="version-action-button version-action-button--duplicate"
-                      disabled={duplicateVersionMutation.isPending}
-                      onClick={() => duplicateVersionMutation.mutate(version.id)}
-                      type="button"
-                    >
-                      {duplicateVersionMutation.isPending ? "Duplicando..." : "Duplicar"}
-                    </button>
+                      <button
+                        className="version-action-button version-action-button--duplicate"
+                        disabled={duplicateVersionMutation.isPending}
+                        onClick={() => duplicateVersionMutation.mutate(version.id)}
+                        type="button"
+                      >
+                        {duplicateVersionMutation.isPending ? "Duplicando..." : "Duplicar"}
+                      </button>
+
+                      <button
+                        className="version-action-button version-action-button--danger"
+                        disabled={
+                          deleteVersionMutation.isPending ||
+                          expediente.cotizaciones.length <= 1 ||
+                          version.estadoVersion === "ACEPTADA" ||
+                          version.estadoVersion === "CONVERTIDA_CONFIRMACION"
+                        }
+                        onClick={() => {
+                          const confirmed = window.confirm(
+                            `¿Seguro que deseas eliminar ${version.versionLabel}? Esta acción no se puede deshacer.`
+                          );
+
+                          if (!confirmed) {
+                            return;
+                          }
+
+                          deleteVersionMutation.mutate(version.id);
+                        }}
+                        type="button"
+                      >
+                        {deleteVersionMutation.isPending ? "Eliminando..." : "Eliminar"}
+                      </button>
                     </div>
                   </td>
                 </tr>

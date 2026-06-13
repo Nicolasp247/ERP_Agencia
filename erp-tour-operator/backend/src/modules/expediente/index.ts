@@ -27,6 +27,10 @@ expedienteRouter.post(
   asyncHandler(expedienteController.duplicateItineraryVersion)
 );
 
+expedienteRouter.delete(
+  "/versiones/:versionId",
+  asyncHandler(expedienteController.deleteItineraryVersion)
+);
 expedienteRouter.get(
   "/:id",
   validateParams(expedienteIdParamSchema),

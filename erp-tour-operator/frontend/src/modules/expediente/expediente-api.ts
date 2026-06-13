@@ -84,3 +84,11 @@ export async function duplicateExpedienteVersion(versionId: number) {
 
   return response.data.data;
 }
+
+export async function deleteExpedienteVersion(versionId: number) {
+  const response = await api.delete<ApiResponse<Record<string, unknown>>>(
+    `/expedientes/versiones/${versionId}`
+  );
+
+  return response.data.data;
+}

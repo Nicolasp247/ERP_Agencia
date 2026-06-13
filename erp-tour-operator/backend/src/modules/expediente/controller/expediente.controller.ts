@@ -37,6 +37,11 @@ class ExpedienteController {
     res.status(201).json(ok(data));
   };
 
+  deleteItineraryVersion = async (req: Request, res: Response) => {
+    const data = await expedienteService.deleteItineraryVersion(Number(req.params.versionId), getRequestUserId(req));
+    res.json(ok(data));
+  };
+
   update = async (req: Request, res: Response) => {
     const data = await expedienteService.update(Number(req.params.id), req.body, getUserId(req));
     res.json(ok(data));
