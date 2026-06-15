@@ -6,7 +6,7 @@ import { Protected } from "@/components/Protected";
 import { AgenteDetailPage } from "@/pages/agentes/AgenteDetailPage";
 import { AgenteFormPage } from "@/pages/agentes/AgenteFormPage";
 import { AgentesListPage } from "@/pages/agentes/AgentesListPage";
-import { CotizacionBuilderPage } from "@/pages/cotizacion-builder/CotizacionBuilderPage";
+import { CotizacionBuilderPage } from "@/pages/expediente/cotizacion-builder/CotizacionBuilderPage";
 import { ClienteDetailPage } from "@/pages/ClienteDetailPage";
 import { ClienteFormPage } from "@/pages/ClienteFormPage";
 import { ClientesListPage } from "@/pages/ClientesListPage";

@@ -8,7 +8,7 @@ import { authRouter } from "@/modules/auth";
 import { clienteRouter } from "@/modules/cliente";
 import { clienteAgenteRouter } from "@/modules/cliente-agente";
 import { expedienteRouter } from "@/modules/expediente";
-import { cotizacionBuilderRouter } from "@/modules/cotizacion-builder";
+import { cotizacionBuilderRouter } from "@/modules/expediente/cotizacion-builder";
 import { documentoRouter } from "@/modules/documento";
 import { geoRouter } from "@/modules/geo";
 import { liquidacionRouter } from "@/modules/liquidacion";

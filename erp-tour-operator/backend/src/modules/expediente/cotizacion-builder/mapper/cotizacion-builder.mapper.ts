@@ -1,0 +1,218 @@
+/* erp-tour-operator/backend/src/modules/expediente/cotizacion-builder/mapper/cotizacion-builder.mapper.ts */
+
+function formatDateOnly(value: Date | string | null | undefined) {
+  if (!value) return null;
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function addDaysToDate(value: Date | string | null | undefined, days: number) {
+  if (!value) return null;
+
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  date.setUTCDate(date.getUTCDate() + days);
+  date.setUTCHours(0, 0, 0, 0);
+
+  return formatDateOnly(date);
+}
+
+function getTipoServicioNombre(item: any) {
+  return item.servicio?.tipo?.nombre ?? "";
+}
+
+function getTipoServicioCodigo(item: any) {
+  return item.servicio?.tipo?.codigo ?? null;
+}
+
+function isAlojamientoItem(item: any) {
+  const tipoNombre = String(getTipoServicioNombre(item)).trim().toLowerCase();
+  const tipoCodigo = String(getTipoServicioCodigo(item) ?? "").trim().toLowerCase();
+
+  return tipoNombre === "alojamiento" || tipoCodigo === "alojamiento";
+}
+
+function getFechaFinAlojamiento(item: any) {
+  const noches = Number(item.alojamientoDetalle?.noches ?? 1);
+
+  return addDaysToDate(item.fechaServicio, noches);
+}
+
+function labelCategoriaHabitacion(alojamiento: any) {
+  if (!alojamiento) {
+    return "habitación estándar";
+  }
+
+  if (alojamiento.categoriaHab === "OTRO") {
+    return "habitación";
+  }
+
+  const labels: Record<string, string> = {
+    ESTANDAR: "habitación estándar",
+    SUPERIOR: "habitación superior",
+    SUITE: "suite"
+  };
+
+  return labels[alojamiento.categoriaHab] ?? "habitación estándar";
+}
+
+function labelRegimen(alojamiento: any) {
+  if (!alojamiento) {
+    return "desayuno diario";
+  }
+
+  if (alojamiento.regimen === "SOLO_ALOJAMIENTO") {
+    return "solo alojamiento";
+  }
+
+  if (alojamiento.regimen === "ALOJAMIENTO_DESAYUNO") {
+    return "desayuno diario";
+  }
+
+  if (alojamiento.regimen === "TODO_INCLUIDO") {
+    return "todo incluido";
+  }
+
+  if (alojamiento.regimen === "OTRO") {
+    return "régimen especial";
+  }
+
+  return "desayuno diario";
+}
+
+function getServicioIncluidoAlojamiento(item: any) {
+  const noches = Number(item.alojamientoDetalle?.noches ?? 1);
+  const habitaciones = Number(item.alojamientoDetalle?.habitaciones ?? 1);
+
+  const nochesText = noches === 1 ? "1 noche" : `${noches} noches`;
+  const habitacionText = labelCategoriaHabitacion(item.alojamientoDetalle);
+  const regimenText = labelRegimen(item.alojamientoDetalle);
+
+  const habitacionFinalText =
+    habitaciones > 1
+      ? `${habitaciones} ${habitacionText.replace("habitación", "habitaciones")}`
+      : habitacionText;
+
+  const partes = [
+    `Alojamiento ${nochesText}`,
+    habitacionFinalText,
+    regimenText
+  ].filter(Boolean);
+
+  return partes.join(", ");
+}
+
+function buildVersionLabel(versionCodigo?: string | null) {
+  return `Cotización ${versionCodigo ?? "A"}`;
+}
+
+function getServicioIncluido(item: any) {
+  if (item.tituloOverride) {
+    return item.tituloOverride;
+  }
+
+  if (isAlojamientoItem(item)) {
+    return getServicioIncluidoAlojamiento(item);
+  }
+
+  return item.servicio?.nombreWtravel || "Servicio sin nombre";
+}
+
+export function toCotizacionBuilderDetail(record: any) {
+  return {
+    version: {
+      id: record.id,
+      idExpediente: record.idExpediente,
+      versionNumero: record.versionNumero,
+      versionCodigo: record.versionCodigo,
+      versionLabel: buildVersionLabel(record.versionCodigo),
+      estadoVersion: record.estadoVersion,
+      nombreCotizacion: record.nombreCotizacion,
+      monedaCodigo: record.monedaCodigo,
+      notasLibres: record.nota ?? ""
+    },
+
+    expediente: {
+      id: record.expediente.id,
+      codigo: record.expediente.codigo,
+      nombreExpediente: record.expediente.nombreExpediente,
+      estado: record.expediente.estado,
+      fechaViajePrincipal: formatDateOnly(record.expediente.fechaViajePrincipal),
+      totalPasajeros: record.expediente.totalPasajeros,
+      monedaCodigo: record.expediente.monedaCodigo,
+      cliente: record.expediente.cliente,
+      clienteAgente: record.expediente.clienteAgente,
+      destinoPrincipal: record.expediente.destinoPrincipal
+    },
+
+    columns: (record.columnas ?? [])
+      .filter((column: any) => column.activo)
+      .map((column: any) => ({
+        id: column.id,
+        grupo: column.grupo,
+        nombre: column.nombre,
+        tipo: column.tipo,
+        unidad: column.unidad,
+        multiplicador: column.multiplicador,
+        precioMostradoFormula: column.precioMostradoFormula ?? null,
+        precioMostradoValor:
+          column.precioMostradoValor === null || column.precioMostradoValor === undefined
+            ? null
+            : Number(column.precioMostradoValor),
+        orden: column.orden
+      })),
+
+    comisiones: (record.comisiones ?? []).map((commission: any) => ({
+      id: commission.id,
+      tipoComision: commission.tipoComision,
+      porcentajeAgente: Number(commission.porcentajeAgente),
+      porcentajeWtravel: Number(commission.porcentajeWtravel),
+      porcentajeBancario: Number(commission.porcentajeBancario),
+      porcentajeTotal: Number(commission.porcentajeTotal),
+      factorVenta: Number(commission.factorVenta)
+    })),
+
+    rows: (record.items ?? []).map((item: any) => ({
+      id: item.id,
+      idServicio: item.idServicio,
+      fecha: formatDateOnly(item.fechaServicio),
+      fechaFin: isAlojamientoItem(item)
+        ? getFechaFinAlojamiento(item)
+        : formatDateOnly(item.fechaServicio),
+      ordenDia: item.ordenDia,
+      servicioIncluido: getServicioIncluido(item),
+      operador:
+        item.servicio?.proveedor?.codigo ||
+        item.operadorMostrado ||
+        item.servicio?.proveedor?.nombreComercial ||
+        "N/D",
+      linkReserva: item.servicio?.linkReserva ?? null,
+      notas: item.notaLinea ?? "",
+      esOpcional: item.esOpcional,
+      tipoServicio: getTipoServicioNombre(item),
+      tipoServicioCodigo: getTipoServicioCodigo(item),
+      ciudadNombre: item.servicio?.ciudad?.nombre ?? null,
+      paisNombre: item.servicio?.ciudad?.pais?.nombre ?? null,
+      precios: (item.precios ?? []).map((precio: any) => ({
+        columnId: precio.idCotizacionColumna,
+        precioNeto: precio.precioNeto === null || precio.precioNeto === undefined
+          ? null
+          : Number(precio.precioNeto)
+      })),
+      hotelesPrevistos: (item.hotelesPrevistos ?? []).map((hotel: any) => ({
+        columnId: hotel.idCotizacionColumna,
+        textoHotel: hotel.textoHotel ?? ""
+      }))
+    }))
+  };
+}

@@ -1,7 +1,7 @@
 /* erp-tour-operator/backend/tests/cotizacion-builder-hotels.smoke.test.ts */
 
 import { prisma } from "@/core/db/prisma";
-import { cotizacionBuilderRepository } from "@/modules/cotizacion-builder/repository/cotizacion-builder.repository";
+import { cotizacionBuilderRepository } from "@/modules/expediente/cotizacion-builder/repository/cotizacion-builder.repository";
 
 const VERSION_ID = 8;
 const ALOJAMIENTO_ITEM_ID = 26;

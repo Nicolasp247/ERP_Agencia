@@ -232,7 +232,87 @@ export class ExpedienteService {
     });
 
     return toExpedienteDetail(updated);
-  }  
+  }
+
+  async updateItineraryVersionStatus(versionId: number, estado: string, userId?: number) {
+    const validStatuses = new Set<CotizacionVersionEstado>([
+      CotizacionVersionEstado.BORRADOR,
+      CotizacionVersionEstado.ENVIADA,
+      CotizacionVersionEstado.ACEPTADA,
+      CotizacionVersionEstado.DESCARTADA
+    ]);
+
+    if (!validStatuses.has(estado as CotizacionVersionEstado)) {
+      throw new AppError(
+        400,
+        "ESTADO_VERSION_INVALIDO",
+        "El estado de la versión no es válido"
+      );
+    }
+
+    const version = await prisma.cotizacion.findUnique({
+      where: {
+        id: versionId
+      },
+      include: {
+        expediente: true,
+        reserva: {
+          select: {
+            id: true
+          }
+        }
+      }
+    });
+
+    if (!version) {
+      throw new AppError(404, "COTIZACION_VERSION_NOT_FOUND", "Versión de cotización no encontrada");
+    }
+
+    if (version.expediente.estado !== ExpedienteEstado.COTIZACION) {
+      throw new AppError(
+        409,
+        "EXPEDIENTE_NO_PERMITE_CAMBIAR_ESTADO_VERSION",
+        "Solo se puede cambiar el estado de versiones en expedientes en cotización"
+      );
+    }
+
+    if (version.estadoVersion === CotizacionVersionEstado.CONVERTIDA_CONFIRMACION) {
+      throw new AppError(
+        409,
+        "COTIZACION_VERSION_CONVERTIDA",
+        "No se puede cambiar el estado de una versión convertida en confirmación"
+      );
+    }
+
+    if (version.reserva) {
+      throw new AppError(
+        409,
+        "COTIZACION_VERSION_CON_RESERVA",
+        "No se puede cambiar el estado de una versión que ya tiene reserva asociada"
+      );
+    }
+
+    const updated = await expedienteRepository.updateItineraryVersionStatus(
+      versionId,
+      estado as CotizacionVersionEstado,
+      userId ?? null
+    );
+
+    if (!updated) {
+      throw new AppError(404, "COTIZACION_VERSION_NOT_FOUND", "Versión de cotización no encontrada");
+    }
+
+    await auditoriaService.record({
+      entidad: "expediente",
+      entidadId: updated.id,
+      accion: "ESTADO_VERSION_ACTUALIZADO",
+      valorAnterior: version,
+      valorNuevo: updated,
+      idUsuario: userId ?? null
+    });
+
+    return toExpedienteDetail(updated);
+  }
 
   async update(id: number, input: ExpedienteInput, userId?: number) {
     const current = await expedienteRepository.findById(id);

@@ -92,3 +92,24 @@ export async function deleteExpedienteVersion(versionId: number) {
 
   return response.data.data;
 }
+
+export async function updateExpedienteVersionStatus(
+  versionId: number,
+  estado: CotizacionVersionEstado
+) {
+  const response = await api.patch<ApiResponse<Record<string, unknown>>>(
+    `/expedientes/versiones/${versionId}/estado`,
+    {
+      estado
+    }
+  );
+
+  return response.data.data;
+}
+
+export type CotizacionVersionEstado =
+  | "BORRADOR"
+  | "ENVIADA"
+  | "ACEPTADA"
+  | "DESCARTADA"
+  | "CONVERTIDA_CONFIRMACION";

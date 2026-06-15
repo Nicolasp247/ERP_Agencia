@@ -734,6 +734,81 @@ export class ExpedienteRepository {
     });
   }
 
+  updateItineraryVersionStatus(
+    versionId: number,
+    estado: CotizacionVersionEstado,
+    userId?: number | null
+  ) {
+    return prismaClient.$transaction(async (tx) => {
+      const version = await tx.cotizacion.findUnique({
+        where: {
+          id: versionId
+        },
+        select: {
+          id: true,
+          idExpediente: true,
+          estadoVersion: true
+        }
+      });
+
+      if (!version) {
+        return null;
+      }
+
+      if (estado === CotizacionVersionEstado.ACEPTADA) {
+        await tx.cotizacion.updateMany({
+          where: {
+            idExpediente: version.idExpediente,
+            id: {
+              not: versionId
+            },
+            estadoVersion: CotizacionVersionEstado.ACEPTADA
+          },
+          data: {
+            estadoVersion: CotizacionVersionEstado.ENVIADA,
+            updatedBy: userId ?? null
+          }
+        });
+      }
+
+      await tx.cotizacion.update({
+        where: {
+          id: versionId
+        },
+        data: {
+          estadoVersion: estado,
+          updatedBy: userId ?? null
+        }
+      });
+
+      return tx.expediente.findUniqueOrThrow({
+        where: {
+          id: version.idExpediente
+        },
+        include: {
+          cliente: {
+            select: {
+              id: true,
+              nombreCompleto: true
+            }
+          },
+          clienteAgente: {
+            select: {
+              id: true,
+              razonSocial: true
+            }
+          },
+          destinoPrincipal: true,
+          cotizaciones: {
+            orderBy: {
+              versionNumero: "asc"
+            }
+          }
+        }
+      });
+    });
+  }
+
   updateExpediente(id: number, data: ExpedienteInput & { updatedBy?: number | null }) {
     return prismaClient.$transaction(async (tx) => {
       const nombreBase = normalizeName(data.nombreCotizacion);

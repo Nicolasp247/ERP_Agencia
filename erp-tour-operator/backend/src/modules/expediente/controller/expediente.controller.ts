@@ -42,6 +42,16 @@ class ExpedienteController {
     res.json(ok(data));
   };
 
+  updateItineraryVersionStatus = async (req: Request, res: Response) => {
+    const data = await expedienteService.updateItineraryVersionStatus(
+      Number(req.params.versionId),
+      req.body.estado,
+      getRequestUserId(req)
+    );
+
+    res.json(ok(data));
+  };
+
   update = async (req: Request, res: Response) => {
     const data = await expedienteService.update(Number(req.params.id), req.body, getUserId(req));
     res.json(ok(data));

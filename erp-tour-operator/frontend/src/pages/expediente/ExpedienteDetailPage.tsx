@@ -15,7 +15,8 @@ import {
   deleteExpedienteVersion,
   discardExpedientes,
   duplicateExpedienteVersion,
-  getExpedientes
+  getExpedientes,
+  updateExpedienteVersionStatus
 } from "@/modules/expediente/expediente-api";
 import { formatDateShortEs } from "@/utils/date-format";
 
@@ -85,6 +86,17 @@ export function ExpedienteDetailPage() {
 
   const deleteVersionMutation = useMutation({
     mutationFn: (versionId: number) => deleteExpedienteVersion(versionId),
+    onSuccess: () => void query.refetch()
+  });
+
+  const updateVersionStatusMutation = useMutation({
+    mutationFn: ({
+      versionId,
+      estado
+    }: {
+      versionId: number;
+      estado: "BORRADOR" | "ENVIADA" | "ACEPTADA" | "DESCARTADA";
+    }) => updateExpedienteVersionStatus(versionId, estado),
     onSuccess: () => void query.refetch()
   });
 
@@ -241,7 +253,10 @@ export function ExpedienteDetailPage() {
 
             <tbody>
               {expediente.cotizaciones.map((version: any) => (
-                <tr key={version.id}>
+                <tr
+                  className={`version-row version-row--${String(version.estadoVersion).toLowerCase()}`}
+                  key={version.id}
+                >
                   <td>
                     <strong>{version.versionLabel}</strong>
                     <p className="table-subtext">{version.nombreCotizacion}</p>
@@ -264,6 +279,78 @@ export function ExpedienteDetailPage() {
                         Construir
                       </Link>
 
+                      {version.estadoVersion === "BORRADOR" ? (
+                        <button
+                          className="version-action-button version-action-button--send"
+                          disabled={updateVersionStatusMutation.isPending}
+                          onClick={() =>
+                            updateVersionStatusMutation.mutate({
+                              versionId: version.id,
+                              estado: "ENVIADA"
+                            })
+                          }
+                          type="button"
+                        >
+                          Enviar
+                        </button>
+                      ) : null}
+
+                      {version.estadoVersion === "DESCARTADA" ? (
+                        <button
+                          className="version-action-button version-action-button--draft"
+                          disabled={updateVersionStatusMutation.isPending}
+                          onClick={() =>
+                            updateVersionStatusMutation.mutate({
+                              versionId: version.id,
+                              estado: "BORRADOR"
+                            })
+                          }
+                          type="button"
+                        >
+                          Borrador
+                        </button>
+                      ) : null}
+
+                      {version.estadoVersion === "BORRADOR" || version.estadoVersion === "ENVIADA" ? (
+                        <button
+                          className="version-action-button version-action-button--accept"
+                          disabled={updateVersionStatusMutation.isPending}
+                          onClick={() => {
+                            const confirmed = window.confirm(
+                              `¿Seguro que deseas marcar ${version.versionLabel} como aceptada? Si otra versión estaba aceptada, dejará de estarlo.`
+                            );
+
+                            if (!confirmed) {
+                              return;
+                            }
+
+                            updateVersionStatusMutation.mutate({
+                              versionId: version.id,
+                              estado: "ACEPTADA"
+                            });
+                          }}
+                          type="button"
+                        >
+                          Aceptar
+                        </button>
+                      ) : null}
+
+                      {version.estadoVersion === "ENVIADA" ? (
+                        <button
+                          className="version-action-button version-action-button--discard"
+                          disabled={updateVersionStatusMutation.isPending}
+                          onClick={() =>
+                            updateVersionStatusMutation.mutate({
+                              versionId: version.id,
+                              estado: "DESCARTADA"
+                            })
+                          }
+                          type="button"
+                        >
+                          Descartar
+                        </button>
+                      ) : null}
+
                       <button
                         className="version-action-button version-action-button--duplicate"
                         disabled={duplicateVersionMutation.isPending}
@@ -273,29 +360,27 @@ export function ExpedienteDetailPage() {
                         {duplicateVersionMutation.isPending ? "Duplicando..." : "Duplicar"}
                       </button>
 
-                      <button
-                        className="version-action-button version-action-button--danger"
-                        disabled={
-                          deleteVersionMutation.isPending ||
-                          expediente.cotizaciones.length <= 1 ||
-                          version.estadoVersion === "ACEPTADA" ||
-                          version.estadoVersion === "CONVERTIDA_CONFIRMACION"
-                        }
-                        onClick={() => {
-                          const confirmed = window.confirm(
-                            `¿Seguro que deseas eliminar ${version.versionLabel}? Esta acción no se puede deshacer.`
-                          );
+                      {version.estadoVersion !== "ACEPTADA" &&
+                      version.estadoVersion !== "CONVERTIDA_CONFIRMACION" ? (
+                        <button
+                          className="version-action-button version-action-button--danger"
+                          disabled={deleteVersionMutation.isPending || expediente.cotizaciones.length <= 1}
+                          onClick={() => {
+                            const confirmed = window.confirm(
+                              `¿Seguro que deseas eliminar ${version.versionLabel}? Esta acción no se puede deshacer.`
+                            );
 
-                          if (!confirmed) {
-                            return;
-                          }
+                            if (!confirmed) {
+                              return;
+                            }
 
-                          deleteVersionMutation.mutate(version.id);
-                        }}
-                        type="button"
-                      >
-                        {deleteVersionMutation.isPending ? "Eliminando..." : "Eliminar"}
-                      </button>
+                            deleteVersionMutation.mutate(version.id);
+                          }}
+                          type="button"
+                        >
+                          {deleteVersionMutation.isPending ? "Eliminando..." : "Eliminar"}
+                        </button>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
