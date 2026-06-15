@@ -274,10 +274,21 @@ export function ExpedienteDetailPage() {
                     <div className="version-actions">
                       <Link
                         className="version-action-button version-action-button--build"
-                        to={`/expedientes/${expediente.id}/versiones/${version.id}/construir`}
+                        to={`/expedientes/${expediente.id}/versiones/${version.id}/construir${
+                          version.estadoVersion === "DESCARTADA" ? "?modo=lectura" : ""
+                        }`}
                       >
-                        Construir
+                        {version.estadoVersion === "DESCARTADA" ? "Ver" : "Construir"}
                       </Link>
+
+                      {version.estadoVersion === "ACEPTADA" ? (
+                        <Link
+                          className="version-action-button version-action-button--confirm"
+                          to={`/expedientes/${expediente.id}/versiones/${version.id}/confirmacion`}
+                        >
+                          Realizar confirmación
+                        </Link>
+                      ) : null}
 
                       {version.estadoVersion === "BORRADOR" ? (
                         <button

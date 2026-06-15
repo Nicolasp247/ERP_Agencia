@@ -213,6 +213,7 @@ function getInitialPriceFormula(value: number | null | undefined) {
 type CotizacionBuilderTableProps = {
   columns: BuilderColumn[];
   rows: BuilderRow[];
+  readOnly?: boolean;
   onDeleteItem: (itemId: number) => void;
   onMoveItem: (itemId: number, direction: "UP" | "DOWN") => void;
   onUpdateItemNotes: (
@@ -236,6 +237,7 @@ type CotizacionBuilderTableProps = {
 export function CotizacionBuilderTable({
   columns,
   rows,
+  readOnly = false,
   onDeleteItem,
   onMoveItem,
   onUpdateItemNotes,
@@ -264,6 +266,8 @@ export function CotizacionBuilderTable({
   }
 
   function startEditingNotes(row: BuilderRow) {
+    if (readOnly) return;
+
     setFloatingPriceEditor(null);
     setVisibleNotesRowId(row.id);
     setEditingNotesRowId(row.id);
@@ -278,6 +282,8 @@ export function CotizacionBuilderTable({
   }
 
   function saveEditingNotes(row: BuilderRow) {
+    if (readOnly) return;
+
     const cleanNote = draftNote.trim();
     const cleanTitle = draftServiceTitle.trim();
     const originalTitle = row.servicioIncluido?.trim() ?? "";
@@ -295,6 +301,8 @@ export function CotizacionBuilderTable({
   }
 
   function openFloatingPriceEditor(row: BuilderRow, column: BuilderColumn) {
+    if (readOnly) return;
+
     const price = row.precios.find((item) => item.columnId === column.id);
 
     setVisibleNotesRowId(null);
@@ -322,6 +330,7 @@ export function CotizacionBuilderTable({
   }
 
   function closeFloatingPriceEditor() {
+    if (readOnly) return;
     setFloatingPriceEditor(null);
   }
 
@@ -390,18 +399,24 @@ export function CotizacionBuilderTable({
           rowSpan={rowSpan}
           className={isEditingThisPrice ? "builder-price-cell-editing" : undefined}
         >
-          <button
-            className={
-              isEditingThisPrice
-                ? "builder-price-cell-button builder-price-cell-button-editing"
-                : "builder-price-cell-button"
-            }
-            type="button"
-            onClick={() => openFloatingPriceEditor(row, column)}
-            title="Editar precio"
-          >
-            {formatPriceValue(price?.precioNeto)}
-          </button>
+          {readOnly ? (
+            <span className="builder-price-cell-readonly">
+              {formatPriceValue(price?.precioNeto)}
+            </span>
+          ) : (
+            <button
+              className={
+                isEditingThisPrice
+                  ? "builder-price-cell-button builder-price-cell-button-editing"
+                  : "builder-price-cell-button"
+              }
+              type="button"
+              onClick={() => openFloatingPriceEditor(row, column)}
+              title="Editar precio"
+            >
+              {formatPriceValue(price?.precioNeto)}
+            </button>
+          )}
         </td>
       );
     });
@@ -430,6 +445,31 @@ export function CotizacionBuilderTable({
   }
 
   function renderActions(row: BuilderRow) {
+    if (readOnly) {
+      return (
+        <div className="builder-row-actions builder-row-actions-compact">
+          {visibleNotesRowId === row.id ? (
+            <button
+              className="icon-button"
+              onClick={closeRowNotes}
+              title="Salir de notas"
+              type="button"
+            >
+              ×
+            </button>
+          ) : (
+            <button
+              className="icon-button"
+              onClick={() => openRowNotes(row)}
+              title="Ver notas"
+              type="button"
+            >
+              ☷
+            </button>
+          )}
+        </div>
+      );
+    }
     return (
       <div className="builder-row-actions builder-row-actions-compact">
         {editingNotesRowId === row.id ? (
@@ -529,6 +569,38 @@ export function CotizacionBuilderTable({
     return evaluatePriceFormula(floatingPriceEditor.value);
   }, [floatingPriceEditor]);
 
+  function renderOrderControls(row: BuilderRow, visualOrder: number) {
+    if (readOnly) {
+      return <span className="builder-order-readonly">{visualOrder}</span>;
+    }
+
+    return (
+      <div className="builder-order-controls">
+        <span className="builder-order-readonly">{visualOrder}</span>
+
+        <div className="builder-row-actions builder-row-actions-compact">
+          <button
+            className="icon-button"
+            onClick={() => onMoveItem(row.id, "UP")}
+            title="Subir servicio"
+            type="button"
+          >
+            ↑
+          </button>
+
+          <button
+            className="icon-button"
+            onClick={() => onMoveItem(row.id, "DOWN")}
+            title="Bajar servicio"
+            type="button"
+          >
+            ↓
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
   <div className="builder-table-shell">
     {floatingPriceEditor ? (
@@ -604,7 +676,8 @@ export function CotizacionBuilderTable({
         </thead>
 
         <tbody>
-          {rows.map((row) => {
+          {rows.map((row, index) => {
+            const visualOrder = index + 1;
             const rowTypeClass = getRowTypeClass(row);
             const isAlojamiento = isAlojamientoRow(row);
 
@@ -613,24 +686,7 @@ export function CotizacionBuilderTable({
                 <Fragment key={row.id}>
                   <tr className={`builder-city-row ${rowTypeClass}`}>
                     <td className="builder-order-cell" rowSpan={2}>
-                      <div className="builder-row-actions builder-row-actions-compact">
-                        <button
-                          className="icon-button"
-                          onClick={() => onMoveItem(row.id, "UP")}
-                          title="Subir servicio"
-                          type="button"
-                        >
-                          ↑
-                        </button>
-                        <button
-                          className="icon-button"
-                          onClick={() => onMoveItem(row.id, "DOWN")}
-                          title="Bajar servicio"
-                          type="button"
-                        >
-                          ↓
-                        </button>
-                      </div>
+                      {renderOrderControls(row, visualOrder)}
                     </td>
 
                     <td className="builder-city-title-cell builder-itinerary-title-cell" colSpan={2}>
@@ -662,26 +718,8 @@ export function CotizacionBuilderTable({
             return (
               <tr className={`builder-service-row ${rowTypeClass}`} key={row.id}>
                 <td className="builder-order-cell">
-                  <div className="builder-row-actions builder-row-actions-compact">
-                    <button
-                      className="icon-button"
-                      onClick={() => onMoveItem(row.id, "UP")}
-                      title="Subir servicio"
-                      type="button"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      className="icon-button"
-                      onClick={() => onMoveItem(row.id, "DOWN")}
-                      title="Bajar servicio"
-                      type="button"
-                    >
-                      ↓
-                    </button>
-                  </div>
+                  {renderOrderControls(row, visualOrder)}
                 </td>
-
                 <td className="builder-date-cell">{formatLongDateEs(row.fecha)}</td>
 
                 <td className="builder-service-name-cell builder-service-included-cell">

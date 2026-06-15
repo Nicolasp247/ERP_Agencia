@@ -206,3 +206,14 @@
   background: #f8f6ef;
   border-color: #c7bfae;
 }
+
+.version-action-button--confirm {
+  background: #143339;
+  color: #ffffff;
+  border-color: #143339;
+}
+
+.version-action-button--confirm:hover:not(:disabled) {
+  background: #0d252a;
+  border-color: #0d252a;
+}

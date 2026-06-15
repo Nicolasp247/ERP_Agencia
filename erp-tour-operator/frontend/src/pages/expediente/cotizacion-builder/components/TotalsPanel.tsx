@@ -20,6 +20,7 @@ type TotalsPanelProps = {
   rows: BuilderRow[];
   monedaCodigo: string;
   totalPasajeros: number;
+  readOnly?: boolean;
   onUpdateColumnShownPrice: (
     columnId: number,
     values: {
@@ -43,6 +44,7 @@ export function TotalsPanel({
   rows,
   monedaCodigo,
   totalPasajeros,
+  readOnly = false,
   onUpdateColumnShownPrice
 }: TotalsPanelProps) {
   const [mostradoInputs, setMostradoInputs] = useState<Record<number, string>>({});
@@ -84,6 +86,7 @@ export function TotalsPanel({
   }
 
   function saveEditingMostrado(item: SummaryColumn) {
+    if (readOnly) return;
     const formula = getInputValue(item).trim() || `=${item.mostradoAutomatico}`;
     const normalizedFormula = formula.startsWith("=") ? formula : `=${formula}`;
     const value = evaluateFormula(normalizedFormula, item.mostradoAutomatico);
@@ -102,7 +105,7 @@ export function TotalsPanel({
   }
 
   function updateOutdatedShownPrices() {
-    if (!hasOutdatedShownPrices) {
+    if (readOnly || !hasOutdatedShownPrices) {
       return;
     }
 
@@ -138,7 +141,7 @@ export function TotalsPanel({
           <div className="builder-totals-heading-row">
             <h4>Totales de cotización</h4>
 
-            {hasOutdatedShownPrices ? (
+            {hasOutdatedShownPrices && !readOnly ? (
               <button
                 className="builder-totals-warning-action"
                 type="button"
@@ -149,7 +152,7 @@ export function TotalsPanel({
             ) : null}
           </div>
 
-          {hasOutdatedShownPrices ? (
+          {hasOutdatedShownPrices && !readOnly ? (
             <div className="builder-totals-warning">
               Hay valores de “Mostrado al pasajero” por debajo del precio calculado.
             </div>
@@ -239,7 +242,11 @@ export function TotalsPanel({
                                 : "builder-total-result-button"
                             }
                             type="button"
-                            onClick={() => setEditingColumnId(item.column.id)}
+                            disabled={readOnly}
+                            onClick={() => {
+                              if (readOnly) return;
+                              setEditingColumnId(item.column.id);
+                            }}
                             title={`Fórmula: ${getInputValue(item)}`}
                           >
                             <strong>{formatMoneyNoDecimals(item.mostrado, monedaCodigo)}</strong>
@@ -269,7 +276,9 @@ export function TotalsPanel({
           </div>
 
           <p className="builder-help-text">
-            En “Mostrado al pasajero” se muestra el resultado. Haz clic sobre el valor para editar la fórmula.
+            {readOnly
+              ? "Modo lectura: los valores mostrados al pasajero no se pueden editar."
+              : "En “Mostrado al pasajero” se muestra el resultado. Haz clic sobre el valor para editar la fórmula."}
           </p>
         </div>
       </div>

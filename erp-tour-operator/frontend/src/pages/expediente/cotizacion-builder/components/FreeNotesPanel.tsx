@@ -5,12 +5,14 @@ import { useEffect, useState } from "react";
 type FreeNotesPanelProps = {
   initialValue: string | null;
   isSaving?: boolean;
+  readOnly?: boolean;
   onSave: (value: string) => void;
 };
 
 export function FreeNotesPanel({
   initialValue,
   isSaving = false,
+  readOnly = false,
   onSave
 }: FreeNotesPanelProps) {
   const [value, setValue] = useState(initialValue ?? "");
@@ -22,6 +24,10 @@ export function FreeNotesPanel({
   }, [initialValue]);
 
   function saveIfChanged() {
+    if (readOnly) {
+      return;
+    }
+
     if (value.trim() === lastSavedValue.trim()) {
       return;
     }
@@ -43,12 +49,17 @@ export function FreeNotesPanel({
         className="builder-free-notes-textarea"
         placeholder="Escribe aquí las anotaciones libres de la cotización..."
         value={value}
+        readOnly={readOnly}
         onBlur={saveIfChanged}
         onChange={(event) => setValue(event.target.value)}
       />
 
       <div className="builder-free-notes-status">
-        {isSaving ? "Guardando anotaciones..." : "Las anotaciones se guardan al salir del campo."}
+        {readOnly
+        ? "Modo lectura: las anotaciones no se pueden editar."
+        : isSaving
+          ? "Guardando anotaciones..."
+          : "Las anotaciones se guardan al salir del campo."}
       </div>
 
       <div className="builder-export-actions">

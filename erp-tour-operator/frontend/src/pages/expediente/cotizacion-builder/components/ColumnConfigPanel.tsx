@@ -108,10 +108,12 @@ function getCommissionFactor(rule: CommissionRule) {
 
 function EditablePercent({
   value,
-  onChange
+  onChange,
+  readOnly = false
 }: {
   value: number;
   onChange: (value: number) => void;
+  readOnly?: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftValue, setDraftValue] = useState(String(value));
@@ -146,6 +148,10 @@ function EditablePercent({
     );
   }
 
+  if (readOnly) {
+    return <strong className="builder-commission-percent-readonly">{value}%</strong>;
+  }
+
   return (
     <button
       className="builder-commission-percent-button"
@@ -163,10 +169,12 @@ function EditablePercent({
 
 function CommissionRuleCard({
   rule,
-  onChange
+  onChange,
+  readOnly = false
 }: {
   rule: CommissionRule;
   onChange: (key: CommissionKey, value: number) => void;
+  readOnly?: boolean;
 }) {
   return (
     <article className="builder-commission-card">
@@ -180,6 +188,7 @@ function CommissionRuleCard({
           <span>Agente</span>
           <EditablePercent
             value={rule.porcentajeAgente}
+            readOnly={readOnly}
             onChange={(value) => onChange("porcentajeAgente", value)}
           />
         </div>
@@ -188,6 +197,7 @@ function CommissionRuleCard({
           <span>WTravel</span>
           <EditablePercent
             value={rule.porcentajeWtravel}
+            readOnly={readOnly}
             onChange={(value) => onChange("porcentajeWtravel", value)}
           />
         </div>
@@ -196,6 +206,7 @@ function CommissionRuleCard({
           <span>Banco</span>
           <EditablePercent
             value={rule.porcentajeBancario}
+            readOnly={readOnly}
             onChange={(value) => onChange("porcentajeBancario", value)}
           />
         </div>
@@ -213,6 +224,7 @@ type PanelMode = "CREATE" | "DELETE" | null;
 type ColumnConfigPanelProps = {
   columns: BuilderColumn[];
   isSaving?: boolean;
+  readOnly?: boolean;
   onCreateColumn: (values: BuilderColumnFormValues) => void;
   onDeleteColumn: (columnId: number) => void;
   comisiones: BuilderCommission[];
@@ -222,6 +234,7 @@ type ColumnConfigPanelProps = {
 export function ColumnConfigPanel({
   columns,
   isSaving = false,
+  readOnly = false,
   onCreateColumn,
   onDeleteColumn,
   comisiones,
@@ -243,6 +256,8 @@ export function ColumnConfigPanel({
     key: CommissionKey,
     value: number
   ) {
+    if (readOnly) return;
+
     const safeValue = Math.max(0, Math.min(99, value));
 
     onUpdateCommission({
@@ -257,6 +272,8 @@ export function ColumnConfigPanel({
   }
 
   function openCreate() {
+    if (readOnly) return;
+    
     setFormValues({
       ...defaultFormValues,
       orden: columns.length + 1
@@ -265,6 +282,7 @@ export function ColumnConfigPanel({
   }
 
   function openDelete() {
+    if (readOnly) return;
     setMode("DELETE");
   }
 
@@ -342,6 +360,8 @@ export function ColumnConfigPanel({
   function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (readOnly) return;
+
     const payload = buildPayload();
 
     if (!payload.grupo || !payload.nombre) {
@@ -353,6 +373,8 @@ export function ColumnConfigPanel({
   }
 
   function deleteColumn(columnId: number) {
+    if (readOnly) return;
+
     onDeleteColumn(columnId);
     setMode(null);
   }
@@ -367,28 +389,36 @@ export function ColumnConfigPanel({
         <div className="builder-commission-grid">
           <CommissionRuleCard
             rule={terrestreCommission}
+            readOnly={readOnly}
             onChange={(key, value) => updateCommissionRule(terrestreCommission, key, value)}
           />
 
           <CommissionRuleCard
             rule={aereaCommission}
+            readOnly={readOnly}
             onChange={(key, value) => updateCommissionRule(aereaCommission, key, value)}
           />
         </div>
 
-        <div className="builder-option-row builder-option-row-table">
-          <strong>Tabla:</strong>
-
-          <div className="builder-option-actions">
-            <button className="link-button" onClick={openCreate} type="button">
-              Agregar
-            </button>
-
-            <button className="link-button" onClick={openDelete} type="button">
-              Eliminar
-            </button>
+        {readOnly ? (
+          <div className="builder-option-row builder-option-row-table builder-read-only-small">
+            Configuración bloqueada en modo lectura.
           </div>
-        </div>
+        ) : (
+          <div className="builder-option-row builder-option-row-table">
+            <strong>Tabla:</strong>
+
+            <div className="builder-option-actions">
+              <button className="link-button" onClick={openCreate} type="button">
+                Agregar
+              </button>
+
+              <button className="link-button" onClick={openDelete} type="button">
+                Eliminar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {mode === "CREATE" ? (

@@ -762,10 +762,12 @@ export class ExpedienteRepository {
             id: {
               not: versionId
             },
-            estadoVersion: CotizacionVersionEstado.ACEPTADA
+            estadoVersion: {
+              not: CotizacionVersionEstado.CONVERTIDA_CONFIRMACION
+            }
           },
           data: {
-            estadoVersion: CotizacionVersionEstado.ENVIADA,
+            estadoVersion: CotizacionVersionEstado.DESCARTADA,
             updatedBy: userId ?? null
           }
         });

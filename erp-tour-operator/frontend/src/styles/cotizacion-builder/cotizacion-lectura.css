@@ -1,0 +1,24 @@
+/* erp-tour-operator/frontend/src/styles/cotizacion-builder/cotizacion-lectura.css */
+
+.builder-order-controls {
+  display: grid;
+  place-items: center;
+  gap: 0.35rem;
+}
+
+.builder-order-controls .builder-row-actions {
+  justify-content: center;
+}
+
+.builder-order-readonly {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 999px;
+  background: #f0eadb;
+  color: #163037;
+  font-size: 0.85rem;
+  font-weight: 900;
+}

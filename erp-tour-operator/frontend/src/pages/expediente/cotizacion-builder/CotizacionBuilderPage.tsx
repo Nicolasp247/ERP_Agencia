@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
 import {
@@ -38,6 +38,7 @@ import { FreeNotesPanel } from "@/pages/expediente/cotizacion-builder/components
 
 export function CotizacionBuilderPage() {
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const versionId = Number(params.versionId);
   const queryClient = useQueryClient();
   const [showAddService, setShowAddService] = useState(false);
@@ -179,6 +180,11 @@ export function CotizacionBuilderPage() {
 
   const builder = query.data;
 
+  const isReadOnly =
+    searchParams.get("modo") === "lectura" ||
+    builder?.version.estadoVersion === "DESCARTADA" ||
+    builder?.version.estadoVersion === "CONVERTIDA_CONFIRMACION";
+
   const nextOrder = useMemo(() => {
     const rows = builder?.rows ?? [];
     const maxOrder = rows.reduce((max, row) => Math.max(max, row.ordenDia ?? 0), 0);
@@ -202,12 +208,25 @@ export function CotizacionBuilderPage() {
 
   return (
     <div className="stack">
+
+      {isReadOnly ? (
+        <div className="builder-read-only-banner">
+          <div>
+            <strong>Modo lectura</strong>
+            <span>
+              Esta cotización está bloqueada para edición. Puedes revisar la información, pero no modificarla.
+            </span>
+          </div>
+        </div>
+      ) : null}
+
       <div className="builder-top-grid">
         <BuilderHeader expediente={builder.expediente} version={builder.version} />
 
         <ColumnConfigPanel
           columns={builder.columns}
           comisiones={builder.comisiones ?? []}
+          readOnly={isReadOnly}
           onCreateColumn={(values) => createColumnMutation.mutate(values)}
           onDeleteColumn={(columnId) => deleteColumnMutation.mutate(columnId)}
           onUpdateCommission={(values) =>
@@ -221,19 +240,22 @@ export function CotizacionBuilderPage() {
 
       <PageSection
         action={
-          <button
-            className="primary-button"
-            onClick={() => setShowAddService(true)}
-            type="button"
-          >
-            Añadir servicio
-          </button>
+          isReadOnly ? null : (
+            <button
+              className="primary-button"
+              onClick={() => setShowAddService(true)}
+              type="button"
+            >
+              Añadir servicio
+            </button>
+          )
         }
         title="Servicios de la cotización"
       >
         <CotizacionBuilderTable
           columns={builder.columns}
           rows={builder.rows}
+          readOnly={isReadOnly}
           onDeleteItem={(itemId) => deleteItemMutation.mutate(itemId)}
           onMoveItem={(itemId, direction) =>
             moveItemMutation.mutate({
@@ -277,6 +299,7 @@ export function CotizacionBuilderPage() {
         <HotelPreviewTable
           columns={builder.columns}
           rows={builder.rows}
+          readOnly={isReadOnly}
           onUpdateItemHotels={(itemId, payload) =>
             updateItemHotelsMutation.mutate({
               itemId,
@@ -292,6 +315,7 @@ export function CotizacionBuilderPage() {
         rows={builder.rows}
         monedaCodigo={builder.expediente.monedaCodigo ?? "USD"}
         totalPasajeros={builder.expediente.totalPasajeros ?? 1}
+        readOnly={isReadOnly}
         onUpdateColumnShownPrice={(columnId, values) =>
           updateColumnShownPriceMutation.mutate({
             columnId,
@@ -309,6 +333,7 @@ export function CotizacionBuilderPage() {
       <FreeNotesPanel
         initialValue={builder.version.notasLibres ?? ""}
         isSaving={updateFreeNotesMutation.isPending}
+        readOnly={isReadOnly}
         onSave={(value) =>
           updateFreeNotesMutation.mutate({
             versionId: builder.version.id,

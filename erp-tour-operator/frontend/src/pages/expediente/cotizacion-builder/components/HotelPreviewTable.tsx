@@ -10,6 +10,7 @@ import type {
 type HotelPreviewTableProps = {
   columns: BuilderColumn[];
   rows: BuilderRow[];
+  readOnly?: boolean;
   onUpdateItemHotels: (
     itemId: number,
     payload: {
@@ -56,7 +57,7 @@ function isAccommodationRow(row: BuilderRow) {
   return row.tipoServicioCodigo === "ALOJAMIENTO" || row.tipoServicio?.toUpperCase() === "ALOJAMIENTO";
 }
 
-export function HotelPreviewTable({ columns, rows, onUpdateItemHotels }: HotelPreviewTableProps) {
+export function HotelPreviewTable({ columns, rows, readOnly = false, onUpdateItemHotels }: HotelPreviewTableProps) {
   const terrestrialColumns = useMemo(
     () => columns.filter((column) => column.tipo === "TERRESTRE"),
     [columns]
@@ -92,6 +93,8 @@ export function HotelPreviewTable({ columns, rows, onUpdateItemHotels }: HotelPr
   }
 
   function handleBlur(row: BuilderRow) {
+    if (readOnly) return;
+
     const hotels = terrestrialColumns.map((column) => ({
       columnId: column.id,
       textoHotel: getInputValue(row, column.id)
@@ -131,7 +134,11 @@ export function HotelPreviewTable({ columns, rows, onUpdateItemHotels }: HotelPr
                       className="builder-hotel-input"
                       placeholder="Hotel previsto o similar"
                       value={getInputValue(row, column.id)}
-                      onChange={(event) => handleChange(row, column.id, event.target.value)}
+                      readOnly={readOnly}
+                      onChange={(event) => {
+                        if (readOnly) return;
+                        handleChange(row, column.id, event.target.value);
+                      }}
                       onBlur={() => handleBlur(row)}
                     />
                   </td>
