@@ -774,6 +774,7 @@ model CotizacionColumna {
   cotizacion        Cotizacion                    @relation(fields: [idCotizacion], references: [id])
   precios           CotizacionItemPrecio[]
   hotelesPrevistos  CotizacionItemHotelPrevisto[]
+  reservasSeleccionadas          ReservaColumnaSeleccionada[]
 
   @@index([idCotizacion], map: "idx_cotizacion_columna_cotizacion")
   @@index([idCotizacion, orden], map: "idx_cotizacion_columna_orden")
@@ -854,6 +855,7 @@ model Reserva {
   cliente                       Cliente                      @relation(fields: [idCliente], references: [id])
   clienteAgente                 ClienteAgente?               @relation(fields: [idClienteAgente], references: [id])
   destinoPrincipal              Continente?                  @relation(fields: [idDestinoPrincipal], references: [id])
+  columnasSeleccionadas         ReservaColumnaSeleccionada[]
   items                         ReservaItem[]
   confirmacionesComerciales     ReservaConfirmacionComercial[]
   liquidacion                   LiquidacionReserva?
@@ -889,6 +891,8 @@ model ReservaItem {
   cotizacionItemOrigen      CotizacionItem    @relation(fields: [idCotizacionItemOrigen], references: [id])
   servicio                  Servicio          @relation(fields: [idServicio], references: [id])
   confirmaciones            ReservaConfirmacionComercialItem[]
+  preciosSeleccionados      ReservaItemPrecioSeleccionado[]
+  hotelesPrevistosSeleccionados  ReservaItemHotelPrevistoSeleccionado[]
 
   @@index([idReserva, ordenDia], map: "idx_res_item_reserva_orden")
   @@index([numeroConfirmacion], map: "idx_res_item_num_confirmacion")
@@ -967,4 +971,74 @@ model AuditoriaEvento {
   @@index([entidad, entidadId], map: "idx_auditoria_entidad")
   @@index([fechaEvento], map: "idx_auditoria_fecha")
   @@map("auditoria_evento")
+}
+
+model ReservaColumnaSeleccionada {
+  id                         Int      @id @default(autoincrement())
+  idReserva                  Int      @map("id_reserva")
+  idCotizacionColumnaOrigen  Int?     @map("id_cotizacion_columna_origen")
+
+  grupoSnapshot              String   @map("grupo_snapshot") @db.VarChar(80)
+  nombreSnapshot             String   @map("nombre_snapshot") @db.VarChar(80)
+  tipoSnapshot               String   @map("tipo_snapshot") @db.VarChar(40)
+  unidadSnapshot             String   @map("unidad_snapshot") @db.VarChar(40)
+  multiplicadorSnapshot      Int      @default(1) @map("multiplicador_snapshot")
+
+  precioMostradoFormulaSnapshot String?  @map("precio_mostrado_formula_snapshot") @db.VarChar(120)
+  precioMostradoValorSnapshot   Decimal? @map("precio_mostrado_valor_snapshot") @db.Decimal(10, 2)
+
+  orden                      Int      @default(1)
+
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+
+  reserva                    Reserva  @relation(fields: [idReserva], references: [id], onDelete: Cascade)
+  cotizacionColumnaOrigen    CotizacionColumna? @relation(fields: [idCotizacionColumnaOrigen], references: [id])
+
+  precios                    ReservaItemPrecioSeleccionado[]
+  hotelesPrevistos           ReservaItemHotelPrevistoSeleccionado[]
+
+  @@index([idReserva], map: "idx_reserva_columna_reserva")
+  @@index([idCotizacionColumnaOrigen], map: "idx_reserva_columna_origen")
+  @@map("reserva_columna_seleccionada")
+}
+
+model ReservaItemPrecioSeleccionado {
+  id                          Int      @id @default(autoincrement())
+  idReservaItem                Int      @map("id_reserva_item")
+  idReservaColumnaSeleccionada Int      @map("id_reserva_columna_seleccionada")
+
+  precioCotizado               Decimal? @map("precio_cotizado") @db.Decimal(12, 2)
+  precioConfirmado             Decimal? @map("precio_confirmado") @db.Decimal(12, 2)
+  monedaCodigo                 String   @default("USD") @map("moneda_codigo") @db.Char(3)
+
+  createdAt                    DateTime @default(now()) @map("created_at")
+  updatedAt                    DateTime @updatedAt @map("updated_at")
+
+  reservaItem                  ReservaItem @relation(fields: [idReservaItem], references: [id], onDelete: Cascade)
+  reservaColumnaSeleccionada   ReservaColumnaSeleccionada @relation(fields: [idReservaColumnaSeleccionada], references: [id], onDelete: Cascade)
+
+  @@unique([idReservaItem, idReservaColumnaSeleccionada], map: "uq_reserva_item_precio_columna")
+  @@index([idReservaItem], map: "idx_reserva_item_precio_item")
+  @@index([idReservaColumnaSeleccionada], map: "idx_reserva_item_precio_columna")
+  @@map("reserva_item_precio_seleccionado")
+}
+
+model ReservaItemHotelPrevistoSeleccionado {
+  id                          Int      @id @default(autoincrement())
+  idReservaItem                Int      @map("id_reserva_item")
+  idReservaColumnaSeleccionada Int      @map("id_reserva_columna_seleccionada")
+
+  textoHotel                   String   @map("texto_hotel") @db.Text
+
+  createdAt                    DateTime @default(now()) @map("created_at")
+  updatedAt                    DateTime @updatedAt @map("updated_at")
+
+  reservaItem                  ReservaItem @relation(fields: [idReservaItem], references: [id], onDelete: Cascade)
+  reservaColumnaSeleccionada   ReservaColumnaSeleccionada @relation(fields: [idReservaColumnaSeleccionada], references: [id], onDelete: Cascade)
+
+  @@unique([idReservaItem, idReservaColumnaSeleccionada], map: "uq_reserva_item_hotel_columna")
+  @@index([idReservaItem], map: "idx_reserva_item_hotel_item")
+  @@index([idReservaColumnaSeleccionada], map: "idx_reserva_item_hotel_columna")
+  @@map("reserva_item_hotel_previsto_seleccionado")
 }

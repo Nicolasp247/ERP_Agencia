@@ -1,6 +1,7 @@
 /* erp-tour-operator/frontend/src/pages/expediente/ExpedienteDetailPage.tsx */
 
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
@@ -19,6 +20,11 @@ import {
   updateExpedienteVersionStatus
 } from "@/modules/expediente/expediente-api";
 import { formatDateShortEs } from "@/utils/date-format";
+import {
+  createConfirmacionBuilder,
+  getConfirmacionBuilderOptions
+} from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";
+import { ConfirmacionStartModal } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionStartModal";
 
 function formatValue(value: unknown) {
   if (value === null || value === undefined || value === "") {
@@ -32,11 +38,18 @@ export function ExpedienteDetailPage() {
   const params = useParams();
   const id = Number(params.id);
   const navigate = useNavigate();
+  const [confirmacionVersion, setConfirmacionVersion] = useState<any | null>(null);
 
   const query = useQuery({
     queryKey: ["expediente", id],
     queryFn: () => getExpedientes(id),
     enabled: Number.isFinite(id)
+  });
+
+  const confirmacionOptionsQuery = useQuery({
+    queryKey: ["confirmacion-builder-options", confirmacionVersion?.id],
+    queryFn: () => getConfirmacionBuilderOptions(Number(confirmacionVersion?.id)),
+    enabled: Boolean(confirmacionVersion?.id)
   });
 
   const discardMutation = useMutation({
@@ -99,6 +112,25 @@ export function ExpedienteDetailPage() {
     }) => updateExpedienteVersionStatus(versionId, estado),
     onSuccess: () => void query.refetch()
   });
+
+  const createConfirmacionMutation = useMutation({
+    mutationFn: (selectedColumnIds: number[]) =>
+      createConfirmacionBuilder(Number(confirmacionVersion?.id), {
+        selectedColumnIds
+      }),
+    onSuccess: () => {
+      if (!confirmacionVersion?.id) {
+        return;
+      }
+
+      const versionId = confirmacionVersion.id;
+
+      setConfirmacionVersion(null);
+      void query.refetch();
+
+      navigate(`/expedientes/${id}/versiones/${versionId}/confirmacion`);
+    }
+  });  
 
   const expediente = query.data as any;
 
@@ -282,12 +314,14 @@ export function ExpedienteDetailPage() {
                       </Link>
 
                       {version.estadoVersion === "ACEPTADA" ? (
-                        <Link
+                        <button
                           className="version-action-button version-action-button--confirm"
-                          to={`/expedientes/${expediente.id}/versiones/${version.id}/confirmacion`}
+                          disabled={createConfirmacionMutation.isPending}
+                          onClick={() => setConfirmacionVersion(version)}
+                          type="button"
                         >
                           Realizar confirmación
-                        </Link>
+                        </button>
                       ) : null}
 
                       {version.estadoVersion === "BORRADOR" ? (
@@ -412,6 +446,40 @@ export function ExpedienteDetailPage() {
           </p>
         </div>
       </PageSection>
+      {confirmacionVersion ? (
+        confirmacionOptionsQuery.isLoading ? (
+          <div className="builder-modal-backdrop">
+            <div className="builder-modal confirmacion-start-modal">
+              <section className="confirmacion-start-card">
+                Cargando opciones de confirmación...
+              </section>
+            </div>
+          </div>
+        ) : confirmacionOptionsQuery.data ? (
+          <ConfirmacionStartModal
+            options={confirmacionOptionsQuery.data}
+            isSaving={createConfirmacionMutation.isPending}
+            onCancel={() => setConfirmacionVersion(null)}
+            onConfirm={(selectedColumnIds) => createConfirmacionMutation.mutate(selectedColumnIds)}
+          />
+        ) : (
+          <div className="builder-modal-backdrop">
+            <div className="builder-modal confirmacion-start-modal">
+              <section className="confirmacion-start-card">
+                <p>No se pudieron cargar las opciones de confirmación.</p>
+
+                <button
+                  className="link-button"
+                  onClick={() => setConfirmacionVersion(null)}
+                  type="button"
+                >
+                  Cerrar
+                </button>
+              </section>
+            </div>
+          </div>
+        )
+      ) : null}
     </div>
   );
 }
