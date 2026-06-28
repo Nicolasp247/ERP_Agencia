@@ -22,6 +22,7 @@ import {
 import { formatDateShortEs } from "@/utils/date-format";
 import {
   createConfirmacionBuilder,
+  deleteConfirmacionBuilder,
   getConfirmacionBuilderOptions
 } from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";
 import { ConfirmacionStartModal } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionStartModal";
@@ -32,6 +33,38 @@ function formatValue(value: unknown) {
   }
 
   return String(value);
+}
+
+function formatReservaEstado(value?: string | null) {
+  const labels: Record<string, string> = {
+    PENDIENTE: "Pendiente",
+    PARCIALMENTE_CONFIRMADA: "Parcialmente confirmada",
+    CONFIRMADA: "Confirmada",
+    CANCELADA: "Cancelada"
+  };
+
+  return labels[value ?? ""] ?? value ?? "N/D";
+}
+
+function formatConfirmacionComercialEstado(value?: string | null) {
+  const labels: Record<string, string> = {
+    NO_CONFIRMADA: "No confirmada",
+    CONFIRMADA: "Confirmada"
+  };
+
+  return labels[value ?? ""] ?? value ?? "N/D";
+}
+
+function getReservaEstadoClass(value?: string | null) {
+  if (value === "CANCELADA") {
+    return "status-chip-inactive";
+  }
+
+  if (value === "CONFIRMADA") {
+    return "status-chip-active";
+  }
+
+  return "status-chip-neutral";
 }
 
 export function ExpedienteDetailPage() {
@@ -130,7 +163,12 @@ export function ExpedienteDetailPage() {
 
       navigate(`/expedientes/${id}/versiones/${versionId}/confirmacion`);
     }
-  });  
+  });
+
+  const deleteConfirmacionMutation = useMutation({
+    mutationFn: (versionId: number) => deleteConfirmacionBuilder(versionId),
+    onSuccess: () => void query.refetch()
+  });
 
   const expediente = query.data as any;
 
@@ -145,6 +183,10 @@ export function ExpedienteDetailPage() {
     Number(expediente.jovenes1218 ?? 0) +
     Number(expediente.ninos311 ?? 0) +
     Number(expediente.infantes02 ?? 0);
+
+  const confirmaciones = Array.isArray(expediente.confirmaciones)
+    ? expediente.confirmaciones
+    : [];
 
   return (
     <div className="stack">
@@ -438,13 +480,100 @@ export function ExpedienteDetailPage() {
       </PageSection>
 
       <PageSection title="Confirmación y reserva">
-        <div className="future-card">
-          <strong>Próximo paso del flujo</strong>
-          <p>
-            Cuando una versión sea aceptada por el pasajero, desde aquí se podrá crear la
-            confirmación comercial y posteriormente la reserva activa.
-          </p>
-        </div>
+        {confirmaciones.length ? (
+          <div className="expediente-confirmaciones-table-wrapper">
+            <table className="expediente-confirmaciones-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Cotización origen</th>
+                  <th>Estado reserva</th>
+                  <th>Confirmación comercial</th>
+                  <th>Fecha viaje</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {confirmaciones.map((confirmacion: any) => (
+                  <tr key={confirmacion.id}>
+                    <td>
+                      <strong>{confirmacion.codigoReserva}</strong>
+                      <p className="table-subtext">
+                        {confirmacion.totalPasajeros ?? expediente.totalPasajeros} pasajero
+                        {(confirmacion.totalPasajeros ?? expediente.totalPasajeros) === 1 ? "" : "s"}
+                      </p>
+                    </td>
+
+                    <td>
+                      <strong>{confirmacion.versionLabel}</strong>
+                      <p className="table-subtext">{confirmacion.nombreCotizacion}</p>
+                    </td>
+
+                    <td>
+                      <span className={`status-chip ${getReservaEstadoClass(confirmacion.estado)}`}>
+                        {formatReservaEstado(confirmacion.estado)}
+                      </span>
+                    </td>
+
+                    <td>
+                      <span className="status-chip status-chip-neutral">
+                        {formatConfirmacionComercialEstado(confirmacion.confirmacionComercialEstado)}
+                      </span>
+                    </td>
+
+                    <td>{formatDateShortEs(confirmacion.fechaViajePrincipal)}</td>
+
+                    <td>
+                      <div className="version-actions">
+                      <Link
+                        className="version-action-button version-action-button--confirm"
+                        to={`/expedientes/${expediente.id}/versiones/${confirmacion.idCotizacionOrigen}/confirmacion`}
+                      >
+                        Editar
+                      </Link>
+
+                      <button
+                        className="version-action-button version-action-button--danger"
+                        disabled={deleteConfirmacionMutation.isPending}
+                        onClick={() => {
+                          const confirmed = window.confirm(
+                            `¿Seguro que deseas eliminar la confirmación ${confirmacion.codigoReserva}? Esta acción no elimina la cotización original.`
+                          );
+
+                          if (!confirmed) {
+                            return;
+                          }
+
+                          deleteConfirmacionMutation.mutate(confirmacion.idCotizacionOrigen);
+                        }}
+                        type="button"
+                      >
+                        {deleteConfirmacionMutation.isPending ? "Eliminando..." : "Eliminar"}
+                      </button>
+
+                      <Link
+                        className="version-action-button version-action-button--build"
+                        to={`/expedientes/${expediente.id}/versiones/${confirmacion.idCotizacionOrigen}/construir?modo=lectura`}
+                      >
+                        Ver cotización
+                      </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="future-card">
+            <strong>Sin confirmaciones creadas</strong>
+            <p>
+              Cuando una versión sea aceptada por el pasajero, desde aquí se podrá crear y consultar
+              la confirmación comercial.
+            </p>
+          </div>
+        )}
       </PageSection>
       {confirmacionVersion ? (
         confirmacionOptionsQuery.isLoading ? (

@@ -35,6 +35,16 @@ export class ConfirmacionBuilderController {
 
     res.status(201).json(ok(data));
   };
+
+  deleteByVersionId = async (req: Request, res: Response) => {
+    const data = await confirmacionBuilderService.deleteByVersionId(
+      Number(req.params.versionId),
+      getRequestUserId(req)
+    );
+
+    res.json(ok(data));
+  };
+
 }
 
 export const confirmacionBuilderController = new ConfirmacionBuilderController();

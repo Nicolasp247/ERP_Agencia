@@ -170,6 +170,22 @@ export class ExpedienteRepository {
         cotizaciones: {
           orderBy: {
             versionNumero: "asc"
+          },
+          include: {
+            reserva: {
+              select: {
+                id: true,
+                codigoReserva: true,
+                estado: true,
+                confirmacionComercialEstado: true,
+                fechaViajePrincipal: true,
+                fechaConversion: true,
+                monedaCodigo: true,
+                totalPasajeros: true,
+                createdAt: true,
+                updatedAt: true
+              }
+            }
           }
         }
       }

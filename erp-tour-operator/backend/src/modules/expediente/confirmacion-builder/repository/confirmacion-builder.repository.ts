@@ -256,6 +256,108 @@ export class ConfirmacionBuilderRepository {
       });
     });
   }
+
+  deleteByVersionId(versionId: number, userId?: number | null) {
+    return prisma.$transaction(async (tx) => {
+      const reserva = await tx.reserva.findUnique({
+        where: {
+          idCotizacionOrigen: versionId
+        },
+        include: {
+          cotizacionOrigen: {
+            select: {
+              id: true,
+              idExpediente: true
+            }
+          },
+          items: {
+            select: {
+              id: true
+            }
+          }
+        }
+      });
+
+      if (!reserva) {
+        return null;
+      }
+
+      const reservaItemIds = reserva.items.map((item) => item.id);
+
+      if (reservaItemIds.length > 0) {
+        await tx.reservaItemHotelPrevistoSeleccionado.deleteMany({
+          where: {
+            idReservaItem: {
+              in: reservaItemIds
+            }
+          }
+        });
+
+        await tx.reservaItemPrecioSeleccionado.deleteMany({
+          where: {
+            idReservaItem: {
+              in: reservaItemIds
+            }
+          }
+        });
+
+        await tx.reservaItem.deleteMany({
+          where: {
+            idReserva: reserva.id
+          }
+        });
+      }
+
+      await tx.reservaColumnaSeleccionada.deleteMany({
+        where: {
+          idReserva: reserva.id
+        }
+      });
+
+      await tx.reserva.delete({
+        where: {
+          id: reserva.id
+        }
+      });
+
+      await tx.cotizacion.update({
+        where: {
+          id: versionId
+        },
+        data: {
+          fechaConvertidaReserva: null,
+          updatedBy: userId ?? null
+        }
+      });
+
+      const remainingReservas = await tx.reserva.count({
+        where: {
+          cotizacionOrigen: {
+            idExpediente: reserva.cotizacionOrigen.idExpediente
+          }
+        }
+      });
+
+      if (remainingReservas === 0) {
+        await tx.expediente.update({
+          where: {
+            id: reserva.cotizacionOrigen.idExpediente
+          },
+          data: {
+            estado: "COTIZACION",
+            updatedBy: userId ?? null
+          }
+        });
+      }
+
+      return {
+        id: reserva.id,
+        idExpediente: reserva.cotizacionOrigen.idExpediente,
+        idCotizacionOrigen: versionId
+      };
+    });
+  }
+
 }
 
 export const confirmacionBuilderRepository = new ConfirmacionBuilderRepository();

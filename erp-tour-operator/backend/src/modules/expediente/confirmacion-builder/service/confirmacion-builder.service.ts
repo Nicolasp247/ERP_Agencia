@@ -74,6 +74,23 @@ export class ConfirmacionBuilderService {
 
     return toConfirmacionBuilderDetail(record);
   }
+
+  async deleteByVersionId(versionId: number, userId?: number) {
+    const deleted = await confirmacionBuilderRepository.deleteByVersionId(
+      versionId,
+      userId ?? null
+    );
+
+    if (!deleted) {
+      throw new AppError(
+        404,
+        "CONFIRMACION_NOT_FOUND",
+        "No existe confirmación creada para esta cotización"
+      );
+    }
+
+    return deleted;
+  }
 }
 
 export const confirmacionBuilderService = new ConfirmacionBuilderService();

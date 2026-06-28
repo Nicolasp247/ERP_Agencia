@@ -76,3 +76,11 @@ export async function getConfirmacionBuilder(versionId: number) {
 
   return response.data.data;
 }
+
+export async function deleteConfirmacionBuilder(versionId: number) {
+  const response = await api.delete<ApiResponse<Record<string, unknown>>>(
+    `/confirmacion-builder/versiones/${versionId}`
+  );
+
+  return response.data.data;
+}

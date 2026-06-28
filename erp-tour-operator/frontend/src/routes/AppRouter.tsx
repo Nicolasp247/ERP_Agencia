@@ -186,18 +186,13 @@ export function AppRouter() {
 
         {/* Rutas nuevas con nombre correcto: Expedientes */}
         <Route path="/expedientes" element={<Protected><ExpedientesListPage /></Protected>} />
+        <Route path="/expedientes/descartados" element={<Protected><ExpedientesListPage /></Protected>} />
+        <Route path="/expedientes/ya-viajaron" element={<Protected><ExpedientesListPage /></Protected>} />
         <Route path="/expedientes/new" element={<Protected><ExpedienteFormPage /></Protected>} />
         <Route path="/expedientes/:id/edit" element={<Protected><ExpedienteFormPage /></Protected>} />
         <Route path="/expedientes/:id" element={<Protected><ExpedienteDetailPage /></Protected>} />
-        <Route
-          path="/expedientes/:id/versiones/:versionId/construir"
-          element={<Protected><CotizacionBuilderPage /></Protected>}
-        />
-
-        <Route
-          path="/expedientes/:id/versiones/:versionId/confirmacion"
-          element={<Protected><ConfirmacionBuilderPage /></Protected>}
-        />
+        <Route path="/expedientes/:id/versiones/:versionId/construir" element={<Protected><CotizacionBuilderPage /></Protected>} />
+        <Route path="/expedientes/:id/versiones/:versionId/confirmacion" element={<Protected><ConfirmacionBuilderPage /></Protected>} />
 
         <Route
           element={

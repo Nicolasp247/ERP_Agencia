@@ -28,6 +28,12 @@ confirmacionBuilderRouter.post(
   asyncHandler(confirmacionBuilderController.createFromAcceptedCotizacion)
 );
 
+confirmacionBuilderRouter.delete(
+  "/versiones/:versionId",
+  validateParams(confirmacionBuilderParamsSchema),
+  asyncHandler(confirmacionBuilderController.deleteByVersionId)
+);
+
 confirmacionBuilderRouter.get(
   "/versiones/:versionId",
   validateParams(confirmacionBuilderParamsSchema),

@@ -36,6 +36,30 @@ function toExpedienteVersionItem(record: any) {
   };
 }
 
+function toExpedienteConfirmacionItem(cotizacion: any) {
+  if (!cotizacion.reserva) {
+    return null;
+  }
+
+  return {
+    id: cotizacion.reserva.id,
+    codigoReserva: cotizacion.reserva.codigoReserva,
+    estado: cotizacion.reserva.estado,
+    confirmacionComercialEstado: cotizacion.reserva.confirmacionComercialEstado,
+    fechaViajePrincipal: formatDateOnly(cotizacion.reserva.fechaViajePrincipal),
+    fechaConversion: cotizacion.reserva.fechaConversion,
+    monedaCodigo: cotizacion.reserva.monedaCodigo,
+    totalPasajeros: cotizacion.reserva.totalPasajeros,
+    idCotizacionOrigen: cotizacion.id,
+    versionNumero: cotizacion.versionNumero,
+    versionCodigo: cotizacion.versionCodigo,
+    versionLabel: buildVersionLabel(cotizacion.versionCodigo),
+    nombreCotizacion: cotizacion.nombreCotizacion,
+    createdAt: cotizacion.reserva.createdAt,
+    updatedAt: cotizacion.reserva.updatedAt
+  };
+}
+
 export function toExpedienteListItem(record: any) {
   const versionPrincipal = record.cotizaciones?.[0] ?? null;
 
@@ -56,6 +80,10 @@ export function toExpedienteListItem(record: any) {
 }
 
 export function toExpedienteDetail(record: any) {
+  const confirmaciones = (record.cotizaciones ?? [])
+    .map(toExpedienteConfirmacionItem)
+    .filter(Boolean);
+  
   return {
     id: record.id,
     codigo: record.codigo,
@@ -76,6 +104,7 @@ export function toExpedienteDetail(record: any) {
     clienteAgente: record.clienteAgente,
     destinoPrincipal: record.destinoPrincipal,
     cotizaciones: (record.cotizaciones ?? []).map(toExpedienteVersionItem),
+    confirmaciones,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
   };

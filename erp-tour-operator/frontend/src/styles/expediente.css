@@ -217,3 +217,129 @@
   background: #0d252a;
   border-color: #0d252a;
 }
+
+/* Listado principal de expedientes */
+
+.expediente-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.expediente-list-stack {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.expediente-list-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.expediente-list-section + .expediente-list-section {
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(22, 48, 55, 0.1);
+}
+
+.expediente-list-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.expediente-list-section-header h3 {
+  margin: 0;
+  color: #061f25;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.expediente-list-section-header p {
+  margin: 0.25rem 0 0;
+  color: #61777d;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.expedientes-main-table th,
+.expedientes-main-table td {
+  vertical-align: middle;
+}
+
+.expedientes-main-table th:nth-child(4),
+.expedientes-main-table th:nth-child(5),
+.expedientes-main-table th:nth-child(6),
+.expedientes-main-table th:nth-child(7),
+.expedientes-main-table td:nth-child(4),
+.expedientes-main-table td:nth-child(5),
+.expedientes-main-table td:nth-child(6),
+.expedientes-main-table td:nth-child(7) {
+  text-align: center;
+}
+
+.expedientes-main-table td:nth-child(4) > *,
+.expedientes-main-table td:nth-child(7) > * {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 900px) {
+  .expediente-list-section-header,
+  .list-page-intro {
+    display: grid;
+  }
+
+  .expediente-list-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* Confirmaciones dentro del detalle del expediente */
+
+.expediente-confirmaciones-table-wrapper {
+  overflow-x: auto;
+}
+
+.expediente-confirmaciones-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.expediente-confirmaciones-table th,
+.expediente-confirmaciones-table td {
+  padding: 0.95rem 0.75rem;
+  border-bottom: 1px solid #ece6d9;
+  vertical-align: middle;
+}
+
+.expediente-confirmaciones-table th {
+  color: #061f25;
+  font-size: 0.92rem;
+  font-weight: 900;
+  text-align: left;
+}
+
+.expediente-confirmaciones-table td {
+  color: #172026;
+}
+
+.expediente-confirmaciones-table th:nth-child(3),
+.expediente-confirmaciones-table th:nth-child(4),
+.expediente-confirmaciones-table th:nth-child(5),
+.expediente-confirmaciones-table th:nth-child(6),
+.expediente-confirmaciones-table td:nth-child(3),
+.expediente-confirmaciones-table td:nth-child(4),
+.expediente-confirmaciones-table td:nth-child(5),
+.expediente-confirmaciones-table td:nth-child(6) {
+  text-align: center;
+}
+
+.expediente-confirmaciones-table td:nth-child(3) > *,
+.expediente-confirmaciones-table td:nth-child(4) > *,
+.expediente-confirmaciones-table td:nth-child(6) > * {
+  margin-left: auto;
+  margin-right: auto;
+}
