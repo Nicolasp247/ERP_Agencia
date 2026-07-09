@@ -137,3 +137,118 @@
     width: 100%;
   }
 }
+
+.confirmacion-passenger-modal {
+  width: min(880px, 100%);
+}
+
+.confirmacion-passenger-card {
+  display: grid;
+  gap: 1.2rem;
+  padding: 1.4rem;
+  border-radius: 24px;
+  background: #fffef9;
+}
+
+.confirmacion-passenger-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.confirmacion-passenger-grid label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.confirmacion-passenger-grid label span {
+  color: #17373d;
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.confirmacion-passenger-grid input {
+  min-height: 42px;
+  border: 1px solid #e4dccb;
+  border-radius: 14px;
+  padding: 0.65rem 0.75rem;
+  background: #fff;
+  color: #061f25;
+  font-size: 0.95rem;
+}
+
+.confirmacion-passengers-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.confirmacion-passengers-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.confirmacion-passengers-heading h3 {
+  margin: 0;
+  color: #061f25;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.confirmacion-passengers-heading p {
+  margin: 0.25rem 0 0;
+  color: #61777d;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.confirmacion-passengers-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(23, 55, 61, 0.16);
+  border-radius: 1rem;
+  background: #fffefa;
+}
+
+.confirmacion-passengers-table {
+  width: 100%;
+  min-width: 1180px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.confirmacion-passengers-table th,
+.confirmacion-passengers-table td {
+  border: 1px solid rgba(23, 55, 61, 0.12);
+  padding: 0.75rem 0.65rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.confirmacion-passengers-table th {
+  background: #f3ead7;
+  color: #061f25;
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.confirmacion-passengers-table td {
+  color: #172026;
+  font-size: 0.88rem;
+}
+
+.confirmacion-passengers-table td:nth-child(1),
+.confirmacion-passengers-table td:nth-child(2) {
+  font-weight: 800;
+  color: #061f25;
+}
+
+@media (max-width: 760px) {
+  .confirmacion-passenger-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .confirmacion-passengers-heading {
+    display: grid;
+  }
+}

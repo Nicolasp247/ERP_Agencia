@@ -1,7 +1,10 @@
 /* erp-tour-operator/backend/src/modules/expediente/confirmacion-builder/service/confirmacion-builder.service.ts */
 
 import { AppError } from "@/core/errors/app-error";
-import type { ConfirmacionBuilderCreateInput } from "@/modules/expediente/confirmacion-builder/dto/confirmacion-builder.dto";
+import type {
+  ConfirmacionBuilderCreateInput,
+  ConfirmacionPassengerInput
+} from "@/modules/expediente/confirmacion-builder/dto/confirmacion-builder.dto";
 import {
   toConfirmacionBuilderDetail,
   toConfirmacionBuilderOptions
@@ -73,6 +76,44 @@ export class ConfirmacionBuilderService {
     }
 
     return toConfirmacionBuilderDetail(record);
+  }
+
+  async createPassenger(reservaId: number, data: ConfirmacionPassengerInput, userId?: number) {
+    const record = await confirmacionBuilderRepository.createPassenger(
+      reservaId,
+      data,
+      userId ?? null
+    );
+
+    if (!record) {
+      throw new AppError(404, "RESERVA_NOT_FOUND", "Reserva no encontrada");
+    }
+
+    return record;
+  }
+
+  async updatePassenger(passengerId: number, data: ConfirmacionPassengerInput, userId?: number) {
+    const record = await confirmacionBuilderRepository.updatePassenger(
+      passengerId,
+      data,
+      userId ?? null
+    );
+
+    if (!record) {
+      throw new AppError(404, "RESERVA_PASAJERO_NOT_FOUND", "Pasajero no encontrado");
+    }
+
+    return record;
+  }
+
+  async deletePassenger(passengerId: number) {
+    const deleted = await confirmacionBuilderRepository.deletePassenger(passengerId);
+
+    if (!deleted) {
+      throw new AppError(404, "RESERVA_PASAJERO_NOT_FOUND", "Pasajero no encontrado");
+    }
+
+    return deleted;
   }
 
   async deleteByVersionId(versionId: number, userId?: number) {

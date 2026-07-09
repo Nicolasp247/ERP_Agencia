@@ -12,6 +12,78 @@ function formatDateOnly(value: Date | string | null | undefined) {
   return date.toISOString().slice(0, 10);
 }
 
+function parseDateOnly(value: Date | string | null | undefined) {
+  if (!value) return null;
+
+  const raw = value instanceof Date ? formatDateOnly(value) : String(value).slice(0, 10);
+  const date = new Date(`${raw}T00:00:00.000Z`);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date;
+}
+
+function calculateAgeAtDate(birthValue: Date | string | null | undefined, targetValue: Date | string | null | undefined) {
+  const birth = parseDateOnly(birthValue);
+  const target = parseDateOnly(targetValue);
+
+  if (!birth || !target) {
+    return null;
+  }
+
+  let age = target.getUTCFullYear() - birth.getUTCFullYear();
+
+  const targetMonth = target.getUTCMonth();
+  const birthMonth = birth.getUTCMonth();
+  const targetDay = target.getUTCDate();
+  const birthDay = birth.getUTCDate();
+
+  if (targetMonth < birthMonth || (targetMonth === birthMonth && targetDay < birthDay)) {
+    age -= 1;
+  }
+
+  return age;
+}
+
+function getReservaFechaFinViaje(record: any) {
+  const start = formatDateOnly(record.fechaViajePrincipal);
+
+  let latest = parseDateOnly(start);
+
+  for (const item of record.items ?? []) {
+    const itemEnd = isAlojamientoItem(item)
+      ? parseDateOnly(getFechaFinAlojamiento(item))
+      : parseDateOnly(item.fechaServicio);
+
+    if (!itemEnd) {
+      continue;
+    }
+
+    if (!latest || itemEnd.getTime() > latest.getTime()) {
+      latest = itemEnd;
+    }
+  }
+
+  return latest ? formatDateOnly(latest) : start;
+}
+
+function formatPassengerTravelAge(passenger: any, fechaInicioViaje: string | null, fechaFinViaje: string | null) {
+  const startAge = calculateAgeAtDate(passenger.fechaNacimiento, fechaInicioViaje);
+  const endAge = calculateAgeAtDate(passenger.fechaNacimiento, fechaFinViaje);
+
+  if (startAge === null || endAge === null) {
+    return "N/D";
+  }
+
+  if (startAge === endAge) {
+    return String(startAge);
+  }
+
+  return `${startAge}/${endAge}`;
+}
+
 function addDaysToDate(value: Date | string | null | undefined, days: number) {
   if (!value) return null;
 
@@ -164,6 +236,25 @@ export function toConfirmacionBuilderDetail(record: any) {
     })
   }));
 
+  const fechaInicioViaje = formatDateOnly(record.fechaViajePrincipal);
+  const fechaFinViaje = getReservaFechaFinViaje(record);
+
+  const pasajeros = (record.pasajeros ?? []).map((passenger: any) => ({
+    id: passenger.id,
+    idReserva: passenger.idReserva,
+    orden: passenger.orden,
+    nombre: passenger.nombre,
+    apellidos: passenger.apellidos,
+    fechaNacimiento: formatDateOnly(passenger.fechaNacimiento),
+    edadEnViaje: formatPassengerTravelAge(passenger, fechaInicioViaje, fechaFinViaje),
+    numeroPasaporte: passenger.numeroPasaporte,
+    fechaExpedicionPasaporte: formatDateOnly(passenger.fechaExpedicionPasaporte),
+    fechaVencimientoPasaporte: formatDateOnly(passenger.fechaVencimientoPasaporte),
+    nacionalidad: passenger.nacionalidad,
+    createdAt: passenger.createdAt,
+    updatedAt: passenger.updatedAt
+  }));
+
   return {
     reserva: {
       id: record.id,
@@ -173,6 +264,7 @@ export function toConfirmacionBuilderDetail(record: any) {
       monedaCodigo: record.monedaCodigo,
       totalPasajeros: record.totalPasajeros,
       fechaViajePrincipal: formatDateOnly(record.fechaViajePrincipal),
+      fechaFinViaje,
       nota: record.nota ?? ""
     },
     version: {
@@ -193,6 +285,7 @@ export function toConfirmacionBuilderDetail(record: any) {
       destinoPrincipal: record.cotizacionOrigen.expediente.destinoPrincipal
     },
     columns,
+    pasajeros,
     rows: rows.filter((item: any) => !item.esOpcional),
     optionalRows: rows.filter((item: any) => item.esOpcional)
   };

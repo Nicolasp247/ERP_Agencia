@@ -12,6 +12,14 @@ const confirmacionBuilderParamsSchema = z.object({
   versionId: z.coerce.number().int().positive()
 });
 
+const confirmacionPassengerReservaParamsSchema = z.object({
+  reservaId: z.coerce.number().int().positive()
+});
+
+const confirmacionPassengerParamsSchema = z.object({
+  passengerId: z.coerce.number().int().positive()
+});
+
 export const confirmacionBuilderRouter = Router();
 
 confirmacionBuilderRouter.use(authenticate);
@@ -32,6 +40,24 @@ confirmacionBuilderRouter.delete(
   "/versiones/:versionId",
   validateParams(confirmacionBuilderParamsSchema),
   asyncHandler(confirmacionBuilderController.deleteByVersionId)
+);
+
+confirmacionBuilderRouter.post(
+  "/reservas/:reservaId/pasajeros",
+  validateParams(confirmacionPassengerReservaParamsSchema),
+  asyncHandler(confirmacionBuilderController.createPassenger)
+);
+
+confirmacionBuilderRouter.put(
+  "/pasajeros/:passengerId",
+  validateParams(confirmacionPassengerParamsSchema),
+  asyncHandler(confirmacionBuilderController.updatePassenger)
+);
+
+confirmacionBuilderRouter.delete(
+  "/pasajeros/:passengerId",
+  validateParams(confirmacionPassengerParamsSchema),
+  asyncHandler(confirmacionBuilderController.deletePassenger)
 );
 
 confirmacionBuilderRouter.get(

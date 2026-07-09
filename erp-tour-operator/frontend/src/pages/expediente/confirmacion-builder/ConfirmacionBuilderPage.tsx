@@ -1,13 +1,22 @@
 /* erp-tour-operator/frontend/src/pages/expediente/confirmacion-builder/ConfirmacionBuilderPage.tsx */
 
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
-import { getConfirmacionBuilder } from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";
+import {
+  createConfirmacionPassenger,
+  deleteConfirmacionPassenger,
+  getConfirmacionBuilder,
+  updateConfirmacionPassenger,
+  type ConfirmacionPassenger,
+  type ConfirmacionPassengerValues
+} from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";
 import { ConfirmacionBuilderTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionBuilderTable";
 import { ConfirmacionOptionalServicesTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionOptionalServicesTable";
+import { ConfirmacionPassengerModal } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionPassengerModal";
+import { ConfirmacionPassengersTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionPassengersTable";
 
 function formatDate(value: string | null | undefined) {
   if (!value) {
@@ -44,11 +53,41 @@ export function ConfirmacionBuilderPage() {
   const params = useParams();
   const expedienteId = Number(params.id);
   const versionId = Number(params.versionId);
+  const queryClient = useQueryClient();
+  const [passengerModalOpen, setPassengerModalOpen] = useState(false);
+  const [editingPassenger, setEditingPassenger] = useState<ConfirmacionPassenger | null>(null);
 
   const query = useQuery({
     queryKey: ["confirmacion-builder", versionId],
     queryFn: () => getConfirmacionBuilder(versionId),
     enabled: Number.isFinite(versionId)
+  });
+
+  const savePassengerMutation = useMutation({
+    mutationFn: (values: ConfirmacionPassengerValues) => {
+      if (editingPassenger) {
+        return updateConfirmacionPassenger(editingPassenger.id, values);
+      }
+
+      return createConfirmacionPassenger(Number(builder?.reserva?.id), values);
+    },
+    onSuccess: async () => {
+      setPassengerModalOpen(false);
+      setEditingPassenger(null);
+
+      await queryClient.invalidateQueries({
+        queryKey: ["confirmacion-builder", versionId]
+      });
+    }
+  });
+
+  const deletePassengerMutation = useMutation({
+    mutationFn: (passengerId: number) => deleteConfirmacionPassenger(passengerId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["confirmacion-builder", versionId]
+      });
+    }
   });
 
   const builder = query.data as any;
@@ -145,6 +184,32 @@ export function ConfirmacionBuilderPage() {
         </section>
       </div>
 
+      <PageSection title="Datos de pasajeros">
+        <ConfirmacionPassengersTable
+          passengers={builder.pasajeros ?? []}
+          isDeleting={deletePassengerMutation.isPending}
+          onAdd={() => {
+            setEditingPassenger(null);
+            setPassengerModalOpen(true);
+          }}
+          onEdit={(passenger) => {
+            setEditingPassenger(passenger);
+            setPassengerModalOpen(true);
+          }}
+          onDelete={(passenger) => {
+            const confirmed = window.confirm(
+              `¿Seguro que deseas eliminar a ${passenger.nombre} ${passenger.apellidos}?`
+            );
+
+            if (!confirmed) {
+              return;
+            }
+
+            deletePassengerMutation.mutate(passenger.id);
+          }}
+        />
+      </PageSection>
+
       <PageSection title="Servicios confirmados">
         <ConfirmacionBuilderTable
           columns={builder.columns ?? []}
@@ -214,6 +279,17 @@ export function ConfirmacionBuilderPage() {
           />
         </div>
       </PageSection>
+      {passengerModalOpen ? (
+        <ConfirmacionPassengerModal
+          passenger={editingPassenger}
+          isSaving={savePassengerMutation.isPending}
+          onCancel={() => {
+            setPassengerModalOpen(false);
+            setEditingPassenger(null);
+          }}
+          onSave={(values) => savePassengerMutation.mutate(values)}
+        />
+      ) : null}
     </div>
   );
 }

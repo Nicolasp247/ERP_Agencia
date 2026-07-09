@@ -856,6 +856,7 @@ model Reserva {
   clienteAgente                 ClienteAgente?               @relation(fields: [idClienteAgente], references: [id])
   destinoPrincipal              Continente?                  @relation(fields: [idDestinoPrincipal], references: [id])
   columnasSeleccionadas         ReservaColumnaSeleccionada[]
+  pasajeros                     ReservaPasajero[]
   items                         ReservaItem[]
   confirmacionesComerciales     ReservaConfirmacionComercial[]
   liquidacion                   LiquidacionReserva?
@@ -864,6 +865,31 @@ model Reserva {
   @@index([idClienteAgente], map: "idx_reserva_cliente_agente")
   @@index([fechaViajePrincipal], map: "idx_reserva_fecha_viaje")
   @@map("reserva")
+}
+
+model ReservaPasajero {
+  id                         Int      @id @default(autoincrement())
+  idReserva                  Int      @map("id_reserva")
+  orden                      Int      @default(1)
+
+  nombre                     String   @db.VarChar(120)
+  apellidos                  String   @db.VarChar(120)
+  fechaNacimiento            DateTime @map("fecha_nacimiento") @db.Date
+
+  numeroPasaporte            String   @map("numero_pasaporte") @db.VarChar(80)
+  fechaExpedicionPasaporte   DateTime @map("fecha_expedicion_pasaporte") @db.Date
+  fechaVencimientoPasaporte  DateTime @map("fecha_vencimiento_pasaporte") @db.Date
+  nacionalidad               String   @db.VarChar(80)
+
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+  createdBy                  Int?     @map("created_by")
+  updatedBy                  Int?     @map("updated_by")
+
+  reserva                    Reserva  @relation(fields: [idReserva], references: [id], onDelete: Cascade)
+
+  @@index([idReserva, orden], map: "idx_reserva_pasajero_reserva_orden")
+  @@map("reserva_pasajero")
 }
 
 model ReservaItem {

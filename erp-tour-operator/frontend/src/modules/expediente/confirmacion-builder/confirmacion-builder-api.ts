@@ -49,6 +49,23 @@ export type ConfirmacionBuilderCreateValues = {
   selectedColumnIds: number[];
 };
 
+export type ConfirmacionPassengerValues = {
+  nombre: string;
+  apellidos: string;
+  fechaNacimiento: string;
+  numeroPasaporte: string;
+  fechaExpedicionPasaporte: string;
+  fechaVencimientoPasaporte: string;
+  nacionalidad: string;
+};
+
+export type ConfirmacionPassenger = ConfirmacionPassengerValues & {
+  id: number;
+  idReserva: number;
+  orden: number;
+  edadEnViaje: string;
+};
+
 export async function getConfirmacionBuilderOptions(versionId: number) {
   const response = await api.get<ApiResponse<ConfirmacionBuilderOptions>>(
     `/confirmacion-builder/versiones/${versionId}/opciones`
@@ -80,6 +97,38 @@ export async function getConfirmacionBuilder(versionId: number) {
 export async function deleteConfirmacionBuilder(versionId: number) {
   const response = await api.delete<ApiResponse<Record<string, unknown>>>(
     `/confirmacion-builder/versiones/${versionId}`
+  );
+
+  return response.data.data;
+}
+
+export async function createConfirmacionPassenger(
+  reservaId: number,
+  values: ConfirmacionPassengerValues
+) {
+  const response = await api.post<ApiResponse<ConfirmacionPassenger>>(
+    `/confirmacion-builder/reservas/${reservaId}/pasajeros`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function updateConfirmacionPassenger(
+  passengerId: number,
+  values: ConfirmacionPassengerValues
+) {
+  const response = await api.put<ApiResponse<ConfirmacionPassenger>>(
+    `/confirmacion-builder/pasajeros/${passengerId}`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function deleteConfirmacionPassenger(passengerId: number) {
+  const response = await api.delete<ApiResponse<{ id: number }>>(
+    `/confirmacion-builder/pasajeros/${passengerId}`
   );
 
   return response.data.data;

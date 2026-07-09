@@ -44,6 +44,16 @@ export const includeConfirmacionBuilderDetail = {
       orden: "asc" as const
     }
   },
+  pasajeros: {
+    orderBy: [
+      {
+        orden: "asc" as const
+      },
+      {
+        id: "asc" as const
+      }
+    ]
+  },
   items: {
     include: {
       servicio: {
