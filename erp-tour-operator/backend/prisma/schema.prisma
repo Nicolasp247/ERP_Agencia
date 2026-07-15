@@ -895,7 +895,7 @@ model ReservaPasajero {
 model ReservaItem {
   id                        Int               @id @default(autoincrement())
   idReserva                 Int               @map("id_reserva")
-  idCotizacionItemOrigen    Int               @map("id_cotizacion_item_origen")
+  idCotizacionItemOrigen    Int?              @map("id_cotizacion_item_origen")
   idServicio                Int               @map("id_servicio")
   fechaServicio             DateTime          @map("fecha_servicio") @db.Date
   ordenDia                  Int               @map("orden_dia")
@@ -914,7 +914,7 @@ model ReservaItem {
   createdAt                 DateTime          @default(now()) @map("created_at")
   updatedAt                 DateTime          @updatedAt @map("updated_at")
   reserva                   Reserva           @relation(fields: [idReserva], references: [id])
-  cotizacionItemOrigen      CotizacionItem    @relation(fields: [idCotizacionItemOrigen], references: [id])
+  cotizacionItemOrigen      CotizacionItem?   @relation(fields: [idCotizacionItemOrigen], references: [id], onDelete: SetNull)
   servicio                  Servicio          @relation(fields: [idServicio], references: [id])
   confirmaciones            ReservaConfirmacionComercialItem[]
   preciosSeleccionados      ReservaItemPrecioSeleccionado[]

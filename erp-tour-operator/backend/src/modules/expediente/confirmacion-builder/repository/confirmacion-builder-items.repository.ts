@@ -5,18 +5,176 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/core/db/prisma";
 import type {
   ConfirmacionBuilderHotelPreviewInput,
+  ConfirmacionBuilderItemInput,
   ConfirmacionBuilderMoveItemInput,
   ConfirmacionBuilderNoteInput,
   ConfirmacionBuilderPriceInput
 } from "@/modules/expediente/confirmacion-builder/dto/confirmacion-builder.dto";
+import { includeConfirmacionBuilderDetail } from "@/modules/expediente/confirmacion-builder/repository/confirmacion-builder.include";
 import {
   addCalendarDays,
+  buildConfirmacionItemSnapshot,
   isAlojamientoTipo,
-  normalizeItemOrderByDate
+  normalizeItemOrderByDate,
+  toDateOnly
 } from "@/modules/expediente/confirmacion-builder/repository/confirmacion-builder.helpers";
-import { includeConfirmacionBuilderDetail } from "@/modules/expediente/confirmacion-builder/repository/confirmacion-builder.include";
 
 export class ConfirmacionBuilderItemsRepository {
+  async createItem(
+    reservaId: number,
+    data: ConfirmacionBuilderItemInput,
+    userId?: number | null
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const reserva = await tx.reserva.findUnique({
+        where: {
+          id: reservaId
+        },
+        include: {
+          columnasSeleccionadas: {
+            orderBy: {
+              orden: "asc"
+            }
+          }
+        }
+      });
+
+      if (!reserva) {
+        return null;
+      }
+
+      const servicio = await tx.servicio.findUnique({
+        where: {
+          id: data.idServicio
+        },
+        include: {
+          proveedor: {
+            select: {
+              codigo: true,
+              nombreComercial: true
+            }
+          },
+
+          tipo: true,
+
+          alojamiento: true,
+
+          tour: {
+            include: {
+              tipoGuia: true,
+              idioma: true
+            }
+          },
+
+          traslado: {
+            include: {
+              origen: true,
+              destino: true
+            }
+          },
+
+          tren: true,
+          vuelo: true
+        }
+      });
+
+      if (!servicio || !servicio.activo) {
+        return "SERVICIO_NOT_FOUND" as const;
+      }
+
+      const maxOrder = await tx.reservaItem.aggregate({
+        where: {
+          idReserva: reservaId
+        },
+        _max: {
+          ordenDia: true
+        }
+      });
+
+      const fechaServicio = toDateOnly(data.fechaServicio);
+
+      const snapshotItem = {
+        tituloOverride: null,
+        servicio,
+        alojamientoDetalle: data.alojamiento
+          ? {
+              noches: data.alojamiento.noches,
+              habitaciones: data.alojamiento.habitaciones,
+              categoriaHab: data.alojamiento.categoriaHab,
+              regimen: data.alojamiento.regimen
+            }
+          : null
+      };
+
+      const createdItem = await tx.reservaItem.create({
+        data: {
+          idReserva: reservaId,
+          idCotizacionItemOrigen: null,
+          idServicio: data.idServicio,
+          fechaServicio,
+          ordenDia:
+            data.ordenDia ??
+            Number(maxOrder._max.ordenDia ?? 0) + 1,
+          esOpcional: data.esOpcional,
+
+          tituloSnapshot: buildConfirmacionItemSnapshot(snapshotItem),
+
+          notaLineaSnapshot: data.notaLinea?.trim() || null,
+          costoCotizado: null,
+          costoFinal: null,
+          monedaCodigo: reserva.monedaCodigo,
+          estadoItem: data.esOpcional ? "NO_APLICA" : "PENDIENTE",
+
+          createdBy: userId ?? null,
+          updatedBy: userId ?? null
+        }
+      });
+
+      const tipoCodigo = String(servicio.tipo?.codigo ?? "")
+        .trim()
+        .toUpperCase();
+
+      const columnasAplicables = reserva.columnasSeleccionadas.filter(
+        (column) => {
+          if (data.esOpcional) {
+            return column.tipoSnapshot === "OPCIONALES";
+          }
+
+          if (tipoCodigo === "VUELO" || tipoCodigo === "TREN") {
+            return column.tipoSnapshot === "TRANSPORTE";
+          }
+
+          if (tipoCodigo === "OTRO") {
+            return data.idReservaColumnaManual
+              ? column.id === data.idReservaColumnaManual
+              : column.tipoSnapshot === "OTRO";
+          }
+
+          return column.tipoSnapshot === "TERRESTRE";
+        }
+      );
+
+      for (const column of columnasAplicables) {
+        await tx.reservaItemPrecioSeleccionado.create({
+          data: {
+            idReservaItem: createdItem.id,
+            idReservaColumnaSeleccionada: column.id,
+            precioCotizado: null,
+            precioConfirmado: null,
+            monedaCodigo: reserva.monedaCodigo
+          }
+        });
+      }
+
+      return tx.reserva.findUnique({
+        where: {
+          id: reservaId
+        },
+        include: includeConfirmacionBuilderDetail
+      });
+    });
+  }
+  
   async updateItemPrices(itemId: number, data: ConfirmacionBuilderPriceInput) {
     return prisma.$transaction(async (tx) => {
       const currentItem = await tx.reservaItem.findUnique({

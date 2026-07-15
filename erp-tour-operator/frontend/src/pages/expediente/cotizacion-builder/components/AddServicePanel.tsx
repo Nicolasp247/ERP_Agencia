@@ -13,6 +13,8 @@ type AddServicePanelProps = {
   isSaving?: boolean;
   defaultDate?: string;
   nextOrder: number;
+  title?: string;
+  eyebrow?: string;
   onCancel: () => void;
   onCreateItem: (values: BuilderItemFormValues) => void;
 };
@@ -58,6 +60,8 @@ export function AddServicePanel({
   isSaving = false,
   defaultDate,
   nextOrder,
+  title = "Añadir servicio a la cotización",
+  eyebrow = "Nuevo servicio",
   onCancel,
   onCreateItem
 }: AddServicePanelProps) {
@@ -179,8 +183,8 @@ export function AddServicePanel({
     <form className="builder-add-service-panel" onSubmit={submitForm}>
       <div className="builder-add-service-header">
         <div>
-          <p className="eyebrow">Nuevo servicio</p>
-          <h3>Añadir servicio a la cotización</h3>
+          <p className="eyebrow">{eyebrow}</p>
+          <h3>{title}</h3>
         </div>
 
         <button className="link-button" onClick={onCancel} type="button">

@@ -9,6 +9,7 @@ import {
   confirmacionBuilderFreeNotesSchema,
   confirmacionBuilderHotelPreviewSchema,
   confirmacionBuilderMoveItemSchema,
+  confirmacionBuilderItemSchema,
   confirmacionBuilderNoteSchema,
   confirmacionBuilderPriceSchema,
   confirmacionPassengerSchema
@@ -16,6 +17,18 @@ import {
 import { confirmacionBuilderService } from "@/modules/expediente/confirmacion-builder/service/confirmacion-builder.service";
 
 export class ConfirmacionBuilderController {
+  createItem = async (req: Request, res: Response) => {
+    const body = confirmacionBuilderItemSchema.parse(req.body);
+
+    const data = await confirmacionBuilderService.createItem(
+      Number(req.params.reservaId),
+      body,
+      getRequestUserId(req)
+    );
+
+    res.status(201).json(ok(data));
+  };
+  
   getOptionsByVersionId = async (req: Request, res: Response) => {
     const data = await confirmacionBuilderService.getOptionsByVersionId(
       Number(req.params.versionId)

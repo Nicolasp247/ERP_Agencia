@@ -83,6 +83,12 @@ confirmacionBuilderRouter.delete(
 );
 
 confirmacionBuilderRouter.post(
+  "/reservas/:reservaId/items",
+  validateParams(confirmacionPassengerReservaParamsSchema),
+  asyncHandler(confirmacionBuilderController.createItem)
+);
+
+confirmacionBuilderRouter.post(
   "/reservas/:reservaId/pasajeros",
   validateParams(confirmacionPassengerReservaParamsSchema),
   asyncHandler(confirmacionBuilderController.createPassenger)

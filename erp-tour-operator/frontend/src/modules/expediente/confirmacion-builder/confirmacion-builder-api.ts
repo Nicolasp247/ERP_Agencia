@@ -228,3 +228,32 @@ export async function updateConfirmacionBuilderFreeNotes(
 
   return response.data.data;
 }
+
+export type ConfirmacionBuilderItemFormValues = {
+  idServicio: number;
+  fechaServicio: string;
+  ordenDia?: number;
+  esOpcional: boolean;
+  notaLinea?: string | null;
+
+  idReservaColumnaManual?: number;
+
+  alojamiento?: {
+    noches: number;
+    habitaciones: number;
+    categoriaHab?: string;
+    regimen?: string;
+  };
+};
+
+export async function createConfirmacionBuilderItem(
+  reservaId: number,
+  values: ConfirmacionBuilderItemFormValues
+) {
+  const response = await api.post<ApiResponse<Record<string, unknown>>>(
+    `/confirmacion-builder/reservas/${reservaId}/items`,
+    values
+  );
+
+  return response.data.data;
+}

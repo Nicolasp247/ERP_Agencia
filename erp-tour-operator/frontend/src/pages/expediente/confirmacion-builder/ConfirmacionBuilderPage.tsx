@@ -16,6 +16,8 @@ import {
   updateConfirmacionBuilderItemNotes,
   updateConfirmacionBuilderItemPrices,
   updateConfirmacionPassenger,
+  createConfirmacionBuilderItem,
+  type ConfirmacionBuilderItemFormValues,
   type ConfirmacionBuilderFreeNotesFormValues,
   type ConfirmacionBuilderHotelPreviewFormValues,
   type ConfirmacionBuilderMoveItemValues,
@@ -29,7 +31,7 @@ import { ConfirmacionPassengerModal } from "@/pages/expediente/confirmacion-buil
 import { ConfirmacionPassengersTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionPassengersTable";
 import { ConfirmacionHotelPreviewTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionHotelPreviewTable";
 import { FreeNotesPanel } from "@/pages/expediente/cotizacion-builder/components/FreeNotesPanel";
-
+import { AddServicePanel } from "@/pages/expediente/cotizacion-builder/components/AddServicePanel";
 
 function formatDate(value: string | null | undefined) {
   if (!value) {
@@ -70,7 +72,7 @@ export function ConfirmacionBuilderPage() {
   const [passengerModalOpen, setPassengerModalOpen] = useState(false);
   const [editingPassenger, setEditingPassenger] = useState<ConfirmacionPassenger | null>(null);
   const queryKey = ["confirmacion-builder", versionId];
-
+  const [showAddService, setShowAddService] = useState(false);
   const query = useQuery({
     queryKey,
     queryFn: () => getConfirmacionBuilder(versionId),
@@ -178,15 +180,69 @@ export function ConfirmacionBuilderPage() {
 
   const builder = query.data as any;
 
+  const nextOrder = useMemo(() => {
+    const allRows = [
+      ...(builder?.rows ?? []),
+      ...(builder?.optionalRows ?? [])
+    ];
+
+    const maxOrder = allRows.reduce(
+      (max: number, row: any) =>
+        Math.max(max, Number(row.ordenDia ?? 0)),
+      0
+    );
+
+    return maxOrder + 1;
+  }, [builder?.rows, builder?.optionalRows]);
+
+  const createItemMutation = useMutation({
+    mutationFn: (values: ConfirmacionBuilderItemFormValues) =>
+      createConfirmacionBuilderItem(
+        Number(builder?.reserva?.id),
+        values
+      ),
+
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+      setShowAddService(false);
+    }
+  });
+
+  const mainColumns = useMemo(
+    () =>
+      (builder?.columns ?? []).filter(
+        (column: any) =>
+          column.tipo === "TERRESTRE" ||
+          column.tipo === "TRANSPORTE" ||
+          column.tipo === "OTRO"
+      ),
+    [builder?.columns]
+  );
+
+  const terrestrialColumns = useMemo(
+    () =>
+      (builder?.columns ?? []).filter(
+        (column: any) => column.tipo === "TERRESTRE"
+      ),
+    [builder?.columns]
+  );
+
+  const optionalColumns = useMemo(
+    () =>
+      (builder?.columns ?? []).filter(
+        (column: any) => column.tipo === "OPCIONALES"
+      ),
+    [builder?.columns]
+  );
+
   const totals = useMemo(() => {
-    const columns = builder?.columns ?? [];
     const rows = builder?.rows ?? [];
 
-    return columns.map((column: any) => ({
+    return mainColumns.map((column: any) => ({
       column,
       total: getColumnPriceTotal(rows, column.id)
     }));
-  }, [builder?.columns, builder?.rows]);
+  }, [mainColumns, builder?.rows]);
 
   if (query.isLoading) {
     return <PageSection title="Confirmación">Cargando confirmación...</PageSection>;
@@ -296,9 +352,20 @@ export function ConfirmacionBuilderPage() {
         />
       </PageSection>
 
-      <PageSection title="Servicios confirmados">
+      <PageSection
+        title="Servicios confirmados"
+        action={
+          <button
+            className="primary-button"
+            onClick={() => setShowAddService(true)}
+            type="button"
+          >
+            Añadir servicio
+          </button>
+        }
+      >
         <ConfirmacionBuilderTable
-          columns={builder.columns ?? []}
+          columns={mainColumns}
           rows={builder.rows ?? []}
           monedaCodigo={monedaCodigo}
           onDeleteItem={(itemId) => deleteItemMutation.mutate(itemId)}
@@ -323,11 +390,36 @@ export function ConfirmacionBuilderPage() {
             })
           }
         />
+        {showAddService ? (
+          <div className="builder-modal-backdrop">
+            <div className="builder-modal">
+              <AddServicePanel
+                columns={builder.columns ?? []}
+                defaultDate={builder.reserva?.fechaViajePrincipal}
+                eyebrow="Nuevo servicio confirmado"
+                title="Añadir servicio a la confirmación"
+                isSaving={createItemMutation.isPending}
+                nextOrder={nextOrder}
+                onCancel={() => setShowAddService(false)}
+                onCreateItem={(values) =>
+                  createItemMutation.mutate({
+                    ...values,
+
+                    idReservaColumnaManual:
+                      values.idCotizacionColumnaManual,
+
+                    idCotizacionColumnaManual: undefined
+                  } as ConfirmacionBuilderItemFormValues)
+                }
+              />
+            </div>
+          </div>
+        ) : null}
       </PageSection>
 
       <PageSection title="Hoteles previstos o similares">
         <ConfirmacionHotelPreviewTable
-          columns={builder.columns ?? []}
+          columns={terrestrialColumns}
           rows={builder.rows ?? []}
           onUpdateItemHotels={(itemId, payload) =>
             updateItemHotelsMutation.mutate({
@@ -369,7 +461,7 @@ export function ConfirmacionBuilderPage() {
       </PageSection>
 
       <ConfirmacionOptionalServicesTable
-        columns={builder.columns ?? []}
+        columns={optionalColumns}
         rows={builder.optionalRows ?? []}
         monedaCodigo={monedaCodigo}
       />

@@ -7,6 +7,7 @@ import type {
   ConfirmacionBuilderHotelPreviewInput,
   ConfirmacionBuilderMoveItemInput,
   ConfirmacionBuilderNoteInput,
+  ConfirmacionBuilderItemInput,
   ConfirmacionBuilderPriceInput,
   ConfirmacionPassengerInput
 } from "@/modules/expediente/confirmacion-builder/dto/confirmacion-builder.dto";
@@ -17,6 +18,36 @@ import {
 import { confirmacionBuilderRepository } from "@/modules/expediente/confirmacion-builder/repository/confirmacion-builder.repository";
 
 export class ConfirmacionBuilderService {
+  async createItem(
+    reservaId: number,
+    data: ConfirmacionBuilderItemInput,
+    userId?: number
+  ) {
+    const record = await confirmacionBuilderRepository.createItem(
+      reservaId,
+      data,
+      userId ?? null
+    );
+
+    if (!record) {
+      throw new AppError(
+        404,
+        "CONFIRMACION_NOT_FOUND",
+        "Confirmación no encontrada"
+      );
+    }
+
+    if (record === "SERVICIO_NOT_FOUND") {
+      throw new AppError(
+        404,
+        "SERVICIO_NOT_FOUND",
+        "Servicio no encontrado o inactivo"
+      );
+    }
+
+    return toConfirmacionBuilderDetail(record);
+  }
+  
   async getOptionsByVersionId(versionId: number) {
     const record = await confirmacionBuilderRepository.findOptionsByVersionId(versionId);
 

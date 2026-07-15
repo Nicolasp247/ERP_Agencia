@@ -5,6 +5,7 @@ import type {
   ConfirmacionBuilderFreeNotesInput,
   ConfirmacionBuilderHotelPreviewInput,
   ConfirmacionBuilderMoveItemInput,
+  ConfirmacionBuilderItemInput,
   ConfirmacionBuilderNoteInput,
   ConfirmacionBuilderPriceInput,
   ConfirmacionPassengerInput
@@ -16,6 +17,18 @@ import { confirmacionBuilderPassengersRepository } from "@/modules/expediente/co
 import { confirmacionBuilderReadRepository } from "@/modules/expediente/confirmacion-builder/repository/confirmacion-builder-read.repository";
 
 export class ConfirmacionBuilderRepository {
+  createItem(
+    reservaId: number,
+    data: ConfirmacionBuilderItemInput,
+    userId?: number | null
+  ) {
+    return confirmacionBuilderItemsRepository.createItem(
+      reservaId,
+      data,
+      userId
+    );
+  }
+  
   findOptionsByVersionId(versionId: number) {
     return confirmacionBuilderReadRepository.findOptionsByVersionId(
       versionId
