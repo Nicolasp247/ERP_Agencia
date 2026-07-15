@@ -1,5 +1,7 @@
 /* erp-tour-operator/backend/src/modules/expediente/confirmacion-builder/mapper/confirmacion-builder.mapper.ts */
 
+import { buildServicioCotizacionTexto } from "@/modules/servicio/helpers/servicio-display.helper";
+
 function formatDateOnly(value: Date | string | null | undefined) {
   if (!value) return null;
 
@@ -120,11 +122,11 @@ function getFechaFinAlojamiento(item: any) {
 }
 
 function getServicioIncluido(item: any) {
-  if (item.tituloSnapshot) {
-    return item.tituloSnapshot;
+  if (item.tituloSnapshot?.trim()) {
+    return item.tituloSnapshot.trim();
   }
 
-  return item.servicio?.nombreWtravel || "Servicio sin nombre";
+  return buildServicioCotizacionTexto(item.servicio);
 }
 
 function getColumnLabel(column: any) {

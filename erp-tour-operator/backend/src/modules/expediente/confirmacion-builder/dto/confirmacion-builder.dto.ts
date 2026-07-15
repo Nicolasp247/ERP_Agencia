@@ -24,4 +24,40 @@ export const confirmacionPassengerSchema = z.object({
   nacionalidad: z.string().trim().min(1, "La nacionalidad es obligatoria").max(80)
 });
 
+export const confirmacionBuilderPriceSchema = z.object({
+  prices: z.array(
+    z.object({
+      columnId: z.coerce.number().int().positive(),
+      precioConfirmado: z.coerce.number().min(0).nullable()
+    })
+  )
+});
+
+export const confirmacionBuilderNoteSchema = z.object({
+  notaLinea: z.string().trim().max(1000).nullable(),
+  tituloOverride: z.string().trim().max(500).nullable().optional()
+});
+
+export const confirmacionBuilderMoveItemSchema = z.object({
+  direction: z.enum(["UP", "DOWN"])
+});
+
+export const confirmacionBuilderHotelPreviewSchema = z.object({
+  hotels: z.array(
+    z.object({
+      columnId: z.coerce.number().int().positive(),
+      textoHotel: z.string().trim().max(500).nullable().optional()
+    })
+  )
+});
+
+export const confirmacionBuilderFreeNotesSchema = z.object({
+  nota: z.string().max(10000).nullable()
+});
+
+export type ConfirmacionBuilderPriceInput = z.infer<typeof confirmacionBuilderPriceSchema>;
+export type ConfirmacionBuilderNoteInput = z.infer<typeof confirmacionBuilderNoteSchema>;
+export type ConfirmacionBuilderMoveItemInput = z.infer<typeof confirmacionBuilderMoveItemSchema>;
+export type ConfirmacionBuilderHotelPreviewInput = z.infer<typeof confirmacionBuilderHotelPreviewSchema>;
+export type ConfirmacionBuilderFreeNotesInput = z.infer<typeof confirmacionBuilderFreeNotesSchema>;
 export type ConfirmacionPassengerInput = z.infer<typeof confirmacionPassengerSchema>;

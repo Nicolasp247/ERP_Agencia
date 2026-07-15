@@ -6,6 +6,11 @@ import { ok } from "@/core/utils/api-response";
 import { getRequestUserId } from "@/core/utils/request-user";
 import {
   confirmacionBuilderCreateSchema,
+  confirmacionBuilderFreeNotesSchema,
+  confirmacionBuilderHotelPreviewSchema,
+  confirmacionBuilderMoveItemSchema,
+  confirmacionBuilderNoteSchema,
+  confirmacionBuilderPriceSchema,
   confirmacionPassengerSchema
 } from "@/modules/expediente/confirmacion-builder/dto/confirmacion-builder.dto";
 import { confirmacionBuilderService } from "@/modules/expediente/confirmacion-builder/service/confirmacion-builder.service";
@@ -66,6 +71,69 @@ export class ConfirmacionBuilderController {
   deletePassenger = async (req: Request, res: Response) => {
     const data = await confirmacionBuilderService.deletePassenger(
       Number(req.params.passengerId)
+    );
+
+    res.json(ok(data));
+  };
+
+  updateItemPrices = async (req: Request, res: Response) => {
+    const body = confirmacionBuilderPriceSchema.parse(req.body);
+
+    const data = await confirmacionBuilderService.updateItemPrices(
+      Number(req.params.itemId),
+      body
+    );
+
+    res.json(ok(data));
+  };
+
+  updateItemNotes = async (req: Request, res: Response) => {
+    const body = confirmacionBuilderNoteSchema.parse(req.body);
+
+    const data = await confirmacionBuilderService.updateItemNotes(
+      Number(req.params.itemId),
+      body
+    );
+
+    res.json(ok(data));
+  };
+
+  updateItemHotels = async (req: Request, res: Response) => {
+    const body = confirmacionBuilderHotelPreviewSchema.parse(req.body);
+
+    const data = await confirmacionBuilderService.updateItemHotels(
+      Number(req.params.itemId),
+      body
+    );
+
+    res.json(ok(data));
+  };
+
+  moveItem = async (req: Request, res: Response) => {
+    const body = confirmacionBuilderMoveItemSchema.parse(req.body);
+
+    const data = await confirmacionBuilderService.moveItem(
+      Number(req.params.itemId),
+      body
+    );
+
+    res.json(ok(data));
+  };
+
+  deleteItem = async (req: Request, res: Response) => {
+    const data = await confirmacionBuilderService.deleteItem(
+      Number(req.params.itemId)
+    );
+
+    res.json(ok(data));
+  };
+
+  updateFreeNotes = async (req: Request, res: Response) => {
+    const body = confirmacionBuilderFreeNotesSchema.parse(req.body);
+
+    const data = await confirmacionBuilderService.updateFreeNotes(
+      Number(req.params.versionId),
+      body
     );
 
     res.json(ok(data));

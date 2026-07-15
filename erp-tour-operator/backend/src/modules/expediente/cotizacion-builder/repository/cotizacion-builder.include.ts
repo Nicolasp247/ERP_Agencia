@@ -42,13 +42,33 @@ export const includeBuilderDetail = {
               nombreComercial: true
             }
           },
+
           tipo: true,
+
           ciudad: {
             include: {
               pais: true
             }
           },
-          alojamiento: true
+
+          alojamiento: true,
+
+          tour: {
+            include: {
+              tipoGuia: true,
+              idioma: true
+            }
+          },
+
+          traslado: {
+            include: {
+              origen: true,
+              destino: true
+            }
+          },
+
+          tren: true,
+          vuelo: true
         }
       },
       precios: true,

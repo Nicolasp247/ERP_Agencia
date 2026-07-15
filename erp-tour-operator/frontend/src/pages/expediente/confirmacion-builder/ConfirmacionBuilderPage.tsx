@@ -7,16 +7,29 @@ import { Link, useParams } from "react-router-dom";
 import { PageSection } from "@/components/PageSection";
 import {
   createConfirmacionPassenger,
+  deleteConfirmacionBuilderItem,
   deleteConfirmacionPassenger,
   getConfirmacionBuilder,
+  moveConfirmacionBuilderItem,
+  updateConfirmacionBuilderFreeNotes,
+  updateConfirmacionBuilderItemHotels,
+  updateConfirmacionBuilderItemNotes,
+  updateConfirmacionBuilderItemPrices,
   updateConfirmacionPassenger,
+  type ConfirmacionBuilderFreeNotesFormValues,
+  type ConfirmacionBuilderHotelPreviewFormValues,
+  type ConfirmacionBuilderMoveItemValues,
+  type ConfirmacionBuilderNoteFormValues,
+  type ConfirmacionBuilderPriceFormValues,
   type ConfirmacionPassenger,
   type ConfirmacionPassengerValues
-} from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";
-import { ConfirmacionBuilderTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionBuilderTable";
+} from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";import { ConfirmacionBuilderTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionBuilderTable";
 import { ConfirmacionOptionalServicesTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionOptionalServicesTable";
 import { ConfirmacionPassengerModal } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionPassengerModal";
 import { ConfirmacionPassengersTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionPassengersTable";
+import { ConfirmacionHotelPreviewTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionHotelPreviewTable";
+import { FreeNotesPanel } from "@/pages/expediente/cotizacion-builder/components/FreeNotesPanel";
+
 
 function formatDate(value: string | null | undefined) {
   if (!value) {
@@ -56,9 +69,10 @@ export function ConfirmacionBuilderPage() {
   const queryClient = useQueryClient();
   const [passengerModalOpen, setPassengerModalOpen] = useState(false);
   const [editingPassenger, setEditingPassenger] = useState<ConfirmacionPassenger | null>(null);
+  const queryKey = ["confirmacion-builder", versionId];
 
   const query = useQuery({
-    queryKey: ["confirmacion-builder", versionId],
+    queryKey,
     queryFn: () => getConfirmacionBuilder(versionId),
     enabled: Number.isFinite(versionId)
   });
@@ -87,6 +101,78 @@ export function ConfirmacionBuilderPage() {
       await queryClient.invalidateQueries({
         queryKey: ["confirmacion-builder", versionId]
       });
+    }
+  });
+
+  const updateItemPricesMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      values
+    }: {
+      itemId: number;
+      values: ConfirmacionBuilderPriceFormValues;
+    }) => updateConfirmacionBuilderItemPrices(itemId, values),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const updateItemNotesMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      values
+    }: {
+      itemId: number;
+      values: ConfirmacionBuilderNoteFormValues;
+    }) => updateConfirmacionBuilderItemNotes(itemId, values),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const updateItemHotelsMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      payload
+    }: {
+      itemId: number;
+      payload: ConfirmacionBuilderHotelPreviewFormValues;
+    }) => updateConfirmacionBuilderItemHotels(itemId, payload),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const moveItemMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      values
+    }: {
+      itemId: number;
+      values: ConfirmacionBuilderMoveItemValues;
+    }) => moveConfirmacionBuilderItem(itemId, values),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: deleteConfirmacionBuilderItem,
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const updateFreeNotesMutation = useMutation({
+    mutationFn: ({
+      versionId,
+      values
+    }: {
+      versionId: number;
+      values: ConfirmacionBuilderFreeNotesFormValues;
+    }) => updateConfirmacionBuilderFreeNotes(versionId, values),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
     }
   });
 
@@ -215,16 +301,41 @@ export function ConfirmacionBuilderPage() {
           columns={builder.columns ?? []}
           rows={builder.rows ?? []}
           monedaCodigo={monedaCodigo}
+          onDeleteItem={(itemId) => deleteItemMutation.mutate(itemId)}
+          onMoveItem={(itemId, direction) =>
+            moveItemMutation.mutate({
+              itemId,
+              values: {
+                direction
+              }
+            })
+          }
+          onUpdateItemNotes={(itemId, values) =>
+            updateItemNotesMutation.mutate({
+              itemId,
+              values
+            })
+          }
+          onUpdateItemPrices={(itemId, values) =>
+            updateItemPricesMutation.mutate({
+              itemId,
+              values
+            })
+          }
         />
       </PageSection>
 
       <PageSection title="Hoteles previstos o similares">
-        <div className="future-card">
-          <strong>Hoteles confirmados</strong>
-          <p>
-            En el siguiente paso conectaremos esta tabla con los hoteles copiados desde la cotización.
-          </p>
-        </div>
+        <ConfirmacionHotelPreviewTable
+          columns={builder.columns ?? []}
+          rows={builder.rows ?? []}
+          onUpdateItemHotels={(itemId, payload) =>
+            updateItemHotelsMutation.mutate({
+              itemId,
+              payload
+            })
+          }
+        />
       </PageSection>
 
       <PageSection title="Totales de confirmación">
@@ -264,20 +375,18 @@ export function ConfirmacionBuilderPage() {
       />
 
       <PageSection title="Anotaciones">
-        <div className="builder-free-notes-section">
-          <div className="builder-free-notes-heading">
-            <h3>Anotaciones de confirmación</h3>
-            <p>
-              Más adelante podremos editar aquí las notas internas y comerciales de la confirmación.
-            </p>
-          </div>
-
-          <textarea
-            className="builder-free-notes-textarea"
-            value={builder.reserva?.nota ?? ""}
-            readOnly
-          />
-        </div>
+        <FreeNotesPanel
+          initialValue={builder.reserva?.nota ?? ""}
+          isSaving={updateFreeNotesMutation.isPending}
+          onSave={(value) =>
+            updateFreeNotesMutation.mutate({
+              versionId: builder.version.id,
+              values: {
+                nota: value
+              }
+            })
+          }
+        />
       </PageSection>
       {passengerModalOpen ? (
         <ConfirmacionPassengerModal

@@ -1,5 +1,7 @@
 /* erp-tour-operator/backend/src/modules/expediente/cotizacion-builder/mapper/cotizacion-builder.mapper.ts */
 
+import { buildServicioCotizacionTexto } from "@/modules/servicio/helpers/servicio-display.helper";
+
 function formatDateOnly(value: Date | string | null | undefined) {
   if (!value) return null;
 
@@ -117,15 +119,15 @@ function buildVersionLabel(versionCodigo?: string | null) {
 }
 
 function getServicioIncluido(item: any) {
-  if (item.tituloOverride) {
-    return item.tituloOverride;
+  if (item.tituloOverride?.trim()) {
+    return item.tituloOverride.trim();
   }
 
   if (isAlojamientoItem(item)) {
     return getServicioIncluidoAlojamiento(item);
   }
 
-  return item.servicio?.nombreWtravel || "Servicio sin nombre";
+  return buildServicioCotizacionTexto(item.servicio);
 }
 
 export function toCotizacionBuilderDetail(record: any) {

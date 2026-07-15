@@ -133,3 +133,98 @@ export async function deleteConfirmacionPassenger(passengerId: number) {
 
   return response.data.data;
 }
+
+export type ConfirmacionBuilderPriceFormValues = {
+  prices: Array<{
+    columnId: number;
+    precioConfirmado: number | null;
+  }>;
+};
+
+export type ConfirmacionBuilderNoteFormValues = {
+  notaLinea: string | null;
+  tituloOverride?: string | null;
+};
+
+export type ConfirmacionBuilderMoveItemValues = {
+  direction: "UP" | "DOWN";
+};
+
+export type ConfirmacionBuilderHotelPreviewFormValues = {
+  hotels: Array<{
+    columnId: number;
+    textoHotel: string;
+  }>;
+};
+
+export type ConfirmacionBuilderFreeNotesFormValues = {
+  nota: string | null;
+};
+
+export async function updateConfirmacionBuilderItemPrices(
+  itemId: number,
+  values: ConfirmacionBuilderPriceFormValues
+) {
+  const response = await api.put<ApiResponse<Record<string, unknown>>>(
+    `/confirmacion-builder/items/${itemId}/prices`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function updateConfirmacionBuilderItemNotes(
+  itemId: number,
+  values: ConfirmacionBuilderNoteFormValues
+) {
+  const response = await api.put<ApiResponse<Record<string, unknown>>>(
+    `/confirmacion-builder/items/${itemId}/notes`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function updateConfirmacionBuilderItemHotels(
+  itemId: number,
+  values: ConfirmacionBuilderHotelPreviewFormValues
+) {
+  const response = await api.put<ApiResponse<Record<string, unknown>>>(
+    `/confirmacion-builder/items/${itemId}/hotels`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function moveConfirmacionBuilderItem(
+  itemId: number,
+  values: ConfirmacionBuilderMoveItemValues
+) {
+  const response = await api.put<ApiResponse<Record<string, unknown>>>(
+    `/confirmacion-builder/items/${itemId}/move`,
+    values
+  );
+
+  return response.data.data;
+}
+
+export async function deleteConfirmacionBuilderItem(itemId: number) {
+  const response = await api.delete<ApiResponse<Record<string, unknown>>>(
+    `/confirmacion-builder/items/${itemId}`
+  );
+
+  return response.data.data;
+}
+
+export async function updateConfirmacionBuilderFreeNotes(
+  versionId: number,
+  values: ConfirmacionBuilderFreeNotesFormValues
+) {
+  const response = await api.put<ApiResponse<Record<string, unknown>>>(
+    `/confirmacion-builder/versiones/${versionId}/free-notes`,
+    values
+  );
+
+  return response.data.data;
+}

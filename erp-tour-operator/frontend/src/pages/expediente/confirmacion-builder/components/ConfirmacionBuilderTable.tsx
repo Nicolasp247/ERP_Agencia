@@ -1,5 +1,7 @@
 /* erp-tour-operator/frontend/src/pages/expediente/confirmacion-builder/components/ConfirmacionBuilderTable.tsx */
 
+import { Fragment, useMemo, useState } from "react";
+
 type ConfirmacionColumn = {
   id: number;
   label?: string;
@@ -20,6 +22,8 @@ type ConfirmacionRow = {
   ordenDia: number;
   servicioIncluido: string;
   operador: string;
+  linkReserva?: string | null;
+  notas?: string | null;
   tipoServicio?: string | null;
   tipoServicioCodigo?: string | null;
   ciudadNombre?: string | null;
@@ -27,10 +31,34 @@ type ConfirmacionRow = {
   precios: ConfirmacionRowPrice[];
 };
 
+type FloatingPriceEditor = {
+  row: ConfirmacionRow;
+  column: ConfirmacionColumn;
+  value: string;
+};
+
 type ConfirmacionBuilderTableProps = {
   columns: ConfirmacionColumn[];
   rows: ConfirmacionRow[];
   monedaCodigo: string;
+  onDeleteItem: (itemId: number) => void;
+  onMoveItem: (itemId: number, direction: "UP" | "DOWN") => void;
+  onUpdateItemNotes: (
+    itemId: number,
+    values: {
+      notaLinea: string | null;
+      tituloOverride?: string | null;
+    }
+  ) => void;
+  onUpdateItemPrices: (
+    itemId: number,
+    values: {
+      prices: Array<{
+        columnId: number;
+        precioConfirmado: number | null;
+      }>;
+    }
+  ) => void;
 };
 
 const SHORT_MONTHS_ES = [
@@ -126,6 +154,30 @@ function isAccommodationRow(row: ConfirmacionRow) {
   return tipoNombre === "alojamiento" || tipoCodigo === "alojamiento";
 }
 
+function getRowTypeClass(row: ConfirmacionRow) {
+  const tipoNombre = row.tipoServicio?.trim().toLowerCase() ?? "";
+  const tipoCodigo = row.tipoServicioCodigo?.trim().toLowerCase() ?? "";
+
+  if (tipoNombre === "alojamiento" || tipoCodigo === "alojamiento") {
+    return "builder-row-accommodation";
+  }
+
+  if (
+    tipoNombre === "vuelo" ||
+    tipoNombre === "tren" ||
+    tipoCodigo === "vuelo" ||
+    tipoCodigo === "tren"
+  ) {
+    return "builder-row-transport";
+  }
+
+  if (tipoNombre === "otro" || tipoCodigo === "otro") {
+    return "builder-row-other-service";
+  }
+
+  return "builder-row-land-service";
+}
+
 function getCityTitle(row: ConfirmacionRow) {
   const city = row.ciudadNombre ?? "Ciudad por definir";
   const country = row.paisNombre ? ` (${row.paisNombre})` : "";
@@ -143,12 +195,57 @@ function getColumnLabel(column: ConfirmacionColumn) {
   );
 }
 
-function formatMoney(value: number | null | undefined, monedaCodigo: string) {
+function normalizeFormulaExpression(value: string) {
+  return value
+    .replace(",", ".")
+    .replaceAll("USD", "")
+    .replaceAll("usd", "")
+    .replaceAll("$", "")
+    .trim();
+}
+
+function evaluatePriceFormula(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  if (!trimmed.startsWith("=")) {
+    const parsed = Number(normalizeFormulaExpression(trimmed));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  const expression = normalizeFormulaExpression(trimmed.slice(1));
+
+  if (!/^[0-9+\-*/().\s]+$/.test(expression)) {
+    return null;
+  }
+
+  try {
+    const result = Function(`"use strict"; return (${expression});`)();
+    const parsed = Number(result);
+
+    return Number.isFinite(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function formatPriceValue(value: number | null | undefined, monedaCodigo: string) {
   if (value === null || value === undefined) {
     return "-";
   }
 
-  return `$ ${Number(value).toFixed(2)} ${monedaCodigo}`;
+  return `$ ${value.toFixed(2)} ${monedaCodigo}`;
+}
+
+function getInitialPriceFormula(value: number | null | undefined) {
+  if (value === null || value === undefined) {
+    return "=";
+  }
+
+  return `=${value}`;
 }
 
 function getPrice(row: ConfirmacionRow, columnId: number) {
@@ -158,10 +255,376 @@ function getPrice(row: ConfirmacionRow, columnId: number) {
 export function ConfirmacionBuilderTable({
   columns,
   rows,
-  monedaCodigo
+  monedaCodigo,
+  onDeleteItem,
+  onMoveItem,
+  onUpdateItemNotes,
+  onUpdateItemPrices
 }: ConfirmacionBuilderTableProps) {
+  const [visibleNotesRowId, setVisibleNotesRowId] = useState<number | null>(null);
+  const [editingNotesRowId, setEditingNotesRowId] = useState<number | null>(null);
+  const [draftNote, setDraftNote] = useState("");
+  const [draftServiceTitle, setDraftServiceTitle] = useState("");
+  const [floatingPriceEditor, setFloatingPriceEditor] =
+    useState<FloatingPriceEditor | null>(null);
+
+  function openRowNotes(row: ConfirmacionRow) {
+    setFloatingPriceEditor(null);
+    setEditingNotesRowId(null);
+    setDraftNote("");
+    setDraftServiceTitle("");
+    setVisibleNotesRowId(row.id);
+  }
+
+  function closeRowNotes() {
+    setVisibleNotesRowId(null);
+    setEditingNotesRowId(null);
+    setDraftNote("");
+    setDraftServiceTitle("");
+  }
+
+  function startEditingNotes(row: ConfirmacionRow) {
+    setFloatingPriceEditor(null);
+    setVisibleNotesRowId(row.id);
+    setEditingNotesRowId(row.id);
+    setDraftNote(row.notas ?? "");
+    setDraftServiceTitle(row.servicioIncluido ?? "");
+  }
+
+  function cancelEditingNotes() {
+    setEditingNotesRowId(null);
+    setDraftNote("");
+    setDraftServiceTitle("");
+  }
+
+  function saveEditingNotes(row: ConfirmacionRow) {
+    const cleanNote = draftNote.trim();
+    const cleanTitle = draftServiceTitle.trim();
+    const originalTitle = row.servicioIncluido?.trim() ?? "";
+    const titleChanged = cleanTitle !== originalTitle;
+
+    onUpdateItemNotes(row.id, {
+      notaLinea: cleanNote || null,
+      tituloOverride: titleChanged ? cleanTitle || null : undefined
+    });
+
+    setEditingNotesRowId(null);
+    setDraftNote("");
+    setDraftServiceTitle("");
+  }
+
+  function openFloatingPriceEditor(row: ConfirmacionRow, column: ConfirmacionColumn) {
+    const price = getPrice(row, column.id);
+
+    setVisibleNotesRowId(null);
+    setEditingNotesRowId(null);
+    setDraftNote("");
+
+    setFloatingPriceEditor({
+      row,
+      column,
+      value: getInitialPriceFormula(price?.precioConfirmado ?? price?.precioCotizado)
+    });
+  }
+
+  function updateFloatingPriceValue(value: string) {
+    setFloatingPriceEditor((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        value
+      };
+    });
+  }
+
+  function closeFloatingPriceEditor() {
+    setFloatingPriceEditor(null);
+  }
+
+  function saveFloatingPriceEditor() {
+    if (!floatingPriceEditor) {
+      return;
+    }
+
+    const newValue = evaluatePriceFormula(floatingPriceEditor.value);
+
+    const prices = floatingPriceEditor.row.precios.map((price) => {
+      if (price.columnId !== floatingPriceEditor.column.id) {
+        return {
+          columnId: price.columnId,
+          precioConfirmado: price.precioConfirmado ?? price.precioCotizado
+        };
+      }
+
+      return {
+        columnId: price.columnId,
+        precioConfirmado: newValue
+      };
+    });
+
+    onUpdateItemPrices(floatingPriceEditor.row.id, {
+      prices
+    });
+
+    setFloatingPriceEditor(null);
+  }
+
+  function renderPriceOrNotesCells(row: ConfirmacionRow, rowSpan?: number) {
+    if (visibleNotesRowId === row.id) {
+      return (
+        <td className="builder-notes-cell" colSpan={columns.length} rowSpan={rowSpan}>
+          {editingNotesRowId === row.id ? (
+            <label className="builder-note-field">
+              Notas internas del servicio
+              <textarea
+                className="builder-note-textarea"
+                onChange={(event) => setDraftNote(event.target.value)}
+                placeholder="Escribe las notas de este servicio..."
+                value={draftNote}
+              />
+            </label>
+          ) : (
+            <div className="builder-notes-view">
+              <strong>Notas:</strong>
+              <p>{row.notas || "Sin notas"}</p>
+            </div>
+          )}
+        </td>
+      );
+    }
+
+    return columns.map((column) => {
+      const price = getPrice(row, column.id);
+      const value = price?.precioConfirmado ?? price?.precioCotizado;
+
+      const isEditingThisPrice =
+        floatingPriceEditor?.row.id === row.id &&
+        floatingPriceEditor?.column.id === column.id;
+
+      return (
+        <td
+          key={column.id}
+          rowSpan={rowSpan}
+          className={isEditingThisPrice ? "builder-price-cell-editing" : undefined}
+        >
+          <button
+            className={
+              isEditingThisPrice
+                ? "builder-price-cell-button builder-price-cell-button-editing"
+                : "builder-price-cell-button"
+            }
+            type="button"
+            onClick={() => openFloatingPriceEditor(row, column)}
+            title="Editar precio confirmado"
+          >
+            {formatPriceValue(value, monedaCodigo)}
+          </button>
+        </td>
+      );
+    });
+  }
+
+  function renderServiceIncludedCell(row: ConfirmacionRow) {
+    if (editingNotesRowId === row.id) {
+      return (
+        <label className="builder-service-title-field">
+          Servicio confirmado personalizado
+          <textarea
+            className="builder-service-title-textarea builder-service-title-textarea-inline"
+            onChange={(event) => setDraftServiceTitle(event.target.value)}
+            placeholder="Ej: Visita panorámica por Madrid con guía privado en español"
+            value={draftServiceTitle}
+          />
+        </label>
+      );
+    }
+
+    return <span>{row.servicioIncluido}</span>;
+  }
+
+  function renderActions(row: ConfirmacionRow) {
+    return (
+      <div className="builder-row-actions builder-row-actions-compact">
+        {editingNotesRowId === row.id ? (
+          <>
+            <button
+              className="icon-button icon-button-success"
+              onClick={() => saveEditingNotes(row)}
+              title="Guardar nota"
+              type="button"
+            >
+              ✓
+            </button>
+
+            <button
+              className="icon-button"
+              onClick={cancelEditingNotes}
+              title="Cancelar edición de nota"
+              type="button"
+            >
+              ×
+            </button>
+          </>
+        ) : visibleNotesRowId === row.id ? (
+          <>
+            <button
+              className="icon-button"
+              onClick={() => startEditingNotes(row)}
+              title="Editar notas"
+              type="button"
+            >
+              ✎
+            </button>
+
+            <button
+              className="icon-button"
+              onClick={closeRowNotes}
+              title="Salir de notas"
+              type="button"
+            >
+              ×
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              className="icon-button"
+              onClick={() => openRowNotes(row)}
+              title="Ver notas"
+              type="button"
+            >
+              ☷
+            </button>
+
+            <button
+              className="icon-button icon-button-danger"
+              onClick={() => {
+                const confirmed = window.confirm(
+                  "¿Eliminar este servicio de la confirmación? No se eliminará de la cotización original."
+                );
+
+                if (confirmed) {
+                  onDeleteItem(row.id);
+                }
+              }}
+              title="Eliminar servicio"
+              type="button"
+            >
+              ×
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  function renderOperator(row: ConfirmacionRow) {
+    if (!row.linkReserva) {
+      return row.operador;
+    }
+
+    return (
+      <a
+        className="builder-operator-link"
+        href={row.linkReserva}
+        rel="noreferrer"
+        target="_blank"
+        title="Abrir link de reserva"
+      >
+        {row.operador}
+      </a>
+    );
+  }
+
+  function renderOrderControls(row: ConfirmacionRow, visualOrder: number) {
+    return (
+      <div className="builder-order-controls">
+        <span className="builder-order-readonly">{visualOrder}</span>
+
+        <div className="builder-row-actions builder-row-actions-compact">
+          <button
+            className="icon-button"
+            onClick={() => onMoveItem(row.id, "UP")}
+            title="Subir servicio"
+            type="button"
+          >
+            ↑
+          </button>
+
+          <button
+            className="icon-button"
+            onClick={() => onMoveItem(row.id, "DOWN")}
+            title="Bajar servicio"
+            type="button"
+          >
+            ↓
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const floatingPreviewValue = useMemo(() => {
+    if (!floatingPriceEditor) {
+      return null;
+    }
+
+    return evaluatePriceFormula(floatingPriceEditor.value);
+  }, [floatingPriceEditor]);
+
   return (
     <div className="builder-table-shell">
+      {floatingPriceEditor ? (
+        <div className="builder-price-formula-bar">
+          <div className="builder-price-formula-meta">
+            <span>Editor de precio confirmado</span>
+            <strong>{floatingPriceEditor.column ? getColumnLabel(floatingPriceEditor.column) : ""}</strong>
+            <small>{floatingPriceEditor.row.servicioIncluido}</small>
+          </div>
+
+          <label className="builder-price-formula-field">
+            Fórmula / valor
+            <input
+              autoFocus
+              value={floatingPriceEditor.value}
+              onChange={(event) => updateFloatingPriceValue(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  saveFloatingPriceEditor();
+                }
+
+                if (event.key === "Escape") {
+                  closeFloatingPriceEditor();
+                }
+              }}
+              placeholder="=150+20"
+            />
+          </label>
+
+          <div className="builder-price-formula-result">
+            <span>Resultado</span>
+            <strong>
+              {floatingPreviewValue === null
+                ? "-"
+                : formatPriceValue(floatingPreviewValue, monedaCodigo)}
+            </strong>
+          </div>
+
+          <div className="builder-price-formula-actions">
+            <button className="primary-button" type="button" onClick={saveFloatingPriceEditor}>
+              Guardar
+            </button>
+
+            <button className="link-button" type="button" onClick={closeFloatingPriceEditor}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="builder-table-wrapper">
         <table className="builder-table">
           <thead>
@@ -182,20 +645,23 @@ export function ConfirmacionBuilderTable({
                   </span>
                 </th>
               ))}
+
+              <th>Acciones</th>
             </tr>
           </thead>
 
           <tbody>
             {rows.map((row, index) => {
               const visualOrder = index + 1;
+              const rowTypeClass = getRowTypeClass(row);
               const isAccommodation = isAccommodationRow(row);
 
               if (isAccommodation) {
                 return (
-                  <>
-                    <tr className="builder-city-row builder-row-accommodation" key={`city-${row.id}`}>
+                  <Fragment key={row.id}>
+                    <tr className={`builder-city-row ${rowTypeClass}`}>
                       <td className="builder-order-cell" rowSpan={2}>
-                        <span className="builder-order-readonly">{visualOrder}</span>
+                        {renderOrderControls(row, visualOrder)}
                       </td>
 
                       <td className="builder-city-title-cell builder-itinerary-title-cell" colSpan={2}>
@@ -203,60 +669,44 @@ export function ConfirmacionBuilderTable({
                       </td>
 
                       <td className="builder-operator-cell" rowSpan={2}>
-                        {row.operador}
+                        {renderOperator(row)}
                       </td>
 
-                      {columns.map((column) => {
-                        const price = getPrice(row, column.id);
+                      {renderPriceOrNotesCells(row, 2)}
 
-                        return (
-                          <td key={column.id} rowSpan={2}>
-                            <span className="builder-price-cell-readonly">
-                              {formatMoney(price?.precioConfirmado ?? price?.precioCotizado, monedaCodigo)}
-                            </span>
-                          </td>
-                        );
-                      })}
+                      <td rowSpan={2}>{renderActions(row)}</td>
                     </tr>
 
-                    <tr className="builder-service-row builder-row-accommodation" key={`row-${row.id}`}>
+                    <tr className={`builder-service-row ${rowTypeClass}`}>
                       <td className="builder-date-cell">
                         {formatAccommodationDateRange(row.fecha, row.fechaFin)}
                       </td>
 
                       <td className="builder-service-name-cell builder-service-included-cell">
-                        <span>{row.servicioIncluido}</span>
+                        {renderServiceIncludedCell(row)}
                       </td>
                     </tr>
-                  </>
+                  </Fragment>
                 );
               }
 
               return (
-                <tr className="builder-service-row" key={row.id}>
+                <tr className={`builder-service-row ${rowTypeClass}`} key={row.id}>
                   <td className="builder-order-cell">
-                    <span className="builder-order-readonly">{visualOrder}</span>
+                    {renderOrderControls(row, visualOrder)}
                   </td>
 
                   <td className="builder-date-cell">{formatLongDateEs(row.fecha)}</td>
 
                   <td className="builder-service-name-cell builder-service-included-cell">
-                    <span>{row.servicioIncluido}</span>
+                    {renderServiceIncludedCell(row)}
                   </td>
 
-                  <td className="builder-operator-cell">{row.operador}</td>
+                  <td className="builder-operator-cell">{renderOperator(row)}</td>
 
-                  {columns.map((column) => {
-                    const price = getPrice(row, column.id);
+                  {renderPriceOrNotesCells(row)}
 
-                    return (
-                      <td key={column.id}>
-                        <span className="builder-price-cell-readonly">
-                          {formatMoney(price?.precioConfirmado ?? price?.precioCotizado, monedaCodigo)}
-                        </span>
-                      </td>
-                    );
-                  })}
+                  <td>{renderActions(row)}</td>
                 </tr>
               );
             })}

@@ -3,6 +3,11 @@
 import { AppError } from "@/core/errors/app-error";
 import type {
   ConfirmacionBuilderCreateInput,
+  ConfirmacionBuilderFreeNotesInput,
+  ConfirmacionBuilderHotelPreviewInput,
+  ConfirmacionBuilderMoveItemInput,
+  ConfirmacionBuilderNoteInput,
+  ConfirmacionBuilderPriceInput,
   ConfirmacionPassengerInput
 } from "@/modules/expediente/confirmacion-builder/dto/confirmacion-builder.dto";
 import {
@@ -114,6 +119,78 @@ export class ConfirmacionBuilderService {
     }
 
     return deleted;
+  }
+
+  async updateItemPrices(itemId: number, data: ConfirmacionBuilderPriceInput) {
+    const record = await confirmacionBuilderRepository.updateItemPrices(itemId, data);
+
+    if (!record) {
+      throw new AppError(404, "RESERVA_ITEM_NOT_FOUND", "Servicio de confirmación no encontrado");
+    }
+
+    return toConfirmacionBuilderDetail(record);
+  }
+
+  async updateItemNotes(itemId: number, data: ConfirmacionBuilderNoteInput) {
+    const record = await confirmacionBuilderRepository.updateItemNotes(itemId, data);
+
+    if (!record) {
+      throw new AppError(404, "RESERVA_ITEM_NOT_FOUND", "Servicio de confirmación no encontrado");
+    }
+
+    return toConfirmacionBuilderDetail(record);
+  }
+
+  async updateItemHotels(itemId: number, data: ConfirmacionBuilderHotelPreviewInput) {
+    const record = await confirmacionBuilderRepository.updateItemHotels(itemId, data);
+
+    if (!record) {
+      throw new AppError(404, "RESERVA_ITEM_NOT_FOUND", "Servicio de confirmación no encontrado");
+    }
+
+    if (record === "ITEM_NOT_ACCOMMODATION") {
+      throw new AppError(
+        400,
+        "RESERVA_ITEM_NOT_ACCOMMODATION",
+        "Solo los servicios de alojamiento pueden tener hoteles previstos"
+      );
+    }
+
+    return toConfirmacionBuilderDetail(record);
+  }
+
+  async moveItem(itemId: number, data: ConfirmacionBuilderMoveItemInput) {
+    const record = await confirmacionBuilderRepository.moveItem(itemId, data);
+
+    if (!record) {
+      throw new AppError(404, "RESERVA_ITEM_NOT_FOUND", "Servicio de confirmación no encontrado");
+    }
+
+    return toConfirmacionBuilderDetail(record);
+  }
+
+  async deleteItem(itemId: number) {
+    const record = await confirmacionBuilderRepository.deleteItem(itemId);
+
+    if (!record) {
+      throw new AppError(404, "RESERVA_ITEM_NOT_FOUND", "Servicio de confirmación no encontrado");
+    }
+
+    return toConfirmacionBuilderDetail(record);
+  }
+
+  async updateFreeNotes(versionId: number, data: ConfirmacionBuilderFreeNotesInput) {
+    const record = await confirmacionBuilderRepository.updateFreeNotes(versionId, data);
+
+    if (!record) {
+      throw new AppError(
+        404,
+        "CONFIRMACION_NOT_FOUND",
+        "No existe confirmación creada para esta cotización"
+      );
+    }
+
+    return toConfirmacionBuilderDetail(record);
   }
 
   async deleteByVersionId(versionId: number, userId?: number) {

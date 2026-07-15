@@ -20,6 +20,10 @@ const confirmacionPassengerParamsSchema = z.object({
   passengerId: z.coerce.number().int().positive()
 });
 
+const confirmacionBuilderItemParamsSchema = z.object({
+  itemId: z.coerce.number().int().positive()
+});
+
 export const confirmacionBuilderRouter = Router();
 
 confirmacionBuilderRouter.use(authenticate);
@@ -28,6 +32,42 @@ confirmacionBuilderRouter.get(
   "/versiones/:versionId/opciones",
   validateParams(confirmacionBuilderParamsSchema),
   asyncHandler(confirmacionBuilderController.getOptionsByVersionId)
+);
+
+confirmacionBuilderRouter.put(
+  "/versiones/:versionId/free-notes",
+  validateParams(confirmacionBuilderParamsSchema),
+  asyncHandler(confirmacionBuilderController.updateFreeNotes)
+);
+
+confirmacionBuilderRouter.put(
+  "/items/:itemId/prices",
+  validateParams(confirmacionBuilderItemParamsSchema),
+  asyncHandler(confirmacionBuilderController.updateItemPrices)
+);
+
+confirmacionBuilderRouter.put(
+  "/items/:itemId/notes",
+  validateParams(confirmacionBuilderItemParamsSchema),
+  asyncHandler(confirmacionBuilderController.updateItemNotes)
+);
+
+confirmacionBuilderRouter.put(
+  "/items/:itemId/hotels",
+  validateParams(confirmacionBuilderItemParamsSchema),
+  asyncHandler(confirmacionBuilderController.updateItemHotels)
+);
+
+confirmacionBuilderRouter.put(
+  "/items/:itemId/move",
+  validateParams(confirmacionBuilderItemParamsSchema),
+  asyncHandler(confirmacionBuilderController.moveItem)
+);
+
+confirmacionBuilderRouter.delete(
+  "/items/:itemId",
+  validateParams(confirmacionBuilderItemParamsSchema),
+  asyncHandler(confirmacionBuilderController.deleteItem)
 );
 
 confirmacionBuilderRouter.post(
