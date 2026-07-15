@@ -199,7 +199,7 @@ function formatPriceValue(value: number | null | undefined) {
     return "-";
   }
 
-  return `$ ${value.toFixed(2)}`;
+  return `${value.toFixed(2)} USD`;
 }
 
 function getInitialPriceFormula(value: number | null | undefined) {

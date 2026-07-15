@@ -237,7 +237,7 @@ function formatPriceValue(value: number | null | undefined, monedaCodigo: string
     return "-";
   }
 
-  return `$ ${value.toFixed(2)} ${monedaCodigo}`;
+  return `${value.toFixed(2)} ${monedaCodigo}`;
 }
 
 function getInitialPriceFormula(value: number | null | undefined) {
