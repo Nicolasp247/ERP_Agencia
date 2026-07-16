@@ -6,6 +6,7 @@ import { Link, useParams } from "react-router-dom";
 
 import { PageSection } from "@/components/PageSection";
 import {
+  createConfirmacionBuilderItem,
   createConfirmacionPassenger,
   deleteConfirmacionBuilderItem,
   deleteConfirmacionPassenger,
@@ -16,16 +17,19 @@ import {
   updateConfirmacionBuilderItemNotes,
   updateConfirmacionBuilderItemPrices,
   updateConfirmacionPassenger,
-  createConfirmacionBuilderItem,
-  type ConfirmacionBuilderItemFormValues,
+  upsertConfirmacionBuilderItemPurchase,
   type ConfirmacionBuilderFreeNotesFormValues,
   type ConfirmacionBuilderHotelPreviewFormValues,
+  type ConfirmacionBuilderItemFormValues,
   type ConfirmacionBuilderMoveItemValues,
   type ConfirmacionBuilderNoteFormValues,
   type ConfirmacionBuilderPriceFormValues,
   type ConfirmacionPassenger,
-  type ConfirmacionPassengerValues
-} from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";import { ConfirmacionBuilderTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionBuilderTable";
+  type ConfirmacionPassengerValues,
+  type ConfirmacionPurchaseFormValues
+} from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";
+
+import { ConfirmacionBuilderTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionBuilderTable";
 import { ConfirmacionOptionalServicesTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionOptionalServicesTable";
 import { ConfirmacionPassengerModal } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionPassengerModal";
 import { ConfirmacionPassengersTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionPassengersTable";
@@ -129,6 +133,27 @@ export function ConfirmacionBuilderPage() {
     }) => updateConfirmacionBuilderItemNotes(itemId, values),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKey, data);
+    }
+  });
+
+  const updateItemPurchaseMutation = useMutation({
+    mutationFn: ({
+      itemId,
+      values
+    }: {
+      itemId: number;
+      values: ConfirmacionPurchaseFormValues;
+    }) =>
+      upsertConfirmacionBuilderItemPurchase(
+        itemId,
+        values
+      ),
+
+    onSuccess: (data) => {
+      queryClient.setQueryData(
+        queryKey,
+        data
+      );
     }
   });
 
@@ -368,7 +393,21 @@ export function ConfirmacionBuilderPage() {
           columns={mainColumns}
           rows={builder.rows ?? []}
           monedaCodigo={monedaCodigo}
-          onDeleteItem={(itemId) => deleteItemMutation.mutate(itemId)}
+          isSavingPurchase={
+            updateItemPurchaseMutation.isPending
+          }
+          onUpdateItemPurchase={(
+            itemId,
+            values
+          ) =>
+            updateItemPurchaseMutation.mutate({
+              itemId,
+              values
+            })
+          }
+          onDeleteItem={(itemId) =>
+            deleteItemMutation.mutate(itemId)
+          }
           onMoveItem={(itemId, direction) =>
             moveItemMutation.mutate({
               itemId,

@@ -94,13 +94,43 @@ export const includeConfirmacionBuilderDetail = {
           vuelo: true
         }
       },
+      
       cotizacionItemOrigen: {
         include: {
           alojamientoDetalle: true
         }
       },
+
+      compraProveedorItem: {
+        include: {
+          compraProveedor: {
+            include: {
+              proveedor: {
+                select: {
+                  id: true,
+                  codigo: true,
+                  nombreComercial: true
+                }
+              },
+
+              pagos: {
+                orderBy: [
+                  {
+                    fechaPago: "asc"
+                  },
+                  {
+                    id: "asc"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+
       preciosSeleccionados: true,
       hotelesPrevistosSeleccionados: true
+
     },
     orderBy: [
       {

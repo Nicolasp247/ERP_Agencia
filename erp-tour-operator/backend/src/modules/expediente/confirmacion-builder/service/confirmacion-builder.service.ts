@@ -6,6 +6,7 @@ import type {
   ConfirmacionBuilderFreeNotesInput,
   ConfirmacionBuilderHotelPreviewInput,
   ConfirmacionBuilderMoveItemInput,
+  ConfirmacionBuilderPurchaseInput,
   ConfirmacionBuilderNoteInput,
   ConfirmacionBuilderItemInput,
   ConfirmacionBuilderPriceInput,
@@ -42,6 +43,37 @@ export class ConfirmacionBuilderService {
         404,
         "SERVICIO_NOT_FOUND",
         "Servicio no encontrado o inactivo"
+      );
+    }
+
+    return toConfirmacionBuilderDetail(record);
+  }
+
+  async upsertItemPurchase(
+    itemId: number,
+    data: ConfirmacionBuilderPurchaseInput,
+    userId?: number
+  ) {
+    const record =
+      await confirmacionBuilderRepository.upsertItemPurchase(
+        itemId,
+        data,
+        userId ?? null
+      );
+
+    if (!record) {
+      throw new AppError(
+        404,
+        "RESERVA_ITEM_NOT_FOUND",
+        "Servicio de confirmación no encontrado"
+      );
+    }
+
+    if (record === "PROVEEDOR_NOT_FOUND") {
+      throw new AppError(
+        400,
+        "RESERVA_ITEM_WITHOUT_PROVIDER",
+        "El servicio debe tener un proveedor para registrar su confirmación administrativa"
       );
     }
 

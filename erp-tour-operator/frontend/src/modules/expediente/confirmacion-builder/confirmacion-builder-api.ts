@@ -257,3 +257,86 @@ export async function createConfirmacionBuilderItem(
 
   return response.data.data;
 }
+
+export type ConfirmacionPurchaseStatus =
+  | "PENDIENTE"
+  | "SOLICITADA"
+  | "CONFIRMADA"
+  | "CANCELADA";
+
+export type ConfirmacionPurchaseCancellationType =
+  | "GRATUITA_HASTA"
+  | "NO_REEMBOLSABLE"
+  | "CONDICIONES_ESPECIALES";
+
+export type ConfirmacionPurchasePayment = {
+  id: number;
+  fechaPago: string | null;
+  valorMonedaOriginal: number | null;
+  monedaOriginal: string;
+  valorCop: number | null;
+  tasaCambio: number | null;
+  metodoPago: string | null;
+  referenciaPago: string | null;
+  nota: string | null;
+  estado: "REGISTRADO" | "ANULADO";
+};
+
+export type ConfirmacionPurchase = {
+  id: number;
+  codigoInterno: string;
+
+  proveedor: {
+    id: number;
+    codigo: string | null;
+    nombreComercial: string | null;
+  } | null;
+
+  codigoConfirmacionProveedor: string | null;
+  estado: ConfirmacionPurchaseStatus;
+  fechaConfirmacion: string | null;
+
+  tipoCancelacion:
+    | ConfirmacionPurchaseCancellationType
+    | null;
+
+  fechaLimiteCancelacion: string | null;
+  zonaHorariaCancelacion: string | null;
+
+  totalConfirmado: number | null;
+  monedaCodigo: string;
+  notaAdministrativa: string;
+
+  pagos: ConfirmacionPurchasePayment[];
+};
+
+export type ConfirmacionPurchaseFormValues = {
+  estado: ConfirmacionPurchaseStatus;
+  codigoConfirmacionProveedor: string | null;
+  fechaConfirmacion: string | null;
+
+  tipoCancelacion:
+    | ConfirmacionPurchaseCancellationType
+    | null;
+
+  fechaLimiteCancelacion: string | null;
+  zonaHorariaCancelacion: string | null;
+
+  totalConfirmado: number | null;
+  monedaCodigo: string;
+  notaAdministrativa: string | null;
+};
+
+export async function upsertConfirmacionBuilderItemPurchase(
+  itemId: number,
+  values: ConfirmacionPurchaseFormValues
+) {
+  const response = await api.put<
+    ApiResponse<Record<string, unknown>>
+  >(
+    `/confirmacion-builder/items/${itemId}/purchase`,
+    values
+  );
+
+  return response.data.data;
+}

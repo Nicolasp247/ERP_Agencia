@@ -53,6 +53,14 @@ confirmacionBuilderRouter.put(
 );
 
 confirmacionBuilderRouter.put(
+  "/items/:itemId/purchase",
+  validateParams(confirmacionBuilderItemParamsSchema),
+  asyncHandler(
+    confirmacionBuilderController.upsertItemPurchase
+  )
+);
+
+confirmacionBuilderRouter.put(
   "/items/:itemId/hotels",
   validateParams(confirmacionBuilderItemParamsSchema),
   asyncHandler(confirmacionBuilderController.updateItemHotels)

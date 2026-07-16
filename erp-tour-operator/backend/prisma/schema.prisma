@@ -37,6 +37,24 @@ enum ReservaItemEstado {
   NO_APLICA
 }
 
+enum CompraProveedorEstado {
+  PENDIENTE
+  SOLICITADA
+  CONFIRMADA
+  CANCELADA
+}
+
+enum CompraProveedorCancelacionTipo {
+  GRATUITA_HASTA
+  NO_REEMBOLSABLE
+  CONDICIONES_ESPECIALES
+}
+
+enum CompraProveedorPagoEstado {
+  REGISTRADO
+  ANULADO
+}
+
 enum ReservaConfirmacionVersionEstado {
   ACTIVA
   REEMPLAZADA
@@ -110,42 +128,42 @@ enum CotizacionColumnaUnidad {
 }
 
 model Continente {
-  id                    Int          @id @default(autoincrement())
-  nombre                String       @db.VarChar(100)
-  paises                Pais[]
-  cotizacionesDestino   Cotizacion[]
-  expedientesDestino    Expediente[]
-  reservasDestino       Reserva[]
+  id                  Int          @id @default(autoincrement())
+  nombre              String       @db.VarChar(100)
+  paises              Pais[]
+  cotizacionesDestino Cotizacion[]
+  expedientesDestino  Expediente[]
+  reservasDestino     Reserva[]
 
   @@map("continente")
 }
 
 model Pais {
-  id               Int             @id @default(autoincrement())
-  nombre           String          @db.VarChar(100)
-  idContinente     Int?            @map("id_continente")
-  continente       Continente?     @relation(fields: [idContinente], references: [id])
-  ciudades         Ciudad[]
-  clienteAgentes   ClienteAgente[]
-  clientes         Cliente[]
-  proveedores      Proveedor[]
+  id             Int             @id @default(autoincrement())
+  nombre         String          @db.VarChar(100)
+  idContinente   Int?            @map("id_continente")
+  continente     Continente?     @relation(fields: [idContinente], references: [id])
+  ciudades       Ciudad[]
+  clienteAgentes ClienteAgente[]
+  clientes       Cliente[]
+  proveedores    Proveedor[]
 
   @@index([idContinente], map: "id_continente")
   @@map("pais")
 }
 
 model Ciudad {
-  id                 Int                  @id @default(autoincrement())
-  nombre             String               @db.VarChar(100)
-  idPais             Int?                 @map("id_pais")
-  pais               Pais?                @relation(fields: [idPais], references: [id])
+  id                 Int                    @id @default(autoincrement())
+  nombre             String                 @db.VarChar(100)
+  idPais             Int?                   @map("id_pais")
+  pais               Pais?                  @relation(fields: [idPais], references: [id])
   clienteAgentes     ClienteAgente[]
   clientes           Cliente[]
   proveedores        Proveedor[]
   servicios          Servicio[]
   hoteles            Hotel[]
   tarifasAlojamiento AlojamientoPrecioMes[]
-  puntosTraslado PuntoTraslado[]
+  puntosTraslado     PuntoTraslado[]
 
   @@index([idPais], map: "id_pais")
   @@map("ciudad")
@@ -159,23 +177,23 @@ model PuntoTraslado {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  ciudad                Ciudad    @relation(fields: [idCiudad], references: [id])
-  trasladosComoOrigen   Traslado[] @relation("TrasladoOrigen")
-  trasladosComoDestino  Traslado[] @relation("TrasladoDestino")
+  ciudad               Ciudad     @relation(fields: [idCiudad], references: [id])
+  trasladosComoOrigen  Traslado[] @relation("TrasladoOrigen")
+  trasladosComoDestino Traslado[] @relation("TrasladoDestino")
 
-  @@index([idCiudad], map: "idx_punto_traslado_ciudad")
   @@unique([idCiudad, nombre], map: "uq_punto_traslado_ciudad_nombre")
+  @@index([idCiudad], map: "idx_punto_traslado_ciudad")
   @@map("punto_traslado")
 }
 
 model TipoServicio {
-  id           Int        @id @default(autoincrement())
-  nombre       String     @unique @db.VarChar(50)
-  codigo       String?    @unique @db.VarChar(20)
-  activo       Boolean    @default(true)
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  servicios    Servicio[]
+  id        Int        @id @default(autoincrement())
+  nombre    String     @unique @db.VarChar(50)
+  codigo    String?    @unique @db.VarChar(20)
+  activo    Boolean    @default(true)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  servicios Servicio[]
 
   @@map("tiposervicio")
 }
@@ -203,29 +221,29 @@ model TipoGuia {
 }
 
 model ClienteAgente {
-  id                Int          @id @default(autoincrement())
-  codigo            String       @unique(map: "uq_cliente_agente_codigo") @db.VarChar(20)
-  razonSocial       String       @map("razon_social") @db.VarChar(150)
-  nombreContacto    String?      @map("nombre_contacto") @db.VarChar(120)
-  telefono          String?      @db.VarChar(40)
-  email             String?      @db.VarChar(120)
-  direccion         String?      @db.VarChar(255)
-  nit               String?      @db.VarChar(60)
-  idPais            Int?         @map("id_pais")
-  idCiudad          Int?         @map("id_ciudad")
-  comisionBasePct   Decimal?     @map("comision_base_pct") @db.Decimal(5, 2)
-  activo            Boolean      @default(true)
-  createdAt         DateTime     @default(now()) @map("created_at")
-  updatedAt         DateTime     @updatedAt @map("updated_at")
-  createdBy         Int?         @map("created_by")
-  updatedBy         Int?         @map("updated_by")
-  pais              Pais?        @relation(fields: [idPais], references: [id])
-  ciudad            Ciudad?      @relation(fields: [idCiudad], references: [id])
-  clientes          Cliente[]
-  expedientes       Expediente[]
-  cotizaciones      Cotizacion[]
-  reservas          Reserva[]
-  comisiones        ClienteAgenteComision[]
+  id              Int                     @id @default(autoincrement())
+  codigo          String                  @unique(map: "uq_cliente_agente_codigo") @db.VarChar(20)
+  razonSocial     String                  @map("razon_social") @db.VarChar(150)
+  nombreContacto  String?                 @map("nombre_contacto") @db.VarChar(120)
+  telefono        String?                 @db.VarChar(40)
+  email           String?                 @db.VarChar(120)
+  direccion       String?                 @db.VarChar(255)
+  nit             String?                 @db.VarChar(60)
+  idPais          Int?                    @map("id_pais")
+  idCiudad        Int?                    @map("id_ciudad")
+  comisionBasePct Decimal?                @map("comision_base_pct") @db.Decimal(5, 2)
+  activo          Boolean                 @default(true)
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+  createdBy       Int?                    @map("created_by")
+  updatedBy       Int?                    @map("updated_by")
+  pais            Pais?                   @relation(fields: [idPais], references: [id])
+  ciudad          Ciudad?                 @relation(fields: [idCiudad], references: [id])
+  clientes        Cliente[]
+  expedientes     Expediente[]
+  cotizaciones    Cotizacion[]
+  reservas        Reserva[]
+  comisiones      ClienteAgenteComision[]
 
   @@index([razonSocial], map: "idx_cliente_agente_razon_social")
   @@index([activo], map: "idx_cliente_agente_activo")
@@ -234,19 +252,19 @@ model ClienteAgente {
 }
 
 model ClienteAgenteComision {
-  id                  Int                   @id @default(autoincrement())
-  idClienteAgente     Int                   @map("id_cliente_agente")
-  tipoComision        TipoComisionCotizacion @map("tipo_comision")
+  id              Int                    @id @default(autoincrement())
+  idClienteAgente Int                    @map("id_cliente_agente")
+  tipoComision    TipoComisionCotizacion @map("tipo_comision")
 
-  porcentajeAgente    Decimal               @default(0.00) @map("porcentaje_agente") @db.Decimal(5, 2)
-  porcentajeWtravel   Decimal               @default(0.00) @map("porcentaje_wtravel") @db.Decimal(5, 2)
-  porcentajeBancario  Decimal               @default(0.00) @map("porcentaje_bancario") @db.Decimal(5, 2)
+  porcentajeAgente   Decimal @default(0.00) @map("porcentaje_agente") @db.Decimal(5, 2)
+  porcentajeWtravel  Decimal @default(0.00) @map("porcentaje_wtravel") @db.Decimal(5, 2)
+  porcentajeBancario Decimal @default(0.00) @map("porcentaje_bancario") @db.Decimal(5, 2)
 
-  activo              Boolean               @default(true)
-  createdAt           DateTime              @default(now()) @map("created_at")
-  updatedAt           DateTime              @updatedAt @map("updated_at")
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  clienteAgente       ClienteAgente         @relation(fields: [idClienteAgente], references: [id], onDelete: Cascade)
+  clienteAgente ClienteAgente @relation(fields: [idClienteAgente], references: [id], onDelete: Cascade)
 
   @@unique([idClienteAgente, tipoComision], map: "uq_cliente_agente_comision_tipo")
   @@index([idClienteAgente], map: "idx_cliente_agente_comision_agente")
@@ -254,21 +272,21 @@ model ClienteAgenteComision {
 }
 
 model CotizacionComision {
-  id                  Int                   @id @default(autoincrement())
-  idCotizacion         Int                   @map("id_cotizacion")
-  tipoComision         TipoComisionCotizacion @map("tipo_comision")
+  id           Int                    @id @default(autoincrement())
+  idCotizacion Int                    @map("id_cotizacion")
+  tipoComision TipoComisionCotizacion @map("tipo_comision")
 
-  porcentajeAgente     Decimal               @default(0.00) @map("porcentaje_agente") @db.Decimal(5, 2)
-  porcentajeWtravel    Decimal               @default(0.00) @map("porcentaje_wtravel") @db.Decimal(5, 2)
-  porcentajeBancario   Decimal               @default(0.00) @map("porcentaje_bancario") @db.Decimal(5, 2)
+  porcentajeAgente   Decimal @default(0.00) @map("porcentaje_agente") @db.Decimal(5, 2)
+  porcentajeWtravel  Decimal @default(0.00) @map("porcentaje_wtravel") @db.Decimal(5, 2)
+  porcentajeBancario Decimal @default(0.00) @map("porcentaje_bancario") @db.Decimal(5, 2)
 
-  porcentajeTotal      Decimal               @default(0.00) @map("porcentaje_total") @db.Decimal(5, 2)
-  factorVenta          Decimal               @default(1.0000) @map("factor_venta") @db.Decimal(8, 4)
+  porcentajeTotal Decimal @default(0.00) @map("porcentaje_total") @db.Decimal(5, 2)
+  factorVenta     Decimal @default(1.0000) @map("factor_venta") @db.Decimal(8, 4)
 
-  createdAt            DateTime              @default(now()) @map("created_at")
-  updatedAt            DateTime              @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  cotizacion           Cotizacion            @relation(fields: [idCotizacion], references: [id], onDelete: Cascade)
+  cotizacion Cotizacion @relation(fields: [idCotizacion], references: [id], onDelete: Cascade)
 
   @@unique([idCotizacion, tipoComision], map: "uq_cotizacion_comision_tipo")
   @@index([idCotizacion], map: "idx_cotizacion_comision_cotizacion")
@@ -276,25 +294,25 @@ model CotizacionComision {
 }
 
 model Cliente {
-  id                 Int             @id @default(autoincrement())
-  idClienteAgente    Int?            @map("id_cliente_agente")
-  nombreCompleto     String          @map("nombre_completo") @db.VarChar(150)
-  telefono           String?         @db.VarChar(40)
-  email              String?         @db.VarChar(120)
-  idPais             Int?            @map("id_pais")
-  idCiudad           Int?            @map("id_ciudad")
-  observaciones      String?         @db.Text
-  activo             Boolean         @default(true)
-  createdAt          DateTime        @default(now()) @map("created_at")
-  updatedAt          DateTime        @updatedAt @map("updated_at")
-  createdBy          Int?            @map("created_by")
-  updatedBy          Int?            @map("updated_by")
-  clienteAgente      ClienteAgente?  @relation(fields: [idClienteAgente], references: [id])
-  pais               Pais?           @relation(fields: [idPais], references: [id])
-  ciudad             Ciudad?         @relation(fields: [idCiudad], references: [id])
-  expedientes        Expediente[]
-  cotizaciones       Cotizacion[]
-  reservas           Reserva[]
+  id              Int            @id @default(autoincrement())
+  idClienteAgente Int?           @map("id_cliente_agente")
+  nombreCompleto  String         @map("nombre_completo") @db.VarChar(150)
+  telefono        String?        @db.VarChar(40)
+  email           String?        @db.VarChar(120)
+  idPais          Int?           @map("id_pais")
+  idCiudad        Int?           @map("id_ciudad")
+  observaciones   String?        @db.Text
+  activo          Boolean        @default(true)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  createdBy       Int?           @map("created_by")
+  updatedBy       Int?           @map("updated_by")
+  clienteAgente   ClienteAgente? @relation(fields: [idClienteAgente], references: [id])
+  pais            Pais?          @relation(fields: [idPais], references: [id])
+  ciudad          Ciudad?        @relation(fields: [idCiudad], references: [id])
+  expedientes     Expediente[]
+  cotizaciones    Cotizacion[]
+  reservas        Reserva[]
 
   @@index([nombreCompleto], map: "idx_cliente_nombre")
   @@index([idClienteAgente], map: "idx_cliente_agente")
@@ -303,22 +321,23 @@ model Cliente {
 }
 
 model Proveedor {
-  id                 Int                  @id @default(autoincrement())
-  codigo             String?              @unique @db.VarChar(10)
-  nombreComercial    String               @map("nombre_comercial") @db.VarChar(100)
-  sitioWeb           String?              @map("sitio_web") @db.VarChar(255)
-  idPais             Int?                 @map("id_pais")
-  idCiudad           Int?                 @map("id_ciudad")
-  observaciones      String?              @db.Text
-  activo             Boolean              @default(true)
-  createdAt          DateTime             @default(now()) @map("created_at")
-  updatedAt          DateTime             @updatedAt @map("updated_at")
-  createdBy          Int?                 @map("created_by")
-  updatedBy          Int?                 @map("updated_by")
-  pais               Pais?                @relation(fields: [idPais], references: [id])
-  ciudad             Ciudad?              @relation(fields: [idCiudad], references: [id])
-  contactos          ProveedorContacto[]
-  servicios          Servicio[]
+  id               Int                 @id @default(autoincrement())
+  codigo           String?             @unique @db.VarChar(10)
+  nombreComercial  String              @map("nombre_comercial") @db.VarChar(100)
+  sitioWeb         String?             @map("sitio_web") @db.VarChar(255)
+  idPais           Int?                @map("id_pais")
+  idCiudad         Int?                @map("id_ciudad")
+  observaciones    String?             @db.Text
+  activo           Boolean             @default(true)
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  createdBy        Int?                @map("created_by")
+  updatedBy        Int?                @map("updated_by")
+  pais             Pais?               @relation(fields: [idPais], references: [id])
+  ciudad           Ciudad?             @relation(fields: [idCiudad], references: [id])
+  contactos        ProveedorContacto[]
+  servicios        Servicio[]
+  comprasProveedor CompraProveedor[]
 
   @@index([nombreComercial], map: "idx_proveedor_nombre")
   @@index([activo], map: "idx_proveedor_activo")
@@ -326,49 +345,49 @@ model Proveedor {
 }
 
 model ProveedorContacto {
-  id               Int        @id @default(autoincrement())
-  idProveedor      Int        @map("id_proveedor")
-  nombreContacto   String?    @map("nombre_contacto") @db.VarChar(120)
-  email            String     @db.VarChar(120)
-  telefono         String?    @db.VarChar(40)
-  cargo            String?    @db.VarChar(80)
-  principal        Boolean    @default(false)
-  activo           Boolean    @default(true)
-  createdAt        DateTime   @default(now()) @map("created_at")
-  updatedAt        DateTime   @updatedAt @map("updated_at")
-  proveedor        Proveedor  @relation(fields: [idProveedor], references: [id])
+  id             Int       @id @default(autoincrement())
+  idProveedor    Int       @map("id_proveedor")
+  nombreContacto String?   @map("nombre_contacto") @db.VarChar(120)
+  email          String    @db.VarChar(120)
+  telefono       String?   @db.VarChar(40)
+  cargo          String?   @db.VarChar(80)
+  principal      Boolean   @default(false)
+  activo         Boolean   @default(true)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  proveedor      Proveedor @relation(fields: [idProveedor], references: [id])
 
   @@index([idProveedor], map: "idx_proveedor_contacto_proveedor")
   @@map("proveedor_contacto")
 }
 
 model Servicio {
-  id                 Int                  @id @default(autoincrement())
-  idTipo             Int                  @map("id_tipo")
-  idProveedor        Int                  @map("id_proveedor")
-  idCiudad           Int                  @map("id_ciudad")
-  nombreWtravel      String               @unique @map("nombre_wtravel") @db.VarChar(120)
-  tiempoServicio     String?              @map("tiempo_servicio") @db.VarChar(50)
-  privado            Boolean              @default(false)
-  descripcion        String?              @db.Text
-  linkReserva        String?              @map("link_reserva") @db.VarChar(255)
-  activo             Boolean              @default(true)
-  createdAt          DateTime             @default(now()) @map("created_at")
-  updatedAt          DateTime             @updatedAt @map("updated_at")
-  createdBy          Int?                 @map("created_by")
-  updatedBy          Int?                 @map("updated_by")
-  tipo               TipoServicio         @relation(fields: [idTipo], references: [id])
-  proveedor          Proveedor            @relation(fields: [idProveedor], references: [id])
-  ciudad             Ciudad               @relation(fields: [idCiudad], references: [id])
-  alojamiento        Alojamiento?
-  tour               Tour?
-  traslado           Traslado?
-  tren               Tren?
-  vuelo              Vuelo?
-  tarifas            ServicioPrecioMes[]
-  tarifasRango       ServicioTarifa[]
-  cotizacionItems    CotizacionItem[]
-  reservaItems       ReservaItem[]
+  id              Int                 @id @default(autoincrement())
+  idTipo          Int                 @map("id_tipo")
+  idProveedor     Int                 @map("id_proveedor")
+  idCiudad        Int                 @map("id_ciudad")
+  nombreWtravel   String              @unique @map("nombre_wtravel") @db.VarChar(120)
+  tiempoServicio  String?             @map("tiempo_servicio") @db.VarChar(50)
+  privado         Boolean             @default(false)
+  descripcion     String?             @db.Text
+  linkReserva     String?             @map("link_reserva") @db.VarChar(255)
+  activo          Boolean             @default(true)
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  createdBy       Int?                @map("created_by")
+  updatedBy       Int?                @map("updated_by")
+  tipo            TipoServicio        @relation(fields: [idTipo], references: [id])
+  proveedor       Proveedor           @relation(fields: [idProveedor], references: [id])
+  ciudad          Ciudad              @relation(fields: [idCiudad], references: [id])
+  alojamiento     Alojamiento?
+  tour            Tour?
+  traslado        Traslado?
+  tren            Tren?
+  vuelo           Vuelo?
+  tarifas         ServicioPrecioMes[]
+  tarifasRango    ServicioTarifa[]
+  cotizacionItems CotizacionItem[]
+  reservaItems    ReservaItem[]
 
   @@index([activo, idTipo, idCiudad], map: "idx_servicio_activo_tipo_ciudad")
   @@index([idProveedor, idTipo], map: "idx_servicio_proveedor_tipo")
@@ -391,13 +410,13 @@ model Alojamiento {
 }
 
 model Tour {
-  id           Int       @id @default(autoincrement())
-  idServicio    Int       @unique(map: "uq_tour_servicio") @map("id_servicio")
-  idTipoGuia    Int       @map("id_tipo_guia")
-  idIdioma      Int       @map("id_idioma")
-  servicio      Servicio  @relation(fields: [idServicio], references: [id])
-  tipoGuia      TipoGuia  @relation(fields: [idTipoGuia], references: [id])
-  idioma        Idioma    @relation(fields: [idIdioma], references: [id])
+  id         Int      @id @default(autoincrement())
+  idServicio Int      @unique(map: "uq_tour_servicio") @map("id_servicio")
+  idTipoGuia Int      @map("id_tipo_guia")
+  idIdioma   Int      @map("id_idioma")
+  servicio   Servicio @relation(fields: [idServicio], references: [id])
+  tipoGuia   TipoGuia @relation(fields: [idTipoGuia], references: [id])
+  idioma     Idioma   @relation(fields: [idIdioma], references: [id])
 
   @@index([idTipoGuia], map: "idx_tour_tipo_guia")
   @@index([idIdioma], map: "idx_tour_idioma")
@@ -405,16 +424,16 @@ model Tour {
 }
 
 model Traslado {
-  id         Int            @id @default(autoincrement())
-  idServicio Int            @unique(map: "uq_traslado_servicio") @map("id_servicio")
-  idOrigen   Int            @map("id_origen")
-  idDestino  Int            @map("id_destino")
-  escalas    Int            @default(0)
-  vehiculo   String?        @db.VarChar(100)
+  id         Int     @id @default(autoincrement())
+  idServicio Int     @unique(map: "uq_traslado_servicio") @map("id_servicio")
+  idOrigen   Int     @map("id_origen")
+  idDestino  Int     @map("id_destino")
+  escalas    Int     @default(0)
+  vehiculo   String? @db.VarChar(100)
 
-  servicio   Servicio       @relation(fields: [idServicio], references: [id])
-  origen     PuntoTraslado  @relation("TrasladoOrigen", fields: [idOrigen], references: [id])
-  destino    PuntoTraslado  @relation("TrasladoDestino", fields: [idDestino], references: [id])
+  servicio Servicio      @relation(fields: [idServicio], references: [id])
+  origen   PuntoTraslado @relation("TrasladoOrigen", fields: [idOrigen], references: [id])
+  destino  PuntoTraslado @relation("TrasladoDestino", fields: [idDestino], references: [id])
 
   @@index([idOrigen], map: "idx_traslado_origen")
   @@index([idDestino], map: "idx_traslado_destino")
@@ -422,71 +441,71 @@ model Traslado {
 }
 
 model Tren {
-  id               Int       @id @default(autoincrement())
-  idServicio       Int       @unique(map: "uq_tren_servicio") @map("id_servicio")
-  origen           String    @db.VarChar(100)
-  destino          String    @db.VarChar(100)
-  escalas          Int       @default(0)
-  clase            String    @db.VarChar(50)
-  sillasReservadas Boolean   @default(true) @map("sillas_reservadas")
-  equipaje         String?   @db.VarChar(255)
-  servicio         Servicio  @relation(fields: [idServicio], references: [id])
+  id               Int      @id @default(autoincrement())
+  idServicio       Int      @unique(map: "uq_tren_servicio") @map("id_servicio")
+  origen           String   @db.VarChar(100)
+  destino          String   @db.VarChar(100)
+  escalas          Int      @default(0)
+  clase            String   @db.VarChar(50)
+  sillasReservadas Boolean  @default(true) @map("sillas_reservadas")
+  equipaje         String?  @db.VarChar(255)
+  servicio         Servicio @relation(fields: [idServicio], references: [id])
 
   @@map("tren")
 }
 
 model Vuelo {
-  id             Int       @id @default(autoincrement())
-  idServicio     Int       @unique(map: "uq_vuelo_servicio") @map("id_servicio")
-  origen         String    @db.VarChar(100)
-  destino        String    @db.VarChar(100)
-  escalas        Int       @default(0)
-  clase          String    @db.VarChar(50)
-  equipaje       String    @db.VarChar(100)
-  servicio       Servicio  @relation(fields: [idServicio], references: [id])
+  id         Int      @id @default(autoincrement())
+  idServicio Int      @unique(map: "uq_vuelo_servicio") @map("id_servicio")
+  origen     String   @db.VarChar(100)
+  destino    String   @db.VarChar(100)
+  escalas    Int      @default(0)
+  clase      String   @db.VarChar(50)
+  equipaje   String   @db.VarChar(100)
+  servicio   Servicio @relation(fields: [idServicio], references: [id])
 
   @@map("vuelo")
 }
 
 model ServicioPrecioMes {
-  idServicio        Int        @map("id_servicio")
-  anio              Int
-  mes               Int
-  tipoHabitacion    String     @map("tipo_habitacion") @db.Char(3)
-  precioUsd         Decimal?   @map("precio_usd") @db.Decimal(10, 2)
-  monedaCodigo      String     @default("USD") @map("moneda_codigo") @db.Char(3)
-  activo            Boolean    @default(true)
-  createdAt         DateTime   @default(now()) @map("created_at")
-  updatedAt         DateTime   @updatedAt @map("updated_at")
-  servicio          Servicio   @relation(fields: [idServicio], references: [id])
+  idServicio     Int      @map("id_servicio")
+  anio           Int
+  mes            Int
+  tipoHabitacion String   @map("tipo_habitacion") @db.Char(3)
+  precioUsd      Decimal? @map("precio_usd") @db.Decimal(10, 2)
+  monedaCodigo   String   @default("USD") @map("moneda_codigo") @db.Char(3)
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  servicio       Servicio @relation(fields: [idServicio], references: [id])
 
   @@id([idServicio, anio, mes, tipoHabitacion])
   @@map("servicio_precio_mes")
 }
 
 model ServicioTarifa {
-  id             Int      @id @default(autoincrement())
-  idServicio     Int      @map("id_servicio")
+  id         Int @id @default(autoincrement())
+  idServicio Int @map("id_servicio")
 
-  fechaDesde     DateTime @map("fecha_desde") @db.Date
-  fechaHasta     DateTime @map("fecha_hasta") @db.Date
+  fechaDesde DateTime @map("fecha_desde") @db.Date
+  fechaHasta DateTime @map("fecha_hasta") @db.Date
 
-  tipoTarifa     String   @map("tipo_tarifa") @db.VarChar(50)
-  unidadPrecio   String   @map("unidad_precio") @db.VarChar(50)
+  tipoTarifa   String @map("tipo_tarifa") @db.VarChar(50)
+  unidadPrecio String @map("unidad_precio") @db.VarChar(50)
 
-  precioNeto     Decimal  @map("precio_neto") @db.Decimal(12, 2)
-  monedaCodigo   String   @default("USD") @map("moneda_codigo") @db.Char(3)
+  precioNeto   Decimal @map("precio_neto") @db.Decimal(12, 2)
+  monedaCodigo String  @default("USD") @map("moneda_codigo") @db.Char(3)
 
-  activo         Boolean  @default(true)
-  observaciones  String?  @db.Text
-  fechaRevision  DateTime? @map("fecha_revision") @db.Date
+  activo        Boolean   @default(true)
+  observaciones String?   @db.Text
+  fechaRevision DateTime? @map("fecha_revision") @db.Date
 
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  createdBy      Int?     @map("created_by")
-  updatedBy      Int?     @map("updated_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy Int?     @map("created_by")
+  updatedBy Int?     @map("updated_by")
 
-  servicio       Servicio @relation(fields: [idServicio], references: [id])
+  servicio Servicio @relation(fields: [idServicio], references: [id])
 
   @@index([idServicio], map: "idx_servicio_tarifa_servicio")
   @@index([fechaDesde, fechaHasta], map: "idx_servicio_tarifa_rango")
@@ -495,19 +514,19 @@ model ServicioTarifa {
 }
 
 model Hotel {
-  id               Int               @id @default(autoincrement())
-  nombre           String            @db.VarChar(100)
-  estrellas        Decimal           @db.Decimal(2, 1)
-  bookingScore     Decimal?          @map("booking_score") @db.Decimal(2, 1)
-  tripadvisorScore Decimal?          @map("tripadvisor_score") @db.Decimal(2, 1)
-  descripcion      String?           @db.Text
-  linkBooking      String?           @map("link_booking") @db.VarChar(255)
-  linkTripadvisor  String?           @map("link_tripadvisor") @db.VarChar(255)
-  idCiudad         Int               @map("id_ciudad")
-  activo           Boolean           @default(true)
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
-  ciudad           Ciudad            @relation(fields: [idCiudad], references: [id])
+  id               Int              @id @default(autoincrement())
+  nombre           String           @db.VarChar(100)
+  estrellas        Decimal          @db.Decimal(2, 1)
+  bookingScore     Decimal?         @map("booking_score") @db.Decimal(2, 1)
+  tripadvisorScore Decimal?         @map("tripadvisor_score") @db.Decimal(2, 1)
+  descripcion      String?          @db.Text
+  linkBooking      String?          @map("link_booking") @db.VarChar(255)
+  linkTripadvisor  String?          @map("link_tripadvisor") @db.VarChar(255)
+  idCiudad         Int              @map("id_ciudad")
+  activo           Boolean          @default(true)
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  ciudad           Ciudad           @relation(fields: [idCiudad], references: [id])
   tarifas          HotelPrecioMes[]
 
   @@index([idCiudad], map: "fk_hotel_ciudad")
@@ -515,19 +534,19 @@ model Hotel {
 }
 
 model HotelPrecioMes {
-  hotelId           Int       @map("hotel_id")
-  categoriaHotel    String    @map("categoria_hotel") @db.VarChar(40)
-  categoriaHab      String    @map("categoria_hab") @db.VarChar(40)
-  regimen           String    @db.VarChar(40)
-  anio              Int
-  mes               Int
-  tipoHabitacion    String    @map("tipo_habitacion") @db.Char(3)
-  precioUsd         Decimal?  @map("precio_usd") @db.Decimal(10, 2)
-  monedaCodigo      String    @default("USD") @map("moneda_codigo") @db.Char(3)
-  activo            Boolean   @default(true)
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  hotel             Hotel     @relation(fields: [hotelId], references: [id])
+  hotelId        Int      @map("hotel_id")
+  categoriaHotel String   @map("categoria_hotel") @db.VarChar(40)
+  categoriaHab   String   @map("categoria_hab") @db.VarChar(40)
+  regimen        String   @db.VarChar(40)
+  anio           Int
+  mes            Int
+  tipoHabitacion String   @map("tipo_habitacion") @db.Char(3)
+  precioUsd      Decimal? @map("precio_usd") @db.Decimal(10, 2)
+  monedaCodigo   String   @default("USD") @map("moneda_codigo") @db.Char(3)
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  hotel          Hotel    @relation(fields: [hotelId], references: [id])
 
   @@id([hotelId, categoriaHotel, categoriaHab, regimen, anio, mes, tipoHabitacion])
   @@index([hotelId, anio, mes], map: "idx_hotel_precio_lookup")
@@ -550,7 +569,7 @@ model AlojamientoPrecioMes {
   createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(3)
 
-  ciudad         Ciudad   @relation(fields: [idCiudad], references: [id])
+  ciudad Ciudad @relation(fields: [idCiudad], references: [id])
 
   @@unique([idCiudad, categoria, categoriaHab, regimen, fechaDesde, fechaHasta, tipoHabitacion], map: "uq_alojamiento_precio_fecha")
   @@index([idCiudad], map: "idx_aloj_precio_id_ciudad")
@@ -560,12 +579,12 @@ model AlojamientoPrecioMes {
 }
 
 model CatalogoOpcion {
-  id           Int       @id @default(autoincrement())
-  grupo        String    @db.VarChar(60)
-  valor        String    @db.VarChar(120)
-  activo       Boolean   @default(true)
-  createdAt    DateTime  @default(now()) @map("created_at")
-  valorNorm    String    @map("valor_norm") @db.VarChar(255)
+  id        Int      @id @default(autoincrement())
+  grupo     String   @db.VarChar(60)
+  valor     String   @db.VarChar(120)
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  valorNorm String   @map("valor_norm") @db.VarChar(255)
 
   @@unique([grupo, valor], map: "uq_grupo_valor")
   @@unique([grupo, valorNorm], map: "uq_catalogo_grupo_valor_norm")
@@ -574,13 +593,13 @@ model CatalogoOpcion {
 }
 
 model Usuario {
-  id             Int             @id @default(autoincrement())
-  nombre         String          @db.VarChar(120)
-  email          String          @unique @db.VarChar(120)
-  passwordHash   String          @map("password_hash") @db.VarChar(255)
-  activo         Boolean         @default(true)
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
+  id             Int                            @id @default(autoincrement())
+  nombre         String                         @db.VarChar(120)
+  email          String                         @unique @db.VarChar(120)
+  passwordHash   String                         @map("password_hash") @db.VarChar(255)
+  activo         Boolean                        @default(true)
+  createdAt      DateTime                       @default(now()) @map("created_at")
+  updatedAt      DateTime                       @updatedAt @map("updated_at")
   roles          UsuarioRol[]
   auditoria      AuditoriaEvento[]
   confirmaciones ReservaConfirmacionComercial[] @relation("ConfirmacionUsuario")
@@ -589,59 +608,59 @@ model Usuario {
 }
 
 model Rol {
-  id          Int         @id @default(autoincrement())
-  codigo      String      @unique @db.VarChar(50)
-  nombre      String      @db.VarChar(100)
-  usuarios    UsuarioRol[]
+  id       Int          @id @default(autoincrement())
+  codigo   String       @unique @db.VarChar(50)
+  nombre   String       @db.VarChar(100)
+  usuarios UsuarioRol[]
 
   @@map("rol")
 }
 
 model UsuarioRol {
-  idUsuario    Int       @map("id_usuario")
-  idRol        Int       @map("id_rol")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  usuario      Usuario   @relation(fields: [idUsuario], references: [id])
-  rol          Rol       @relation(fields: [idRol], references: [id])
+  idUsuario Int      @map("id_usuario")
+  idRol     Int      @map("id_rol")
+  createdAt DateTime @default(now()) @map("created_at")
+  usuario   Usuario  @relation(fields: [idUsuario], references: [id])
+  rol       Rol      @relation(fields: [idRol], references: [id])
 
   @@id([idUsuario, idRol])
   @@map("usuario_rol")
 }
 
 model Expediente {
-  id                    Int               @id @default(autoincrement())
-  codigo                String            @unique(map: "uq_expediente_codigo") @db.VarChar(50)
+  id     Int    @id @default(autoincrement())
+  codigo String @unique(map: "uq_expediente_codigo") @db.VarChar(50)
 
-  idCliente             Int               @map("id_cliente")
-  idClienteAgente       Int?              @map("id_cliente_agente")
+  idCliente       Int  @map("id_cliente")
+  idClienteAgente Int? @map("id_cliente_agente")
 
-  nombreExpediente      String            @map("nombre_expediente") @db.VarChar(255)
-  estado                ExpedienteEstado  @default(COTIZACION)
+  nombreExpediente String           @map("nombre_expediente") @db.VarChar(255)
+  estado           ExpedienteEstado @default(COTIZACION)
 
-  fechaViajePrincipal   DateTime          @map("fecha_viaje_principal") @db.Date
-  idDestinoPrincipal    Int?              @map("id_destino_principal")
+  fechaViajePrincipal DateTime @map("fecha_viaje_principal") @db.Date
+  idDestinoPrincipal  Int?     @map("id_destino_principal")
 
-  monedaCodigo          String            @default("USD") @map("moneda_codigo") @db.Char(3)
+  monedaCodigo String @default("USD") @map("moneda_codigo") @db.Char(3)
 
-  adultos65             Int               @default(0) @map("adultos_65")
-  adultos1964           Int               @default(0) @map("adultos_19_64")
-  jovenes1218           Int               @default(0) @map("jovenes_12_18")
-  ninos311              Int               @default(0) @map("ninos_3_11")
-  infantes02            Int               @default(0) @map("infantes_0_2")
-  totalPasajeros        Int               @map("total_pasajeros")
+  adultos65      Int @default(0) @map("adultos_65")
+  adultos1964    Int @default(0) @map("adultos_19_64")
+  jovenes1218    Int @default(0) @map("jovenes_12_18")
+  ninos311       Int @default(0) @map("ninos_3_11")
+  infantes02     Int @default(0) @map("infantes_0_2")
+  totalPasajeros Int @map("total_pasajeros")
 
-  observacionesCliente  String?           @map("observaciones_cliente") @db.Text
-  notasInternas         String?           @map("notas_internas") @db.Text
+  observacionesCliente String? @map("observaciones_cliente") @db.Text
+  notasInternas        String? @map("notas_internas") @db.Text
 
-  createdAt             DateTime          @default(now()) @map("created_at")
-  updatedAt             DateTime          @updatedAt @map("updated_at")
-  createdBy             Int?              @map("created_by")
-  updatedBy             Int?              @map("updated_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy Int?     @map("created_by")
+  updatedBy Int?     @map("updated_by")
 
-  cliente               Cliente           @relation(fields: [idCliente], references: [id])
-  clienteAgente         ClienteAgente?    @relation(fields: [idClienteAgente], references: [id])
-  destinoPrincipal      Continente?       @relation(fields: [idDestinoPrincipal], references: [id])
-  cotizaciones          Cotizacion[]
+  cliente          Cliente        @relation(fields: [idCliente], references: [id])
+  clienteAgente    ClienteAgente? @relation(fields: [idClienteAgente], references: [id])
+  destinoPrincipal Continente?    @relation(fields: [idDestinoPrincipal], references: [id])
+  cotizaciones     Cotizacion[]
 
   @@index([estado], map: "idx_expediente_estado")
   @@index([idCliente], map: "idx_expediente_cliente")
@@ -651,47 +670,47 @@ model Expediente {
 }
 
 model Cotizacion {
-  id                    Int                @id @default(autoincrement())
-  idExpediente          Int                     @map("id_expediente")
-  versionNumero         Int                     @default(1) @map("version_numero")
-  versionCodigo         String                  @default("A") @map("version_codigo") @db.VarChar(10)
-  estadoVersion         CotizacionVersionEstado @default(BORRADOR) @map("estado_version")
-  origenCotizacionId    Int?                    @map("origen_cotizacion_id")
-  idCliente             Int                @map("id_cliente")
-  idClienteAgente       Int?               @map("id_cliente_agente")
-  nombreCotizacion      String             @map("nombre_cotizacion") @db.VarChar(255)
-  estado                CotizacionEstado   @default(ACTIVA)
-  fechaViajePrincipal   DateTime           @map("fecha_viaje_principal") @db.Date
-  idDestinoPrincipal    Int?               @map("id_destino_principal")
-  categoriaViaje        String?            @map("categoria_viaje") @db.VarChar(50)
-  monedaCodigo          String             @default("USD") @map("moneda_codigo") @db.Char(3)
-  presupuestoEstimado   Decimal?           @map("presupuesto_estimado") @db.Decimal(12, 2)
-  presupuestoTipo       PresupuestoTipo?   @map("presupuesto_tipo")
-  comisionPctAplicada   Decimal?           @map("comision_pct_aplicada") @db.Decimal(5, 2)
-  margenAplicadoValor   Decimal?           @map("margen_aplicado_valor") @db.Decimal(12, 2)
-  adultos65             Int                @default(0) @map("adultos_65")
-  adultos1964           Int                @default(0) @map("adultos_19_64")
-  jovenes1218           Int                @default(0) @map("jovenes_12_18")
-  ninos311              Int                @default(0) @map("ninos_3_11")
-  infantes02            Int                @default(0) @map("infantes_0_2")
-  totalPasajeros        Int                @map("total_pasajeros")
-  nota                  String?            @db.Text
-  fechaDescartada       DateTime?          @map("fecha_descartada")
-  fechaConvertidaReserva DateTime?         @map("fecha_convertida_reserva")
-  createdAt             DateTime           @default(now()) @map("created_at")
-  updatedAt             DateTime           @updatedAt @map("updated_at")
-  createdBy             Int?               @map("created_by")
-  updatedBy             Int?               @map("updated_by")
-  cliente               Cliente                 @relation(fields: [idCliente], references: [id])
-  clienteAgente         ClienteAgente?          @relation(fields: [idClienteAgente], references: [id])
-  destinoPrincipal      Continente?             @relation(fields: [idDestinoPrincipal], references: [id])
-  expediente            Expediente              @relation(fields: [idExpediente], references: [id])
-  origenCotizacion      Cotizacion?             @relation("CotizacionOrigen", fields: [origenCotizacionId], references: [id])
-  cotizacionesDerivadas Cotizacion[]            @relation("CotizacionOrigen")
-  items                 CotizacionItem[]
-  columnas              CotizacionColumna[]
-  comisiones            CotizacionComision[]
-  reserva               Reserva?
+  id                     Int                     @id @default(autoincrement())
+  idExpediente           Int                     @map("id_expediente")
+  versionNumero          Int                     @default(1) @map("version_numero")
+  versionCodigo          String                  @default("A") @map("version_codigo") @db.VarChar(10)
+  estadoVersion          CotizacionVersionEstado @default(BORRADOR) @map("estado_version")
+  origenCotizacionId     Int?                    @map("origen_cotizacion_id")
+  idCliente              Int                     @map("id_cliente")
+  idClienteAgente        Int?                    @map("id_cliente_agente")
+  nombreCotizacion       String                  @map("nombre_cotizacion") @db.VarChar(255)
+  estado                 CotizacionEstado        @default(ACTIVA)
+  fechaViajePrincipal    DateTime                @map("fecha_viaje_principal") @db.Date
+  idDestinoPrincipal     Int?                    @map("id_destino_principal")
+  categoriaViaje         String?                 @map("categoria_viaje") @db.VarChar(50)
+  monedaCodigo           String                  @default("USD") @map("moneda_codigo") @db.Char(3)
+  presupuestoEstimado    Decimal?                @map("presupuesto_estimado") @db.Decimal(12, 2)
+  presupuestoTipo        PresupuestoTipo?        @map("presupuesto_tipo")
+  comisionPctAplicada    Decimal?                @map("comision_pct_aplicada") @db.Decimal(5, 2)
+  margenAplicadoValor    Decimal?                @map("margen_aplicado_valor") @db.Decimal(12, 2)
+  adultos65              Int                     @default(0) @map("adultos_65")
+  adultos1964            Int                     @default(0) @map("adultos_19_64")
+  jovenes1218            Int                     @default(0) @map("jovenes_12_18")
+  ninos311               Int                     @default(0) @map("ninos_3_11")
+  infantes02             Int                     @default(0) @map("infantes_0_2")
+  totalPasajeros         Int                     @map("total_pasajeros")
+  nota                   String?                 @db.Text
+  fechaDescartada        DateTime?               @map("fecha_descartada")
+  fechaConvertidaReserva DateTime?               @map("fecha_convertida_reserva")
+  createdAt              DateTime                @default(now()) @map("created_at")
+  updatedAt              DateTime                @updatedAt @map("updated_at")
+  createdBy              Int?                    @map("created_by")
+  updatedBy              Int?                    @map("updated_by")
+  cliente                Cliente                 @relation(fields: [idCliente], references: [id])
+  clienteAgente          ClienteAgente?          @relation(fields: [idClienteAgente], references: [id])
+  destinoPrincipal       Continente?             @relation(fields: [idDestinoPrincipal], references: [id])
+  expediente             Expediente              @relation(fields: [idExpediente], references: [id])
+  origenCotizacion       Cotizacion?             @relation("CotizacionOrigen", fields: [origenCotizacionId], references: [id])
+  cotizacionesDerivadas  Cotizacion[]            @relation("CotizacionOrigen")
+  items                  CotizacionItem[]
+  columnas               CotizacionColumna[]
+  comisiones             CotizacionComision[]
+  reserva                Reserva?
 
   @@index([estado, fechaViajePrincipal], map: "idx_cotizacion_estado_fecha")
   @@index([idCliente], map: "idx_cotizacion_cliente")
@@ -704,31 +723,31 @@ model Cotizacion {
 }
 
 model CotizacionItem {
-  id                   Int         @id @default(autoincrement())
-  idCotizacion         Int         @map("id_cotizacion")
-  idServicio           Int         @map("id_servicio")
-  fechaServicio        DateTime    @map("fecha_servicio") @db.Date
-  ordenDia             Int         @map("orden_dia")
-  esOpcional           Boolean     @default(false) @map("es_opcional")
-  operadorMostrado     String?     @map("operador_mostrado") @db.VarChar(150)
-  linkOperador         String?     @map("link_operador") @db.VarChar(255)
-  tituloOverride       String?     @map("titulo_override") @db.VarChar(255)
-  claseOverride        String?     @map("clase_override") @db.VarChar(50)
-  idiomaOverride       String?     @map("idioma_override") @db.VarChar(50)
-  notaLinea            String?     @map("nota_linea") @db.Text
-  precioSugerido       Decimal?    @map("precio_sugerido") @db.Decimal(12, 2)
-  precioVenta          Decimal?    @map("precio_venta") @db.Decimal(12, 2)
-  precioMonedaCodigo   String      @default("USD") @map("precio_moneda_codigo") @db.Char(3)
-  precioEditadoManual  Boolean     @default(false) @map("precio_editado_manual")
-  createdAt            DateTime    @default(now()) @map("created_at")
-  updatedAt            DateTime    @updatedAt @map("updated_at")
+  id                  Int      @id @default(autoincrement())
+  idCotizacion        Int      @map("id_cotizacion")
+  idServicio          Int      @map("id_servicio")
+  fechaServicio       DateTime @map("fecha_servicio") @db.Date
+  ordenDia            Int      @map("orden_dia")
+  esOpcional          Boolean  @default(false) @map("es_opcional")
+  operadorMostrado    String?  @map("operador_mostrado") @db.VarChar(150)
+  linkOperador        String?  @map("link_operador") @db.VarChar(255)
+  tituloOverride      String?  @map("titulo_override") @db.VarChar(255)
+  claseOverride       String?  @map("clase_override") @db.VarChar(50)
+  idiomaOverride      String?  @map("idioma_override") @db.VarChar(50)
+  notaLinea           String?  @map("nota_linea") @db.Text
+  precioSugerido      Decimal? @map("precio_sugerido") @db.Decimal(12, 2)
+  precioVenta         Decimal? @map("precio_venta") @db.Decimal(12, 2)
+  precioMonedaCodigo  String   @default("USD") @map("precio_moneda_codigo") @db.Char(3)
+  precioEditadoManual Boolean  @default(false) @map("precio_editado_manual")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
-  cotizacion           Cotizacion            @relation(fields: [idCotizacion], references: [id])
-  servicio             Servicio                      @relation(fields: [idServicio], references: [id])
-  precios              CotizacionItemPrecio[]
-  alojamientoDetalle   CotizacionItemAlojamiento?
-  hotelesPrevistos     CotizacionItemHotelPrevisto[]
-  reservaItems         ReservaItem[]
+  cotizacion         Cotizacion                    @relation(fields: [idCotizacion], references: [id])
+  servicio           Servicio                      @relation(fields: [idServicio], references: [id])
+  precios            CotizacionItemPrecio[]
+  alojamientoDetalle CotizacionItemAlojamiento?
+  hotelesPrevistos   CotizacionItemHotelPrevisto[]
+  reservaItems       ReservaItem[]
 
   @@index([idCotizacion, ordenDia], map: "idx_cot_item_cotizacion_orden")
   @@index([fechaServicio], map: "idx_cot_item_fecha")
@@ -737,44 +756,44 @@ model CotizacionItem {
 }
 
 model CotizacionItemAlojamiento {
-  id               Int      @id @default(autoincrement())
-  idCotizacionItem Int      @unique(map: "uq_cotizacion_item_alojamiento_item") @map("id_cotizacion_item")
+  id               Int @id @default(autoincrement())
+  idCotizacionItem Int @unique(map: "uq_cotizacion_item_alojamiento_item") @map("id_cotizacion_item")
 
-  noches           Int
-  habitaciones     Int      @default(1)
-  categoriaHab     String   @default("ESTANDAR") @map("categoria_hab") @db.VarChar(40)
-  regimen          String   @default("ALOJAMIENTO_DESAYUNO") @db.VarChar(40)
+  noches       Int
+  habitaciones Int    @default(1)
+  categoriaHab String @default("ESTANDAR") @map("categoria_hab") @db.VarChar(40)
+  regimen      String @default("ALOJAMIENTO_DESAYUNO") @db.VarChar(40)
 
-  cotizacionItem   CotizacionItem @relation(fields: [idCotizacionItem], references: [id], onDelete: Cascade)
+  cotizacionItem CotizacionItem @relation(fields: [idCotizacionItem], references: [id], onDelete: Cascade)
 
   @@map("cotizacion_item_alojamiento")
 }
 
 model CotizacionColumna {
-  id            Int                     @id @default(autoincrement())
-  idCotizacion  Int                     @map("id_cotizacion")
+  id           Int @id @default(autoincrement())
+  idCotizacion Int @map("id_cotizacion")
 
-  grupo         String                  @db.VarChar(80)
-  nombre        String                  @db.VarChar(80)
+  grupo  String @db.VarChar(80)
+  nombre String @db.VarChar(80)
 
-  tipo          CotizacionColumnaTipo   @default(TERRESTRE)
-  unidad        CotizacionColumnaUnidad @default(POR_PERSONA)
+  tipo   CotizacionColumnaTipo   @default(TERRESTRE)
+  unidad CotizacionColumnaUnidad @default(POR_PERSONA)
 
-  multiplicador Int                     @default(1)
+  multiplicador Int @default(1)
 
-  precioMostradoFormula String?         @map("precio_mostrado_formula") @db.VarChar(120)
-  precioMostradoValor   Decimal?        @map("precio_mostrado_valor") @db.Decimal(10, 2)
+  precioMostradoFormula String?  @map("precio_mostrado_formula") @db.VarChar(120)
+  precioMostradoValor   Decimal? @map("precio_mostrado_valor") @db.Decimal(10, 2)
 
-  orden         Int                     @default(1)
-  activo        Boolean                 @default(true)
+  orden  Int     @default(1)
+  activo Boolean @default(true)
 
-  createdAt     DateTime                @default(now()) @map("created_at")
-  updatedAt     DateTime                @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  cotizacion        Cotizacion                    @relation(fields: [idCotizacion], references: [id])
-  precios           CotizacionItemPrecio[]
-  hotelesPrevistos  CotizacionItemHotelPrevisto[]
-  reservasSeleccionadas          ReservaColumnaSeleccionada[]
+  cotizacion            Cotizacion                    @relation(fields: [idCotizacion], references: [id])
+  precios               CotizacionItemPrecio[]
+  hotelesPrevistos      CotizacionItemHotelPrevisto[]
+  reservasSeleccionadas ReservaColumnaSeleccionada[]
 
   @@index([idCotizacion], map: "idx_cotizacion_columna_cotizacion")
   @@index([idCotizacion, orden], map: "idx_cotizacion_columna_orden")
@@ -782,22 +801,22 @@ model CotizacionColumna {
 }
 
 model CotizacionItemPrecio {
-  id                    Int                @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  idCotizacionItem       Int                @map("id_cotizacion_item")
-  idCotizacionColumna    Int                @map("id_cotizacion_columna")
+  idCotizacionItem    Int @map("id_cotizacion_item")
+  idCotizacionColumna Int @map("id_cotizacion_columna")
 
-  precioNeto             Decimal?           @map("precio_neto") @db.Decimal(12, 2)
-  monedaCodigo           String             @default("USD") @map("moneda_codigo") @db.Char(3)
+  precioNeto   Decimal? @map("precio_neto") @db.Decimal(12, 2)
+  monedaCodigo String   @default("USD") @map("moneda_codigo") @db.Char(3)
 
-  precioEditadoManual    Boolean            @default(false) @map("precio_editado_manual")
-  observaciones          String?            @db.Text
+  precioEditadoManual Boolean @default(false) @map("precio_editado_manual")
+  observaciones       String? @db.Text
 
-  createdAt              DateTime           @default(now()) @map("created_at")
-  updatedAt              DateTime           @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  cotizacionItem         CotizacionItem     @relation(fields: [idCotizacionItem], references: [id])
-  cotizacionColumna      CotizacionColumna  @relation(fields: [idCotizacionColumna], references: [id])
+  cotizacionItem    CotizacionItem    @relation(fields: [idCotizacionItem], references: [id])
+  cotizacionColumna CotizacionColumna @relation(fields: [idCotizacionColumna], references: [id])
 
   @@unique([idCotizacionItem, idCotizacionColumna], map: "uq_cot_item_precio_item_columna")
   @@index([idCotizacionItem], map: "idx_cot_item_precio_item")
@@ -806,17 +825,17 @@ model CotizacionItemPrecio {
 }
 
 model CotizacionItemHotelPrevisto {
-  id                   Int      @id @default(autoincrement())
-  idCotizacionItem     Int      @map("id_cotizacion_item")
-  idCotizacionColumna  Int      @map("id_cotizacion_columna")
+  id                  Int @id @default(autoincrement())
+  idCotizacionItem    Int @map("id_cotizacion_item")
+  idCotizacionColumna Int @map("id_cotizacion_columna")
 
-  textoHotel           String   @map("texto_hotel") @db.Text
+  textoHotel String @map("texto_hotel") @db.Text
 
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  cotizacionItem        CotizacionItem    @relation(fields: [idCotizacionItem], references: [id], onDelete: Cascade)
-  cotizacionColumna     CotizacionColumna @relation(fields: [idCotizacionColumna], references: [id], onDelete: Cascade)
+  cotizacionItem    CotizacionItem    @relation(fields: [idCotizacionItem], references: [id], onDelete: Cascade)
+  cotizacionColumna CotizacionColumna @relation(fields: [idCotizacionColumna], references: [id], onDelete: Cascade)
 
   @@unique([idCotizacionItem, idCotizacionColumna], map: "uq_cot_item_hotel_columna")
   @@index([idCotizacionItem], map: "idx_cot_item_hotel_item")
@@ -825,41 +844,42 @@ model CotizacionItemHotelPrevisto {
 }
 
 model Reserva {
-  id                            Int                          @id @default(autoincrement())
-  idCotizacionOrigen            Int                          @unique(map: "uq_reserva_cotizacion_origen") @map("id_cotizacion_origen")
-  idCliente                     Int                          @map("id_cliente")
-  idClienteAgente               Int?                         @map("id_cliente_agente")
-  codigoReserva                 String                       @unique(map: "uq_reserva_codigo") @map("codigo_reserva") @db.VarChar(50)
-  estado                        ReservaEstado                @default(PENDIENTE)
-  confirmacionComercialEstado   ConfirmacionComercialEstado  @default(NO_CONFIRMADA) @map("confirmacion_comercial_estado")
-  fechaViajePrincipal           DateTime                     @map("fecha_viaje_principal") @db.Date
-  idDestinoPrincipal            Int?                         @map("id_destino_principal")
-  categoriaViaje                String?                      @map("categoria_viaje") @db.VarChar(50)
-  monedaCodigo                  String                       @default("USD") @map("moneda_codigo") @db.Char(3)
-  totalPasajeros                Int                          @map("total_pasajeros")
-  adultos65                     Int                          @default(0) @map("adultos_65")
-  adultos1964                   Int                          @default(0) @map("adultos_19_64")
-  jovenes1218                   Int                          @default(0) @map("jovenes_12_18")
-  ninos311                      Int                          @default(0) @map("ninos_3_11")
-  infantes02                    Int                          @default(0) @map("infantes_0_2")
-  comisionPctSnapshot           Decimal?                     @map("comision_pct_snapshot") @db.Decimal(5, 2)
-  nota                          String?                      @db.Text
-  fechaConversion               DateTime                     @map("fecha_conversion")
-  fechaCancelacion              DateTime?                    @map("fecha_cancelacion")
-  motivoCancelacion             String?                      @map("motivo_cancelacion") @db.VarChar(255)
-  createdAt                     DateTime                     @default(now()) @map("created_at")
-  updatedAt                     DateTime                     @updatedAt @map("updated_at")
-  createdBy                     Int?                         @map("created_by")
-  updatedBy                     Int?                         @map("updated_by")
-  cotizacionOrigen              Cotizacion                   @relation(fields: [idCotizacionOrigen], references: [id])
-  cliente                       Cliente                      @relation(fields: [idCliente], references: [id])
-  clienteAgente                 ClienteAgente?               @relation(fields: [idClienteAgente], references: [id])
-  destinoPrincipal              Continente?                  @relation(fields: [idDestinoPrincipal], references: [id])
-  columnasSeleccionadas         ReservaColumnaSeleccionada[]
-  pasajeros                     ReservaPasajero[]
-  items                         ReservaItem[]
-  confirmacionesComerciales     ReservaConfirmacionComercial[]
-  liquidacion                   LiquidacionReserva?
+  id                          Int                            @id @default(autoincrement())
+  idCotizacionOrigen          Int                            @unique(map: "uq_reserva_cotizacion_origen") @map("id_cotizacion_origen")
+  idCliente                   Int                            @map("id_cliente")
+  idClienteAgente             Int?                           @map("id_cliente_agente")
+  codigoReserva               String                         @unique(map: "uq_reserva_codigo") @map("codigo_reserva") @db.VarChar(50)
+  estado                      ReservaEstado                  @default(PENDIENTE)
+  confirmacionComercialEstado ConfirmacionComercialEstado    @default(NO_CONFIRMADA) @map("confirmacion_comercial_estado")
+  fechaViajePrincipal         DateTime                       @map("fecha_viaje_principal") @db.Date
+  idDestinoPrincipal          Int?                           @map("id_destino_principal")
+  categoriaViaje              String?                        @map("categoria_viaje") @db.VarChar(50)
+  monedaCodigo                String                         @default("USD") @map("moneda_codigo") @db.Char(3)
+  totalPasajeros              Int                            @map("total_pasajeros")
+  adultos65                   Int                            @default(0) @map("adultos_65")
+  adultos1964                 Int                            @default(0) @map("adultos_19_64")
+  jovenes1218                 Int                            @default(0) @map("jovenes_12_18")
+  ninos311                    Int                            @default(0) @map("ninos_3_11")
+  infantes02                  Int                            @default(0) @map("infantes_0_2")
+  comisionPctSnapshot         Decimal?                       @map("comision_pct_snapshot") @db.Decimal(5, 2)
+  nota                        String?                        @db.Text
+  fechaConversion             DateTime                       @map("fecha_conversion")
+  fechaCancelacion            DateTime?                      @map("fecha_cancelacion")
+  motivoCancelacion           String?                        @map("motivo_cancelacion") @db.VarChar(255)
+  createdAt                   DateTime                       @default(now()) @map("created_at")
+  updatedAt                   DateTime                       @updatedAt @map("updated_at")
+  createdBy                   Int?                           @map("created_by")
+  updatedBy                   Int?                           @map("updated_by")
+  cotizacionOrigen            Cotizacion                     @relation(fields: [idCotizacionOrigen], references: [id])
+  cliente                     Cliente                        @relation(fields: [idCliente], references: [id])
+  clienteAgente               ClienteAgente?                 @relation(fields: [idClienteAgente], references: [id])
+  destinoPrincipal            Continente?                    @relation(fields: [idDestinoPrincipal], references: [id])
+  columnasSeleccionadas       ReservaColumnaSeleccionada[]
+  pasajeros                   ReservaPasajero[]
+  items                       ReservaItem[]
+  confirmacionesComerciales   ReservaConfirmacionComercial[]
+  comprasProveedor            CompraProveedor[]
+  liquidacion                 LiquidacionReserva?
 
   @@index([estado], map: "idx_reserva_estado")
   @@index([idClienteAgente], map: "idx_reserva_cliente_agente")
@@ -868,57 +888,58 @@ model Reserva {
 }
 
 model ReservaPasajero {
-  id                         Int      @id @default(autoincrement())
-  idReserva                  Int      @map("id_reserva")
-  orden                      Int      @default(1)
+  id        Int @id @default(autoincrement())
+  idReserva Int @map("id_reserva")
+  orden     Int @default(1)
 
-  nombre                     String   @db.VarChar(120)
-  apellidos                  String   @db.VarChar(120)
-  fechaNacimiento            DateTime @map("fecha_nacimiento") @db.Date
+  nombre          String   @db.VarChar(120)
+  apellidos       String   @db.VarChar(120)
+  fechaNacimiento DateTime @map("fecha_nacimiento") @db.Date
 
-  numeroPasaporte            String   @map("numero_pasaporte") @db.VarChar(80)
-  fechaExpedicionPasaporte   DateTime @map("fecha_expedicion_pasaporte") @db.Date
-  fechaVencimientoPasaporte  DateTime @map("fecha_vencimiento_pasaporte") @db.Date
-  nacionalidad               String   @db.VarChar(80)
+  numeroPasaporte           String   @map("numero_pasaporte") @db.VarChar(80)
+  fechaExpedicionPasaporte  DateTime @map("fecha_expedicion_pasaporte") @db.Date
+  fechaVencimientoPasaporte DateTime @map("fecha_vencimiento_pasaporte") @db.Date
+  nacionalidad              String   @db.VarChar(80)
 
-  createdAt                  DateTime @default(now()) @map("created_at")
-  updatedAt                  DateTime @updatedAt @map("updated_at")
-  createdBy                  Int?     @map("created_by")
-  updatedBy                  Int?     @map("updated_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy Int?     @map("created_by")
+  updatedBy Int?     @map("updated_by")
 
-  reserva                    Reserva  @relation(fields: [idReserva], references: [id], onDelete: Cascade)
+  reserva Reserva @relation(fields: [idReserva], references: [id], onDelete: Cascade)
 
   @@index([idReserva, orden], map: "idx_reserva_pasajero_reserva_orden")
   @@map("reserva_pasajero")
 }
 
 model ReservaItem {
-  id                        Int               @id @default(autoincrement())
-  idReserva                 Int               @map("id_reserva")
-  idCotizacionItemOrigen    Int?              @map("id_cotizacion_item_origen")
-  idServicio                Int               @map("id_servicio")
-  fechaServicio             DateTime          @map("fecha_servicio") @db.Date
-  ordenDia                  Int               @map("orden_dia")
-  esOpcional                Boolean           @default(false) @map("es_opcional")
-  tituloSnapshot            String?           @map("titulo_snapshot") @db.VarChar(255)
-  idiomaSnapshot            String?           @map("idioma_snapshot") @db.VarChar(50)
-  claseSnapshot             String?           @map("clase_snapshot") @db.VarChar(50)
-  notaLineaSnapshot         String?           @map("nota_linea_snapshot") @db.Text
-  costoCotizado             Decimal?          @map("costo_cotizado") @db.Decimal(12, 2)
-  costoFinal                Decimal?          @map("costo_final") @db.Decimal(12, 2)
-  monedaCodigo              String            @default("USD") @map("moneda_codigo") @db.Char(3)
-  numeroConfirmacion        String?           @map("numero_confirmacion") @db.VarChar(120)
-  fechaPrimerConfirmacion   DateTime?         @map("fecha_primer_confirmacion")
-  fechaUltimaConfirmacion   DateTime?         @map("fecha_ultima_confirmacion")
-  estadoItem                ReservaItemEstado @default(PENDIENTE) @map("estado_item")
-  createdAt                 DateTime          @default(now()) @map("created_at")
-  updatedAt                 DateTime          @updatedAt @map("updated_at")
-  reserva                   Reserva           @relation(fields: [idReserva], references: [id])
-  cotizacionItemOrigen      CotizacionItem?   @relation(fields: [idCotizacionItemOrigen], references: [id], onDelete: SetNull)
-  servicio                  Servicio          @relation(fields: [idServicio], references: [id])
-  confirmaciones            ReservaConfirmacionComercialItem[]
-  preciosSeleccionados      ReservaItemPrecioSeleccionado[]
-  hotelesPrevistosSeleccionados  ReservaItemHotelPrevistoSeleccionado[]
+  id                            Int                                    @id @default(autoincrement())
+  idReserva                     Int                                    @map("id_reserva")
+  idCotizacionItemOrigen        Int?                                   @map("id_cotizacion_item_origen")
+  idServicio                    Int                                    @map("id_servicio")
+  fechaServicio                 DateTime                               @map("fecha_servicio") @db.Date
+  ordenDia                      Int                                    @map("orden_dia")
+  esOpcional                    Boolean                                @default(false) @map("es_opcional")
+  tituloSnapshot                String?                                @map("titulo_snapshot") @db.VarChar(255)
+  idiomaSnapshot                String?                                @map("idioma_snapshot") @db.VarChar(50)
+  claseSnapshot                 String?                                @map("clase_snapshot") @db.VarChar(50)
+  notaLineaSnapshot             String?                                @map("nota_linea_snapshot") @db.Text
+  costoCotizado                 Decimal?                               @map("costo_cotizado") @db.Decimal(12, 2)
+  costoFinal                    Decimal?                               @map("costo_final") @db.Decimal(12, 2)
+  monedaCodigo                  String                                 @default("USD") @map("moneda_codigo") @db.Char(3)
+  numeroConfirmacion            String?                                @map("numero_confirmacion") @db.VarChar(120)
+  fechaPrimerConfirmacion       DateTime?                              @map("fecha_primer_confirmacion")
+  fechaUltimaConfirmacion       DateTime?                              @map("fecha_ultima_confirmacion")
+  estadoItem                    ReservaItemEstado                      @default(PENDIENTE) @map("estado_item")
+  createdAt                     DateTime                               @default(now()) @map("created_at")
+  updatedAt                     DateTime                               @updatedAt @map("updated_at")
+  reserva                       Reserva                                @relation(fields: [idReserva], references: [id])
+  cotizacionItemOrigen          CotizacionItem?                        @relation(fields: [idCotizacionItemOrigen], references: [id], onDelete: SetNull)
+  servicio                      Servicio                               @relation(fields: [idServicio], references: [id])
+  confirmaciones                ReservaConfirmacionComercialItem[]
+  compraProveedorItem           CompraProveedorItem?
+  preciosSeleccionados          ReservaItemPrecioSeleccionado[]
+  hotelesPrevistosSeleccionados ReservaItemHotelPrevistoSeleccionado[]
 
   @@index([idReserva, ordenDia], map: "idx_res_item_reserva_orden")
   @@index([numeroConfirmacion], map: "idx_res_item_num_confirmacion")
@@ -928,20 +949,100 @@ model ReservaItem {
   @@map("reserva_item")
 }
 
+model CompraProveedor {
+  id          Int @id @default(autoincrement())
+  idReserva   Int @map("id_reserva")
+  idProveedor Int @map("id_proveedor")
+
+  codigoInterno               String  @unique(map: "uq_compra_proveedor_codigo_interno") @map("codigo_interno") @db.VarChar(40)
+  codigoConfirmacionProveedor String? @map("codigo_confirmacion_proveedor") @db.VarChar(120)
+
+  estado                 CompraProveedorEstado           @default(PENDIENTE)
+  fechaConfirmacion      DateTime?                       @map("fecha_confirmacion")
+  tipoCancelacion        CompraProveedorCancelacionTipo? @map("tipo_cancelacion")
+  fechaLimiteCancelacion DateTime?                       @map("fecha_limite_cancelacion")
+  zonaHorariaCancelacion String?                         @map("zona_horaria_cancelacion") @db.VarChar(80)
+
+  totalConfirmado Decimal? @map("total_confirmado") @db.Decimal(12, 2)
+  monedaCodigo    String   @default("USD") @map("moneda_codigo") @db.Char(3)
+
+  notaAdministrativa String? @map("nota_administrativa") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy Int?     @map("created_by")
+  updatedBy Int?     @map("updated_by")
+
+  reserva   Reserva               @relation(fields: [idReserva], references: [id], onDelete: Cascade)
+  proveedor Proveedor             @relation(fields: [idProveedor], references: [id])
+  items     CompraProveedorItem[]
+  pagos     CompraProveedorPago[]
+
+  @@index([idReserva], map: "idx_compra_proveedor_reserva")
+  @@index([idProveedor], map: "idx_compra_proveedor_proveedor")
+  @@index([codigoConfirmacionProveedor], map: "idx_compra_proveedor_confirmacion")
+  @@index([estado], map: "idx_compra_proveedor_estado")
+  @@index([fechaLimiteCancelacion], map: "idx_compra_proveedor_cancelacion")
+  @@map("compra_proveedor")
+}
+
+model CompraProveedorItem {
+  id                Int @id @default(autoincrement())
+  idCompraProveedor Int @map("id_compra_proveedor")
+  idReservaItem     Int @unique(map: "uq_compra_proveedor_item_reserva_item") @map("id_reserva_item")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  compraProveedor CompraProveedor @relation(fields: [idCompraProveedor], references: [id], onDelete: Cascade)
+  reservaItem     ReservaItem     @relation(fields: [idReservaItem], references: [id], onDelete: Cascade)
+
+  @@index([idCompraProveedor], map: "idx_compra_proveedor_item_compra")
+  @@map("compra_proveedor_item")
+}
+
+model CompraProveedorPago {
+  id                Int @id @default(autoincrement())
+  idCompraProveedor Int @map("id_compra_proveedor")
+
+  fechaPago           DateTime @map("fecha_pago") @db.Date
+  valorMonedaOriginal Decimal  @map("valor_moneda_original") @db.Decimal(12, 2)
+  monedaOriginal      String   @map("moneda_original") @db.Char(3)
+
+  valorCop   Decimal? @map("valor_cop") @db.Decimal(14, 2)
+  tasaCambio Decimal? @map("tasa_cambio") @db.Decimal(14, 6)
+
+  metodoPago     String?                   @map("metodo_pago") @db.VarChar(100)
+  referenciaPago String?                   @map("referencia_pago") @db.VarChar(160)
+  nota           String?                   @db.Text
+  estado         CompraProveedorPagoEstado @default(REGISTRADO)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy Int?     @map("created_by")
+  updatedBy Int?     @map("updated_by")
+
+  compraProveedor CompraProveedor @relation(fields: [idCompraProveedor], references: [id], onDelete: Cascade)
+
+  @@index([idCompraProveedor], map: "idx_compra_proveedor_pago_compra")
+  @@index([fechaPago], map: "idx_compra_proveedor_pago_fecha")
+  @@index([estado], map: "idx_compra_proveedor_pago_estado")
+  @@map("compra_proveedor_pago")
+}
+
 model ReservaConfirmacionComercial {
-  id                     Int                               @id @default(autoincrement())
-  idReserva              Int                               @map("id_reserva")
-  version                Int
-  estado                 ReservaConfirmacionVersionEstado  @default(ACTIVA)
-  totalVentaConfirmada   Decimal                           @map("total_venta_confirmada") @db.Decimal(12, 2)
-  monedaCodigo           String                            @default("USD") @map("moneda_codigo") @db.Char(3)
-  observacion            String?                           @db.Text
-  fechaConfirmacion      DateTime                          @map("fecha_confirmacion")
-  confirmedBy            Int?                              @map("confirmed_by")
-  createdAt              DateTime                          @default(now()) @map("created_at")
-  reserva                Reserva                           @relation(fields: [idReserva], references: [id])
-  usuarioConfirmador     Usuario?                          @relation("ConfirmacionUsuario", fields: [confirmedBy], references: [id])
-  items                  ReservaConfirmacionComercialItem[]
+  id                   Int                                @id @default(autoincrement())
+  idReserva            Int                                @map("id_reserva")
+  version              Int
+  estado               ReservaConfirmacionVersionEstado   @default(ACTIVA)
+  totalVentaConfirmada Decimal                            @map("total_venta_confirmada") @db.Decimal(12, 2)
+  monedaCodigo         String                             @default("USD") @map("moneda_codigo") @db.Char(3)
+  observacion          String?                            @db.Text
+  fechaConfirmacion    DateTime                           @map("fecha_confirmacion")
+  confirmedBy          Int?                               @map("confirmed_by")
+  createdAt            DateTime                           @default(now()) @map("created_at")
+  reserva              Reserva                            @relation(fields: [idReserva], references: [id])
+  usuarioConfirmador   Usuario?                           @relation("ConfirmacionUsuario", fields: [confirmedBy], references: [id])
+  items                ReservaConfirmacionComercialItem[]
 
   @@unique([idReserva, version], map: "uq_reserva_confirmacion_version")
   @@index([idReserva, estado], map: "idx_reserva_confirmacion_estado")
@@ -949,34 +1050,34 @@ model ReservaConfirmacionComercial {
 }
 
 model ReservaConfirmacionComercialItem {
-  id                       Int                           @id @default(autoincrement())
-  idConfirmacionComercial  Int                           @map("id_confirmacion_comercial")
-  idReservaItem            Int                           @map("id_reserva_item")
-  precioVentaConfirmado    Decimal                       @map("precio_venta_confirmado") @db.Decimal(12, 2)
-  esOpcionalVendido        Boolean                       @default(false) @map("es_opcional_vendido")
-  confirmacionComercial    ReservaConfirmacionComercial  @relation(fields: [idConfirmacionComercial], references: [id])
-  reservaItem              ReservaItem                   @relation(fields: [idReservaItem], references: [id])
+  id                      Int                          @id @default(autoincrement())
+  idConfirmacionComercial Int                          @map("id_confirmacion_comercial")
+  idReservaItem           Int                          @map("id_reserva_item")
+  precioVentaConfirmado   Decimal                      @map("precio_venta_confirmado") @db.Decimal(12, 2)
+  esOpcionalVendido       Boolean                      @default(false) @map("es_opcional_vendido")
+  confirmacionComercial   ReservaConfirmacionComercial @relation(fields: [idConfirmacionComercial], references: [id])
+  reservaItem             ReservaItem                  @relation(fields: [idReservaItem], references: [id])
 
   @@unique([idConfirmacionComercial, idReservaItem], map: "uq_confirmacion_item_reserva_item")
   @@map("reserva_confirmacion_comercial_item")
 }
 
 model LiquidacionReserva {
-  id                         Int                     @id @default(autoincrement())
-  idReserva                  Int                     @unique(map: "uq_liquidacion_reserva") @map("id_reserva")
-  totalVentaConfirmada       Decimal                 @map("total_venta_confirmada") @db.Decimal(12, 2)
-  totalCostoReal             Decimal                 @map("total_costo_real") @db.Decimal(12, 2)
-  utilidadBrutaTotal         Decimal                 @map("utilidad_bruta_total") @db.Decimal(12, 2)
-  utilidadPorPersona         Decimal?                @map("utilidad_por_persona") @db.Decimal(12, 2)
-  valorAgencia               Decimal?                @map("valor_agencia") @db.Decimal(12, 2)
-  diferenciaCotizadoVsReal   Decimal?                @map("diferencia_cotizado_vs_real") @db.Decimal(12, 2)
-  monedaCodigo               String                  @default("USD") @map("moneda_codigo") @db.Char(3)
-  estadoCierre               LiquidacionEstadoCierre @default(ABIERTA) @map("estado_cierre")
-  fechaCalculo               DateTime                @map("fecha_calculo")
-  fechaCierre                DateTime?               @map("fecha_cierre")
-  createdAt                  DateTime                @default(now()) @map("created_at")
-  updatedAt                  DateTime                @updatedAt @map("updated_at")
-  reserva                    Reserva                 @relation(fields: [idReserva], references: [id])
+  id                       Int                     @id @default(autoincrement())
+  idReserva                Int                     @unique(map: "uq_liquidacion_reserva") @map("id_reserva")
+  totalVentaConfirmada     Decimal                 @map("total_venta_confirmada") @db.Decimal(12, 2)
+  totalCostoReal           Decimal                 @map("total_costo_real") @db.Decimal(12, 2)
+  utilidadBrutaTotal       Decimal                 @map("utilidad_bruta_total") @db.Decimal(12, 2)
+  utilidadPorPersona       Decimal?                @map("utilidad_por_persona") @db.Decimal(12, 2)
+  valorAgencia             Decimal?                @map("valor_agencia") @db.Decimal(12, 2)
+  diferenciaCotizadoVsReal Decimal?                @map("diferencia_cotizado_vs_real") @db.Decimal(12, 2)
+  monedaCodigo             String                  @default("USD") @map("moneda_codigo") @db.Char(3)
+  estadoCierre             LiquidacionEstadoCierre @default(ABIERTA) @map("estado_cierre")
+  fechaCalculo             DateTime                @map("fecha_calculo")
+  fechaCierre              DateTime?               @map("fecha_cierre")
+  createdAt                DateTime                @default(now()) @map("created_at")
+  updatedAt                DateTime                @updatedAt @map("updated_at")
+  reserva                  Reserva                 @relation(fields: [idReserva], references: [id])
 
   @@index([estadoCierre], map: "idx_liquidacion_estado")
   @@index([fechaCalculo], map: "idx_liquidacion_fecha")
@@ -984,15 +1085,15 @@ model LiquidacionReserva {
 }
 
 model AuditoriaEvento {
-  id             Int       @id @default(autoincrement())
-  entidad        String    @db.VarChar(60)
-  entidadId      Int       @map("entidad_id")
-  accion         String    @db.VarChar(60)
-  valorAnterior  Json?     @map("valor_anterior")
-  valorNuevo     Json?     @map("valor_nuevo")
-  fechaEvento    DateTime  @default(now()) @map("fecha_evento")
-  idUsuario      Int?      @map("id_usuario")
-  usuario        Usuario?  @relation(fields: [idUsuario], references: [id])
+  id            Int      @id @default(autoincrement())
+  entidad       String   @db.VarChar(60)
+  entidadId     Int      @map("entidad_id")
+  accion        String   @db.VarChar(60)
+  valorAnterior Json?    @map("valor_anterior")
+  valorNuevo    Json?    @map("valor_nuevo")
+  fechaEvento   DateTime @default(now()) @map("fecha_evento")
+  idUsuario     Int?     @map("id_usuario")
+  usuario       Usuario? @relation(fields: [idUsuario], references: [id])
 
   @@index([entidad, entidadId], map: "idx_auditoria_entidad")
   @@index([fechaEvento], map: "idx_auditoria_fecha")
@@ -1000,29 +1101,29 @@ model AuditoriaEvento {
 }
 
 model ReservaColumnaSeleccionada {
-  id                         Int      @id @default(autoincrement())
-  idReserva                  Int      @map("id_reserva")
-  idCotizacionColumnaOrigen  Int?     @map("id_cotizacion_columna_origen")
+  id                        Int  @id @default(autoincrement())
+  idReserva                 Int  @map("id_reserva")
+  idCotizacionColumnaOrigen Int? @map("id_cotizacion_columna_origen")
 
-  grupoSnapshot              String   @map("grupo_snapshot") @db.VarChar(80)
-  nombreSnapshot             String   @map("nombre_snapshot") @db.VarChar(80)
-  tipoSnapshot               String   @map("tipo_snapshot") @db.VarChar(40)
-  unidadSnapshot             String   @map("unidad_snapshot") @db.VarChar(40)
-  multiplicadorSnapshot      Int      @default(1) @map("multiplicador_snapshot")
+  grupoSnapshot         String @map("grupo_snapshot") @db.VarChar(80)
+  nombreSnapshot        String @map("nombre_snapshot") @db.VarChar(80)
+  tipoSnapshot          String @map("tipo_snapshot") @db.VarChar(40)
+  unidadSnapshot        String @map("unidad_snapshot") @db.VarChar(40)
+  multiplicadorSnapshot Int    @default(1) @map("multiplicador_snapshot")
 
   precioMostradoFormulaSnapshot String?  @map("precio_mostrado_formula_snapshot") @db.VarChar(120)
   precioMostradoValorSnapshot   Decimal? @map("precio_mostrado_valor_snapshot") @db.Decimal(10, 2)
 
-  orden                      Int      @default(1)
+  orden Int @default(1)
 
-  createdAt                  DateTime @default(now()) @map("created_at")
-  updatedAt                  DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  reserva                    Reserva  @relation(fields: [idReserva], references: [id], onDelete: Cascade)
-  cotizacionColumnaOrigen    CotizacionColumna? @relation(fields: [idCotizacionColumnaOrigen], references: [id])
+  reserva                 Reserva            @relation(fields: [idReserva], references: [id], onDelete: Cascade)
+  cotizacionColumnaOrigen CotizacionColumna? @relation(fields: [idCotizacionColumnaOrigen], references: [id])
 
-  precios                    ReservaItemPrecioSeleccionado[]
-  hotelesPrevistos           ReservaItemHotelPrevistoSeleccionado[]
+  precios          ReservaItemPrecioSeleccionado[]
+  hotelesPrevistos ReservaItemHotelPrevistoSeleccionado[]
 
   @@index([idReserva], map: "idx_reserva_columna_reserva")
   @@index([idCotizacionColumnaOrigen], map: "idx_reserva_columna_origen")
@@ -1030,19 +1131,19 @@ model ReservaColumnaSeleccionada {
 }
 
 model ReservaItemPrecioSeleccionado {
-  id                          Int      @id @default(autoincrement())
-  idReservaItem                Int      @map("id_reserva_item")
-  idReservaColumnaSeleccionada Int      @map("id_reserva_columna_seleccionada")
+  id                           Int @id @default(autoincrement())
+  idReservaItem                Int @map("id_reserva_item")
+  idReservaColumnaSeleccionada Int @map("id_reserva_columna_seleccionada")
 
-  precioCotizado               Decimal? @map("precio_cotizado") @db.Decimal(12, 2)
-  precioConfirmado             Decimal? @map("precio_confirmado") @db.Decimal(12, 2)
-  monedaCodigo                 String   @default("USD") @map("moneda_codigo") @db.Char(3)
+  precioCotizado   Decimal? @map("precio_cotizado") @db.Decimal(12, 2)
+  precioConfirmado Decimal? @map("precio_confirmado") @db.Decimal(12, 2)
+  monedaCodigo     String   @default("USD") @map("moneda_codigo") @db.Char(3)
 
-  createdAt                    DateTime @default(now()) @map("created_at")
-  updatedAt                    DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  reservaItem                  ReservaItem @relation(fields: [idReservaItem], references: [id], onDelete: Cascade)
-  reservaColumnaSeleccionada   ReservaColumnaSeleccionada @relation(fields: [idReservaColumnaSeleccionada], references: [id], onDelete: Cascade)
+  reservaItem                ReservaItem                @relation(fields: [idReservaItem], references: [id], onDelete: Cascade)
+  reservaColumnaSeleccionada ReservaColumnaSeleccionada @relation(fields: [idReservaColumnaSeleccionada], references: [id], onDelete: Cascade)
 
   @@unique([idReservaItem, idReservaColumnaSeleccionada], map: "uq_reserva_item_precio_columna")
   @@index([idReservaItem], map: "idx_reserva_item_precio_item")
@@ -1051,17 +1152,17 @@ model ReservaItemPrecioSeleccionado {
 }
 
 model ReservaItemHotelPrevistoSeleccionado {
-  id                          Int      @id @default(autoincrement())
-  idReservaItem                Int      @map("id_reserva_item")
-  idReservaColumnaSeleccionada Int      @map("id_reserva_columna_seleccionada")
+  id                           Int @id @default(autoincrement())
+  idReservaItem                Int @map("id_reserva_item")
+  idReservaColumnaSeleccionada Int @map("id_reserva_columna_seleccionada")
 
-  textoHotel                   String   @map("texto_hotel") @db.Text
+  textoHotel String @map("texto_hotel") @db.Text
 
-  createdAt                    DateTime @default(now()) @map("created_at")
-  updatedAt                    DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  reservaItem                  ReservaItem @relation(fields: [idReservaItem], references: [id], onDelete: Cascade)
-  reservaColumnaSeleccionada   ReservaColumnaSeleccionada @relation(fields: [idReservaColumnaSeleccionada], references: [id], onDelete: Cascade)
+  reservaItem                ReservaItem                @relation(fields: [idReservaItem], references: [id], onDelete: Cascade)
+  reservaColumnaSeleccionada ReservaColumnaSeleccionada @relation(fields: [idReservaColumnaSeleccionada], references: [id], onDelete: Cascade)
 
   @@unique([idReservaItem, idReservaColumnaSeleccionada], map: "uq_reserva_item_hotel_columna")
   @@index([idReservaItem], map: "idx_reserva_item_hotel_item")

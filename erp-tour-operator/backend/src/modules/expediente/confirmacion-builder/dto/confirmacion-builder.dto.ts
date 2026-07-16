@@ -87,6 +87,59 @@ export const confirmacionBuilderItemSchema = z.object({
     .optional()
 });
 
+export const confirmacionBuilderPurchaseSchema = z.object({
+  estado: z.enum([
+    "PENDIENTE",
+    "SOLICITADA",
+    "CONFIRMADA",
+    "CANCELADA"
+  ]),
+
+  codigoConfirmacionProveedor: z
+    .string()
+    .trim()
+    .max(120)
+    .nullable(),
+
+  fechaConfirmacion: dateStringSchema.nullable(),
+
+  tipoCancelacion: z
+    .enum([
+      "GRATUITA_HASTA",
+      "NO_REEMBOLSABLE",
+      "CONDICIONES_ESPECIALES"
+    ])
+    .nullable(),
+
+  fechaLimiteCancelacion: z
+    .string()
+    .datetime({ offset: true })
+    .nullable(),
+
+  zonaHorariaCancelacion: z
+    .string()
+    .trim()
+    .max(80)
+    .nullable(),
+
+  totalConfirmado: z.coerce
+    .number()
+    .min(0)
+    .nullable(),
+
+  monedaCodigo: z
+    .string()
+    .trim()
+    .length(3)
+    .transform((value) => value.toUpperCase()),
+
+  notaAdministrativa: z
+    .string()
+    .trim()
+    .max(10000)
+    .nullable()
+});
+
 export type ConfirmacionBuilderItemInput = z.infer<typeof confirmacionBuilderItemSchema>;
 export type ConfirmacionBuilderPriceInput = z.infer<typeof confirmacionBuilderPriceSchema>;
 export type ConfirmacionBuilderNoteInput = z.infer<typeof confirmacionBuilderNoteSchema>;
@@ -94,3 +147,4 @@ export type ConfirmacionBuilderMoveItemInput = z.infer<typeof confirmacionBuilde
 export type ConfirmacionBuilderHotelPreviewInput = z.infer<typeof confirmacionBuilderHotelPreviewSchema>;
 export type ConfirmacionBuilderFreeNotesInput = z.infer<typeof confirmacionBuilderFreeNotesSchema>;
 export type ConfirmacionPassengerInput = z.infer<typeof confirmacionPassengerSchema>;
+export type ConfirmacionBuilderPurchaseInput = z.infer<typeof confirmacionBuilderPurchaseSchema>;

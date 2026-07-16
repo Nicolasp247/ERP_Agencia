@@ -7,6 +7,7 @@ import type {
   ConfirmacionBuilderMoveItemInput,
   ConfirmacionBuilderItemInput,
   ConfirmacionBuilderNoteInput,
+  ConfirmacionBuilderPurchaseInput,
   ConfirmacionBuilderPriceInput,
   ConfirmacionPassengerInput
 } from "@/modules/expediente/confirmacion-builder/dto/confirmacion-builder.dto";
@@ -15,6 +16,7 @@ import { confirmacionBuilderItemsRepository } from "@/modules/expediente/confirm
 import { confirmacionBuilderLifecycleRepository } from "@/modules/expediente/confirmacion-builder/repository/confirmacion-builder-lifecycle.repository";
 import { confirmacionBuilderPassengersRepository } from "@/modules/expediente/confirmacion-builder/repository/confirmacion-builder-passengers.repository";
 import { confirmacionBuilderReadRepository } from "@/modules/expediente/confirmacion-builder/repository/confirmacion-builder-read.repository";
+import { confirmacionBuilderPurchasesRepository } from "@/modules/expediente/confirmacion-builder/repository/confirmacion-builder-purchases.repository";
 
 export class ConfirmacionBuilderRepository {
   createItem(
@@ -29,6 +31,18 @@ export class ConfirmacionBuilderRepository {
     );
   }
   
+  upsertItemPurchase(
+    itemId: number,
+    data: ConfirmacionBuilderPurchaseInput,
+    userId?: number | null
+  ) {
+    return confirmacionBuilderPurchasesRepository.upsertItemPurchase(
+      itemId,
+      data,
+      userId
+    );
+  }
+
   findOptionsByVersionId(versionId: number) {
     return confirmacionBuilderReadRepository.findOptionsByVersionId(
       versionId

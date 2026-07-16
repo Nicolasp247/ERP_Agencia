@@ -10,6 +10,7 @@ import {
   confirmacionBuilderHotelPreviewSchema,
   confirmacionBuilderMoveItemSchema,
   confirmacionBuilderItemSchema,
+  confirmacionBuilderPurchaseSchema,
   confirmacionBuilderNoteSchema,
   confirmacionBuilderPriceSchema,
   confirmacionPassengerSchema
@@ -27,6 +28,24 @@ export class ConfirmacionBuilderController {
     );
 
     res.status(201).json(ok(data));
+  };
+
+  upsertItemPurchase = async (
+    req: Request,
+    res: Response
+  ) => {
+    const body = confirmacionBuilderPurchaseSchema.parse(
+      req.body
+    );
+
+    const data =
+      await confirmacionBuilderService.upsertItemPurchase(
+        Number(req.params.itemId),
+        body,
+        getRequestUserId(req)
+      );
+
+    res.json(ok(data));
   };
   
   getOptionsByVersionId = async (req: Request, res: Response) => {
