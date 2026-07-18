@@ -1,4 +1,4 @@
-/* erp-tour-operator/backend/src/modules/expediente/confirmacion-builder/dto/confirmacion-builder.dto.ts */
+/* erp-tour-operator/frontend/src/pages/expediente/confirmacion-builder/components/ConfirmacionAdministrativePanel.tsx */
 
 import {
   useEffect,
@@ -14,70 +14,216 @@ import type {
   ConfirmacionPurchaseStatus
 } from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";
 
+type ConfirmacionAdministrativeColumn = {
+  id: number;
+  label?: string;
+  grupo: string;
+  nombre: string;
+  multiplicador: number;
+};
+
+type ConfirmacionAdministrativeRow = {
+  fecha: string | null;
+  fechaFin?: string | null;
+  servicioIncluido: string;
+
+  precios: Array<{
+    columnId: number;
+    precioCotizado: number | null;
+    precioConfirmado: number | null;
+  }>;
+};
+
 type ConfirmacionAdministrativePanelProps = {
   operador: string;
   compraProveedor?: ConfirmacionPurchase | null;
   monedaCodigo: string;
+  columns: ConfirmacionAdministrativeColumn[];
+  row: ConfirmacionAdministrativeRow;
   isSaving?: boolean;
   onCancel: () => void;
-  onSave: (
-    values: ConfirmacionPurchaseFormValues
-  ) => void;
+  onSave: (values: ConfirmacionPurchaseFormValues) => void;
 };
 
-function isoToDateTimeLocal(
+const MONTH_LABELS = [
+  "Ene",
+  "Feb",
+  "Mar",
+  "Abr",
+  "May",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dic"
+];
+
+function isoToDisplayInput(
   value: string | null | undefined
 ) {
   if (!value) {
     return "";
   }
 
-  const date = new Date(value);
+  const match = String(value)
+    .slice(0, 10)
+    .match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
-  if (Number.isNaN(date.getTime())) {
+  if (!match) {
     return "";
   }
 
-  const localDate = new Date(
-    date.getTime() -
-      date.getTimezoneOffset() * 60_000
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
+function displayInputToIso(value: string) {
+  const cleanValue = value.trim();
+
+  if (!cleanValue) {
+    return null;
+  }
+
+  const match = cleanValue.match(
+    /^(\d{2})\/(\d{2})\/(\d{4})$/
   );
 
-  return localDate
-    .toISOString()
-    .slice(0, 16);
+  if (!match) {
+    return null;
+  }
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+
+  const date = new Date(
+    Date.UTC(year, month - 1, day)
+  );
+
+  const isValid =
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day;
+
+  if (!isValid) {
+    return null;
+  }
+
+  return [
+    String(year).padStart(4, "0"),
+    String(month).padStart(2, "0"),
+    String(day).padStart(2, "0")
+  ].join("-");
 }
 
-function dateTimeLocalToIso(value: string) {
+function formatAdministrativeDate(
+  value: string | null | undefined
+) {
   if (!value) {
-    return null;
+    return "Sin fecha";
   }
 
-  const date = new Date(value);
+  const match = String(value)
+    .slice(0, 10)
+    .match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
-  if (Number.isNaN(date.getTime())) {
-    return null;
+  if (!match) {
+    return value;
   }
 
-  return date.toISOString();
+  const year = match[1];
+  const monthNumber = Number(match[2]);
+  const day = match[3];
+
+  const monthLabel =
+    MONTH_LABELS[monthNumber - 1] ?? "";
+
+  return `${day}/${monthLabel}(${match[2]})/${year}`;
 }
 
-function getCurrentTimeZone() {
-  try {
-    return (
-      Intl.DateTimeFormat()
-        .resolvedOptions()
-        .timeZone || "America/Bogota"
-    );
-  } catch {
-    return "America/Bogota";
+function getColumnLabel(
+  column: ConfirmacionAdministrativeColumn
+) {
+  return (
+    column.label ||
+    `${column.grupo} ${column.nombre}`
+      .replaceAll("*", " estrellas")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+}
+
+function formatServiceDate(
+  startValue: string | null,
+  endValue?: string | null
+) {
+  if (!startValue) {
+    return "Sin fecha";
   }
+
+  const format = (value: string) => {
+    const date = new Date(
+      `${value}T00:00:00.000Z`
+    );
+
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+
+    return new Intl.DateTimeFormat("es-CO", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC"
+    }).format(date);
+  };
+
+  if (
+    !endValue ||
+    endValue === startValue
+  ) {
+    return format(startValue);
+  }
+
+  return `${format(startValue)} al ${format(endValue)}`;
+}
+
+function formatMoney(
+  value: number | null | undefined,
+  currency: string
+) {
+  if (
+    value === null ||
+    value === undefined ||
+    !Number.isFinite(Number(value))
+  ) {
+    return "-";
+  }
+
+  return `${Number(value).toFixed(2)} ${currency}`;
+}
+
+function normalizeDateInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+  if (digits.length <= 4) {
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  }
+
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
 export function ConfirmacionAdministrativePanel({
   operador,
   compraProveedor,
   monedaCodigo,
+  columns,
+  row,
   isSaving = false,
   onCancel,
   onSave
@@ -91,15 +237,16 @@ export function ConfirmacionAdministrativePanel({
     codigoConfirmacionProveedor,
     setCodigoConfirmacionProveedor
   ] = useState(
-    compraProveedor
-      ?.codigoConfirmacionProveedor ?? ""
+    compraProveedor?.codigoConfirmacionProveedor ?? ""
   );
 
   const [
     fechaConfirmacion,
     setFechaConfirmacion
   ] = useState(
-    compraProveedor?.fechaConfirmacion ?? ""
+    isoToDisplayInput(
+      compraProveedor?.fechaConfirmacion
+    )
   );
 
   const [
@@ -115,30 +262,30 @@ export function ConfirmacionAdministrativePanel({
     fechaLimiteCancelacion,
     setFechaLimiteCancelacion
   ] = useState(
-    isoToDateTimeLocal(
+    isoToDisplayInput(
       compraProveedor?.fechaLimiteCancelacion
     )
   );
 
   const [
-    zonaHorariaCancelacion,
-    setZonaHorariaCancelacion
+    selectedColumnId,
+    setSelectedColumnId
   ] = useState(
-    compraProveedor?.zonaHorariaCancelacion ??
-      getCurrentTimeZone()
+    compraProveedor?.columnaSeleccionada
+      ? String(
+          compraProveedor.columnaSeleccionada.id
+        )
+      : ""
   );
 
   const [
-    totalConfirmado,
-    setTotalConfirmado
+    totalPagado,
+    setTotalPagado
   ] = useState(
-    compraProveedor?.totalConfirmado === null ||
-      compraProveedor?.totalConfirmado ===
-        undefined
+    compraProveedor?.totalPagado === null ||
+      compraProveedor?.totalPagado === undefined
       ? ""
-      : String(
-          compraProveedor.totalConfirmado
-        )
+      : String(compraProveedor.totalPagado)
   );
 
   const [
@@ -167,7 +314,9 @@ export function ConfirmacionAdministrativePanel({
     );
 
     setFechaConfirmacion(
-      compraProveedor?.fechaConfirmacion ?? ""
+      isoToDisplayInput(
+        compraProveedor?.fechaConfirmacion
+      )
     );
 
     setTipoCancelacion(
@@ -175,26 +324,27 @@ export function ConfirmacionAdministrativePanel({
     );
 
     setFechaLimiteCancelacion(
-      isoToDateTimeLocal(
-        compraProveedor
-          ?.fechaLimiteCancelacion
+      isoToDisplayInput(
+        compraProveedor?.fechaLimiteCancelacion
       )
     );
 
-    setZonaHorariaCancelacion(
-      compraProveedor
-        ?.zonaHorariaCancelacion ??
-        getCurrentTimeZone()
+    setSelectedColumnId(
+      compraProveedor?.columnaSeleccionada
+        ? String(
+            compraProveedor
+              .columnaSeleccionada.id
+          )
+        : ""
     );
 
-    setTotalConfirmado(
-      compraProveedor?.totalConfirmado ===
-        null ||
-        compraProveedor?.totalConfirmado ===
+    setTotalPagado(
+      compraProveedor?.totalPagado === null ||
+        compraProveedor?.totalPagado ===
           undefined
         ? ""
         : String(
-            compraProveedor.totalConfirmado
+            compraProveedor.totalPagado
           )
     );
 
@@ -209,12 +359,42 @@ export function ConfirmacionAdministrativePanel({
     );
   }, [compraProveedor, monedaCodigo]);
 
-  const panelTitle = compraProveedor
-    ? "Editar confirmación del operador"
-    : "Registrar confirmación del operador";
-
   const showCancellationDeadline =
     tipoCancelacion === "GRATUITA_HASTA";
+
+  const selectedColumn = useMemo(
+    () =>
+      columns.find(
+        (column) =>
+          column.id ===
+          Number(selectedColumnId)
+      ) ?? null,
+    [columns, selectedColumnId]
+  );
+
+  const dividedPaidValue = useMemo(() => {
+    if (
+      !selectedColumn ||
+      !totalPagado.trim()
+    ) {
+      return null;
+    }
+
+    const parsedTotal = Number(totalPagado);
+
+    if (!Number.isFinite(parsedTotal)) {
+      return null;
+    }
+
+    const multiplier = Math.max(
+      Number(
+        selectedColumn.multiplicador ?? 1
+      ),
+      1
+    );
+
+    return parsedTotal / multiplier;
+  }, [selectedColumn, totalPagado]);
 
   const statusHelp = useMemo(() => {
     if (estado === "PENDIENTE") {
@@ -229,6 +409,10 @@ export function ConfirmacionAdministrativePanel({
       return "El operador confirmó la prestación del servicio.";
     }
 
+    if (estado === "PAGAR_DESPUES") {
+      return "El servicio está confirmado, pero el pago se realizará posteriormente.";
+    }
+
     return "La compra o reserva fue cancelada.";
   }, [estado]);
 
@@ -237,41 +421,83 @@ export function ConfirmacionAdministrativePanel({
   ) {
     event.preventDefault();
 
-    const parsedTotal = totalConfirmado.trim()
-      ? Number(totalConfirmado)
-      : null;
+    const parsedConfirmationDate =
+      displayInputToIso(fechaConfirmacion);
+
+    const parsedCancellationDate =
+      showCancellationDeadline
+        ? displayInputToIso(
+            fechaLimiteCancelacion
+          )
+        : null;
+
+    const parsedTotal =
+      totalPagado.trim()
+        ? Number(totalPagado)
+        : null;
+
+    if (
+      fechaConfirmacion.trim() &&
+      !parsedConfirmationDate
+    ) {
+      window.alert(
+        "La fecha de confirmación debe tener formato dd/mm/yyyy."
+      );
+      return;
+    }
+
+    if (
+      showCancellationDeadline &&
+      fechaLimiteCancelacion.trim() &&
+      !parsedCancellationDate
+    ) {
+      window.alert(
+        "La fecha máxima de cancelación debe tener formato dd/mm/yyyy."
+      );
+      return;
+    }
+
+    if (!selectedColumnId) {
+      window.alert(
+        "Debes seleccionar la columna a la que corresponde el pago."
+      );
+      return;
+    }
+
+    if (
+      parsedTotal !== null &&
+      (
+        !Number.isFinite(parsedTotal) ||
+        parsedTotal < 0
+      )
+    ) {
+      window.alert(
+        "El precio total pagado debe ser un valor válido."
+      );
+      return;
+    }
 
     onSave({
       estado,
+
+      idReservaColumnaSeleccionada:
+        Number(selectedColumnId),
 
       codigoConfirmacionProveedor:
         codigoConfirmacionProveedor.trim() ||
         null,
 
       fechaConfirmacion:
-        fechaConfirmacion || null,
+        parsedConfirmationDate,
 
       tipoCancelacion:
         tipoCancelacion || null,
 
       fechaLimiteCancelacion:
-        showCancellationDeadline
-          ? dateTimeLocalToIso(
-              fechaLimiteCancelacion
-            )
-          : null,
+        parsedCancellationDate,
 
-      zonaHorariaCancelacion:
-        showCancellationDeadline
-          ? zonaHorariaCancelacion.trim() ||
-            null
-          : null,
-
-      totalConfirmado:
-        parsedTotal !== null &&
-        Number.isFinite(parsedTotal)
-          ? parsedTotal
-          : null,
+      totalPagado:
+        parsedTotal,
 
       monedaCodigo:
         purchaseCurrency
@@ -294,23 +520,112 @@ export function ConfirmacionAdministrativePanel({
             Gestión administrativa
           </p>
 
-          <h3>{panelTitle}</h3>
+          <h2>
+            {compraProveedor
+              ? "Editar confirmación del operador"
+              : "Registrar confirmación del operador"}
+          </h2>
+        </div>
 
-          <p>
-            Operador:{" "}
-            <strong>{operador}</strong>
-          </p>
+        <button
+          aria-label="Cerrar"
+          className="icon-button"
+          disabled={isSaving}
+          onClick={onCancel}
+          type="button"
+        >
+          ×
+        </button>
+      </div>
+
+      <section className="confirmacion-admin-service-summary">
+        <div className="confirmacion-admin-service-main">
+          <span>Servicio seleccionado</span>
+
+          <strong>
+            {row.servicioIncluido}
+          </strong>
+
+          <small>
+            {formatServiceDate(
+              row.fecha,
+              row.fechaFin
+            )}
+          </small>
+        </div>
+
+        <div className="confirmacion-admin-summary-item">
+          <span>Operador</span>
+          <strong>{operador}</strong>
+        </div>
+
+        <div className="confirmacion-admin-summary-item">
+          <span>Código actual</span>
+
+          <strong>
+            {compraProveedor
+              ?.codigoConfirmacionProveedor ||
+              "Sin confirmar"}
+          </strong>
         </div>
 
         {compraProveedor ? (
-          <div className="confirmacion-admin-code">
+          <div className="confirmacion-admin-summary-item">
             <span>Código interno</span>
+
             <strong>
               {compraProveedor.codigoInterno}
             </strong>
           </div>
         ) : null}
-      </div>
+      </section>
+
+      <section className="confirmacion-admin-service-prices">
+        <h3>
+          Precios registrados en la confirmación
+        </h3>
+
+        <div className="confirmacion-admin-price-list">
+          {columns.map((column) => {
+            const price = row.precios.find(
+              (item) =>
+                item.columnId === column.id
+            );
+
+            const value =
+              price?.precioConfirmado ??
+              price?.precioCotizado;
+
+            return (
+              <div
+                className="confirmacion-admin-price-item"
+                key={column.id}
+              >
+                <span>
+                  {getColumnLabel(column)}
+                </span>
+
+                <strong>
+                  {formatMoney(
+                    value,
+                    monedaCodigo
+                  )}
+                </strong>
+
+                <small>
+                  Multiplicador:{" "}
+                  {Math.max(
+                    Number(
+                      column.multiplicador ?? 1
+                    ),
+                    1
+                  )}
+                </small>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       <div className="confirmacion-admin-grid">
         <label>
@@ -336,6 +651,10 @@ export function ConfirmacionAdministrativePanel({
 
             <option value="CONFIRMADA">
               Confirmada
+            </option>
+
+            <option value="PAGAR_DESPUES">
+              Pagar después
             </option>
 
             <option value="CANCELADA">
@@ -371,14 +690,28 @@ export function ConfirmacionAdministrativePanel({
 
           <input
             disabled={isSaving}
+            inputMode="numeric"
+            maxLength={10}
             onChange={(event) =>
               setFechaConfirmacion(
-                event.target.value
+                normalizeDateInput(
+                  event.target.value
+                )
               )
             }
-            type="date"
+            placeholder="dd/mm/yyyy"
             value={fechaConfirmacion}
           />
+
+          {compraProveedor?.fechaConfirmacion ? (
+            <small>
+              Guardada:{" "}
+              {formatAdministrativeDate(
+                compraProveedor
+                  .fechaConfirmacion
+              )}
+            </small>
+          ) : null}
         </label>
 
         <label>
@@ -416,64 +749,103 @@ export function ConfirmacionAdministrativePanel({
         </label>
 
         {showCancellationDeadline ? (
-          <>
-            <label>
-              <span>
-                Cancelación gratuita hasta
-              </span>
+          <label>
+            <span>
+              Cancelación gratuita hasta
+            </span>
 
-              <input
-                disabled={isSaving}
-                onChange={(event) =>
-                  setFechaLimiteCancelacion(
+            <input
+              disabled={isSaving}
+              inputMode="numeric"
+              maxLength={10}
+              onChange={(event) =>
+                setFechaLimiteCancelacion(
+                  normalizeDateInput(
                     event.target.value
                   )
-                }
-                type="datetime-local"
-                value={
-                  fechaLimiteCancelacion
-                }
-              />
-            </label>
+                )
+              }
+              placeholder="dd/mm/yyyy"
+              value={fechaLimiteCancelacion}
+            />
 
-            <label>
-              <span>Zona horaria</span>
-
-              <input
-                disabled={isSaving}
-                maxLength={80}
-                onChange={(event) =>
-                  setZonaHorariaCancelacion(
-                    event.target.value
-                  )
-                }
-                placeholder="America/Bogota"
-                value={
-                  zonaHorariaCancelacion
-                }
-              />
-            </label>
-          </>
+            {compraProveedor
+              ?.fechaLimiteCancelacion ? (
+              <small>
+                Guardada:{" "}
+                {formatAdministrativeDate(
+                  compraProveedor
+                    .fechaLimiteCancelacion
+                )}
+              </small>
+            ) : null}
+          </label>
         ) : null}
 
         <label>
           <span>
-            Precio total confirmado
+            Columna a la que aplica
           </span>
+
+          <select
+            disabled={isSaving}
+            onChange={(event) =>
+              setSelectedColumnId(
+                event.target.value
+              )
+            }
+            required
+            value={selectedColumnId}
+          >
+            <option value="">
+              Selecciona una columna
+            </option>
+
+            {columns.map((column) => (
+              <option
+                key={column.id}
+                value={column.id}
+              >
+                {getColumnLabel(column)}
+                {" · "}
+                multiplicador{" "}
+                {Math.max(
+                  Number(
+                    column.multiplicador ?? 1
+                  ),
+                  1
+                )}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>Precio total pagado</span>
 
           <input
             disabled={isSaving}
             min="0"
             onChange={(event) =>
-              setTotalConfirmado(
+              setTotalPagado(
                 event.target.value
               )
             }
             placeholder="0.00"
             step="0.01"
             type="number"
-            value={totalConfirmado}
+            value={totalPagado}
           />
+
+          {dividedPaidValue !== null ? (
+            <small>
+              Valor dividido:{" "}
+              {formatMoney(
+                dividedPaidValue,
+                purchaseCurrency
+              )}
+            </small>
+          ) : null}
         </label>
 
         <label>
@@ -485,7 +857,10 @@ export function ConfirmacionAdministrativePanel({
             minLength={3}
             onChange={(event) =>
               setPurchaseCurrency(
-                event.target.value.toUpperCase()
+                event.target.value
+                  .toUpperCase()
+                  .replace(/[^A-Z]/g, "")
+                  .slice(0, 3)
               )
             }
             placeholder="USD"
@@ -524,7 +899,8 @@ export function ConfirmacionAdministrativePanel({
           className="primary-button"
           disabled={
             isSaving ||
-            purchaseCurrency.trim().length !== 3
+            purchaseCurrency.trim().length !== 3 ||
+            !selectedColumnId
           }
           type="submit"
         >

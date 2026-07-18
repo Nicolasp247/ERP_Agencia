@@ -1,4 +1,4 @@
-/* erp-tour-operator/backend/src/modules/expediente/confirmacion-builder/dto/confirmacion-builder.dto.ts */
+/* erp-tour-operator/backend/src/modules/expediente/confirmacion-builder/repository/confirmacion-builder-purchases.repository.ts */
 
 import { Prisma } from "@prisma/client";
 
@@ -19,20 +19,6 @@ function buildCompraProveedorCode(
     String(reservaId).padStart(6, "0"),
     String(itemId).padStart(6, "0")
   ].join("-");
-}
-
-function toNullableDateTime(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date;
 }
 
 export class ConfirmacionBuilderPurchasesRepository {
@@ -72,8 +58,31 @@ export class ConfirmacionBuilderPurchasesRepository {
         return "PROVEEDOR_NOT_FOUND" as const;
       }
 
+      const selectedColumn =
+        data.idReservaColumnaSeleccionada === null
+          ? null
+          : await tx.reservaColumnaSeleccionada.findFirst({
+              where: {
+                id: data.idReservaColumnaSeleccionada,
+                idReserva: item.idReserva
+              },
+              select: {
+                id: true
+              }
+            });
+
+      if (
+        data.idReservaColumnaSeleccionada !== null &&
+        !selectedColumn
+      ) {
+        return "INVALID_COLUMN" as const;
+      }
+
       const purchaseData = {
         idProveedor: item.servicio.idProveedor,
+
+        idReservaColumnaSeleccionada:
+          selectedColumn?.id ?? null,
 
         codigoConfirmacionProveedor:
           data.codigoConfirmacionProveedor?.trim() || null,
@@ -86,17 +95,15 @@ export class ConfirmacionBuilderPurchasesRepository {
 
         tipoCancelacion: data.tipoCancelacion,
 
-        fechaLimiteCancelacion: toNullableDateTime(
+        fechaLimiteCancelacion:
           data.fechaLimiteCancelacion
-        ),
+            ? toDateOnly(data.fechaLimiteCancelacion)
+            : null,
 
-        zonaHorariaCancelacion:
-          data.zonaHorariaCancelacion?.trim() || null,
-
-        totalConfirmado:
-          data.totalConfirmado === null
+        totalPagado:
+          data.totalPagado === null
             ? null
-            : new Prisma.Decimal(data.totalConfirmado),
+            : new Prisma.Decimal(data.totalPagado),
 
         monedaCodigo: data.monedaCodigo.toUpperCase(),
 
@@ -117,6 +124,7 @@ export class ConfirmacionBuilderPurchasesRepository {
         const compra = await tx.compraProveedor.create({
           data: {
             idReserva: item.idReserva,
+
             codigoInterno: buildCompraProveedorCode(
               item.idReserva,
               item.id

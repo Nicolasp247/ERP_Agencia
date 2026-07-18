@@ -77,6 +77,14 @@ export class ConfirmacionBuilderService {
       );
     }
 
+    if (record === "INVALID_COLUMN") {
+      throw new AppError(
+        400,
+        "CONFIRMACION_PURCHASE_INVALID_COLUMN",
+        "La columna seleccionada no pertenece a esta confirmación"
+      );
+    }
+
     return toConfirmacionBuilderDetail(record);
   }
   

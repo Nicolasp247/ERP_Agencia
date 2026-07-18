@@ -92,8 +92,15 @@ export const confirmacionBuilderPurchaseSchema = z.object({
     "PENDIENTE",
     "SOLICITADA",
     "CONFIRMADA",
+    "PAGAR_DESPUES",
     "CANCELADA"
   ]),
+
+  idReservaColumnaSeleccionada: z.coerce
+    .number()
+    .int()
+    .positive()
+    .nullable(),
 
   codigoConfirmacionProveedor: z
     .string()
@@ -111,18 +118,9 @@ export const confirmacionBuilderPurchaseSchema = z.object({
     ])
     .nullable(),
 
-  fechaLimiteCancelacion: z
-    .string()
-    .datetime({ offset: true })
-    .nullable(),
+  fechaLimiteCancelacion: dateStringSchema.nullable(),
 
-  zonaHorariaCancelacion: z
-    .string()
-    .trim()
-    .max(80)
-    .nullable(),
-
-  totalConfirmado: z.coerce
+  totalPagado: z.coerce
     .number()
     .min(0)
     .nullable(),

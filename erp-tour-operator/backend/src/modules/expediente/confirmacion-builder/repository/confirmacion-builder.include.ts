@@ -113,6 +113,18 @@ export const includeConfirmacionBuilderDetail = {
                 }
               },
 
+              reservaColumnaSeleccionada: {
+                select: {
+                  id: true,
+                  grupoSnapshot: true,
+                  nombreSnapshot: true,
+                  tipoSnapshot: true,
+                  unidadSnapshot: true,
+                  multiplicadorSnapshot: true,
+                  orden: true
+                }
+              },
+
               pagos: {
                 orderBy: [
                   {

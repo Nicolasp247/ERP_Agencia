@@ -277,45 +277,40 @@ export function ConfirmacionBuilderTable({
   onUpdateItemPrices
 }: ConfirmacionBuilderTableProps) {
   const [visibleNotesRowId, setVisibleNotesRowId] = useState<number | null>(null);
-  const [visibleAdministrativeRowId, setVisibleAdministrativeRowId] = useState<number | null>(null);
+  const [administrativeRow, setAdministrativeRow] = useState<ConfirmacionRow | null>(null);
   const [editingNotesRowId, setEditingNotesRowId] = useState<number | null>(null);
   const [draftNote, setDraftNote] = useState("");
   const [draftServiceTitle, setDraftServiceTitle] = useState("");
   const [floatingPriceEditor, setFloatingPriceEditor] =
     useState<FloatingPriceEditor | null>(null);
 
-  function openAdministrativePanel(
-    row: ConfirmacionRow
-  ) {
+  function openAdministrativePanel(row: ConfirmacionRow) {
     setFloatingPriceEditor(null);
     setVisibleNotesRowId(null);
     setEditingNotesRowId(null);
     setDraftNote("");
     setDraftServiceTitle("");
-
-    setVisibleAdministrativeRowId(
-      row.id
-    );
+    setAdministrativeRow(row);
   }
 
   function closeAdministrativePanel() {
-    setVisibleAdministrativeRowId(null);
+    if (isSavingPurchase) {
+      return;
+    }
+
+    setAdministrativeRow(null);
   }
 
   function saveAdministrativePanel(
     row: ConfirmacionRow,
     values: ConfirmacionPurchaseFormValues
   ) {
-    onUpdateItemPurchase(
-      row.id,
-      values
-    );
-
-    setVisibleAdministrativeRowId(null);
+    onUpdateItemPurchase(row.id, values);
+    setAdministrativeRow(null);
   }
 
   function openRowNotes(row: ConfirmacionRow) {
-    setVisibleAdministrativeRowId(null);
+    setAdministrativeRow(null);
     setFloatingPriceEditor(null);
     setEditingNotesRowId(null);
     setDraftNote("");
@@ -365,7 +360,7 @@ export function ConfirmacionBuilderTable({
 
     setVisibleNotesRowId(null);
     setEditingNotesRowId(null);
-    setVisibleAdministrativeRowId(null);
+    setAdministrativeRow(null);
     setDraftNote("");
 
     setFloatingPriceEditor({
@@ -475,44 +470,6 @@ export function ConfirmacionBuilderTable({
     });
   }
 
-  function renderAdministrativeRow(
-    row: ConfirmacionRow
-  ) {
-    if (
-      visibleAdministrativeRowId !==
-      row.id
-    ) {
-      return null;
-    }
-
-    const totalColumns =
-      columns.length + 5;
-
-    return (
-      <tr className="confirmacion-admin-table-row">
-        <td colSpan={totalColumns}>
-          <ConfirmacionAdministrativePanel
-            operador={row.operador}
-            compraProveedor={
-              row.compraProveedor ?? null
-            }
-            monedaCodigo={monedaCodigo}
-            isSaving={isSavingPurchase}
-            onCancel={
-              closeAdministrativePanel
-            }
-            onSave={(values) =>
-              saveAdministrativePanel(
-                row,
-                values
-              )
-            }
-          />
-        </td>
-      </tr>
-    );
-  }
-
   function renderServiceIncludedCell(row: ConfirmacionRow) {
     if (editingNotesRowId === row.id) {
       return (
@@ -578,22 +535,11 @@ export function ConfirmacionBuilderTable({
           <>
             <button
               className={
-                visibleAdministrativeRowId ===
-                row.id
+                administrativeRow?.id === row.id
                   ? "icon-button icon-button-active"
                   : "icon-button"
               }
-              onClick={() => {
-                if (
-                  visibleAdministrativeRowId ===
-                  row.id
-                ) {
-                  closeAdministrativePanel();
-                  return;
-                }
-
-                openAdministrativePanel(row);
-              }}
+              onClick={() => openAdministrativePanel(row)}
               title={
                 row.compraProveedor
                   ? "Editar confirmación del operador"
@@ -827,38 +773,30 @@ export function ConfirmacionBuilderTable({
               }
 
               return (
-                <Fragment key={row.id}>
-                  <tr
-                    className={`builder-service-row ${rowTypeClass}`}
-                  >
-                    <td className="builder-order-cell">
-                      {renderOrderControls(
-                        row,
-                        visualOrder
-                      )}
-                    </td>
+                <tr
+                  className={`builder-service-row ${rowTypeClass}`}
+                  key={row.id}
+                >
+                  <td className="builder-order-cell">
+                    {renderOrderControls(row, visualOrder)}
+                  </td>
 
-                    <td className="builder-date-cell">
-                      {formatLongDateEs(row.fecha)}
-                    </td>
+                  <td className="builder-date-cell">
+                    {formatLongDateEs(row.fecha)}
+                  </td>
 
-                    <td className="builder-service-name-cell builder-service-included-cell">
-                      {renderServiceIncludedCell(row)}
-                    </td>
+                  <td className="builder-service-name-cell builder-service-included-cell">
+                    {renderServiceIncludedCell(row)}
+                  </td>
 
-                    <td className="builder-operator-cell">
-                      {renderOperator(row)}
-                    </td>
+                  <td className="builder-operator-cell">
+                    {renderOperator(row)}
+                  </td>
 
-                    {renderPriceOrNotesCells(row)}
+                  {renderPriceOrNotesCells(row)}
 
-                    <td>
-                      {renderActions(row)}
-                    </td>
-                  </tr>
-
-                  {renderAdministrativeRow(row)}
-                </Fragment>
+                  <td>{renderActions(row)}</td>
+                </tr>
               );
             })}
           </tbody>
@@ -870,6 +808,47 @@ export function ConfirmacionBuilderTable({
           </div>
         ) : null}
       </div>
+      
+      {administrativeRow ? (
+        <div
+          className="builder-modal-backdrop confirmacion-admin-modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeAdministrativePanel();
+            }
+          }}
+        >
+          <div
+            aria-modal="true"
+            className="builder-modal confirmacion-admin-modal"
+            role="dialog"
+          >
+            <ConfirmacionAdministrativePanel
+              columns={columns}
+              row={{
+                fecha: administrativeRow.fecha,
+                fechaFin: administrativeRow.fechaFin,
+                servicioIncluido:
+                  administrativeRow.servicioIncluido,
+                precios: administrativeRow.precios
+              }}
+              operador={administrativeRow.operador}
+              compraProveedor={
+                administrativeRow.compraProveedor ?? null
+              }
+              monedaCodigo={monedaCodigo}
+              isSaving={isSavingPurchase}
+              onCancel={closeAdministrativePanel}
+              onSave={(values) =>
+                saveAdministrativePanel(
+                  administrativeRow,
+                  values
+                )
+              }
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -262,6 +262,7 @@ export type ConfirmacionPurchaseStatus =
   | "PENDIENTE"
   | "SOLICITADA"
   | "CONFIRMADA"
+  | "PAGAR_DESPUES"
   | "CANCELADA";
 
 export type ConfirmacionPurchaseCancellationType =
@@ -280,6 +281,21 @@ export type ConfirmacionPurchasePayment = {
   referenciaPago: string | null;
   nota: string | null;
   estado: "REGISTRADO" | "ANULADO";
+};
+
+export type ConfirmacionPurchaseColumn = {
+  id: number;
+  grupo: string;
+  nombre: string;
+  tipo: "TERRESTRE" | "TRANSPORTE" | "OPCIONALES" | "OTRO";
+  unidad:
+    | "POR_PERSONA"
+    | "POR_NINO"
+    | "POR_HABITACION"
+    | "POR_GRUPO";
+  multiplicador: number;
+  orden: number;
+  label: string;
 };
 
 export type ConfirmacionPurchase = {
@@ -301,9 +317,20 @@ export type ConfirmacionPurchase = {
     | null;
 
   fechaLimiteCancelacion: string | null;
-  zonaHorariaCancelacion: string | null;
 
-  totalConfirmado: number | null;
+  columnaSeleccionada:
+    | ConfirmacionPurchaseColumn
+    | null;
+
+  totalPagado: number | null;
+  valorPagadoUnidad: number | null;
+  precioCotizadoComparacion: number | null;
+
+  resultadoComparacion:
+    | "MENOR_IGUAL"
+    | "MAYOR"
+    | null;
+
   monedaCodigo: string;
   notaAdministrativa: string;
 
@@ -312,6 +339,9 @@ export type ConfirmacionPurchase = {
 
 export type ConfirmacionPurchaseFormValues = {
   estado: ConfirmacionPurchaseStatus;
+
+  idReservaColumnaSeleccionada: number | null;
+
   codigoConfirmacionProveedor: string | null;
   fechaConfirmacion: string | null;
 
@@ -320,9 +350,8 @@ export type ConfirmacionPurchaseFormValues = {
     | null;
 
   fechaLimiteCancelacion: string | null;
-  zonaHorariaCancelacion: string | null;
 
-  totalConfirmado: number | null;
+  totalPagado: number | null;
   monedaCodigo: string;
   notaAdministrativa: string | null;
 };

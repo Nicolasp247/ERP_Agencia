@@ -41,6 +41,7 @@ enum CompraProveedorEstado {
   PENDIENTE
   SOLICITADA
   CONFIRMADA
+  PAGAR_DESPUES
   CANCELADA
 }
 
@@ -950,21 +951,21 @@ model ReservaItem {
 }
 
 model CompraProveedor {
-  id          Int @id @default(autoincrement())
-  idReserva   Int @map("id_reserva")
-  idProveedor Int @map("id_proveedor")
+  id                           Int  @id @default(autoincrement())
+  idReserva                    Int  @map("id_reserva")
+  idProveedor                  Int  @map("id_proveedor")
+  idReservaColumnaSeleccionada Int? @map("id_reserva_columna_seleccionada")
 
   codigoInterno               String  @unique(map: "uq_compra_proveedor_codigo_interno") @map("codigo_interno") @db.VarChar(40)
   codigoConfirmacionProveedor String? @map("codigo_confirmacion_proveedor") @db.VarChar(120)
 
   estado                 CompraProveedorEstado           @default(PENDIENTE)
-  fechaConfirmacion      DateTime?                       @map("fecha_confirmacion")
+  fechaConfirmacion      DateTime?                       @map("fecha_confirmacion") @db.Date
   tipoCancelacion        CompraProveedorCancelacionTipo? @map("tipo_cancelacion")
-  fechaLimiteCancelacion DateTime?                       @map("fecha_limite_cancelacion")
-  zonaHorariaCancelacion String?                         @map("zona_horaria_cancelacion") @db.VarChar(80)
+  fechaLimiteCancelacion DateTime?                       @map("fecha_limite_cancelacion") @db.Date
 
-  totalConfirmado Decimal? @map("total_confirmado") @db.Decimal(12, 2)
-  monedaCodigo    String   @default("USD") @map("moneda_codigo") @db.Char(3)
+  totalPagado  Decimal? @map("total_pagado") @db.Decimal(12, 2)
+  monedaCodigo String   @default("USD") @map("moneda_codigo") @db.Char(3)
 
   notaAdministrativa String? @map("nota_administrativa") @db.Text
 
@@ -973,15 +974,17 @@ model CompraProveedor {
   createdBy Int?     @map("created_by")
   updatedBy Int?     @map("updated_by")
 
-  reserva   Reserva               @relation(fields: [idReserva], references: [id], onDelete: Cascade)
-  proveedor Proveedor             @relation(fields: [idProveedor], references: [id])
-  items     CompraProveedorItem[]
-  pagos     CompraProveedorPago[]
+  reserva                    Reserva                     @relation(fields: [idReserva], references: [id], onDelete: Cascade)
+  proveedor                  Proveedor                   @relation(fields: [idProveedor], references: [id])
+  reservaColumnaSeleccionada ReservaColumnaSeleccionada? @relation(fields: [idReservaColumnaSeleccionada], references: [id], onDelete: SetNull)
+  items                      CompraProveedorItem[]
+  pagos                      CompraProveedorPago[]
 
   @@index([idReserva], map: "idx_compra_proveedor_reserva")
   @@index([idProveedor], map: "idx_compra_proveedor_proveedor")
   @@index([codigoConfirmacionProveedor], map: "idx_compra_proveedor_confirmacion")
   @@index([estado], map: "idx_compra_proveedor_estado")
+  @@index([idReservaColumnaSeleccionada], map: "idx_compra_proveedor_columna")
   @@index([fechaLimiteCancelacion], map: "idx_compra_proveedor_cancelacion")
   @@map("compra_proveedor")
 }
@@ -1124,6 +1127,7 @@ model ReservaColumnaSeleccionada {
 
   precios          ReservaItemPrecioSeleccionado[]
   hotelesPrevistos ReservaItemHotelPrevistoSeleccionado[]
+  comprasProveedor CompraProveedor[]
 
   @@index([idReserva], map: "idx_reserva_columna_reserva")
   @@index([idCotizacionColumnaOrigen], map: "idx_reserva_columna_origen")

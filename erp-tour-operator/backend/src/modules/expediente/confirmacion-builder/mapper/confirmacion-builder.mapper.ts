@@ -224,82 +224,133 @@ function getColumnLabel(column: any) {
     .trim();
 }
 
-function formatDateTimeIso(
-  value: Date | string | null | undefined
-) {
-  if (!value) {
-    return null;
-  }
-
-  const date =
-    value instanceof Date
-      ? value
-      : new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toISOString();
-}
-
 function mapCompraProveedor(item: any) {
   const compra =
-    item.compraProveedorItem
-      ?.compraProveedor;
+    item.compraProveedorItem?.compraProveedor;
 
   if (!compra) {
     return null;
   }
 
+  const selectedColumn =
+    compra.reservaColumnaSeleccionada ?? null;
+
+  const multiplicador = Math.max(
+    Number(
+      selectedColumn?.multiplicadorSnapshot ?? 1
+    ),
+    1
+  );
+
+  const totalPagado =
+    compra.totalPagado === null ||
+    compra.totalPagado === undefined
+      ? null
+      : Number(compra.totalPagado);
+
+  const valorPagadoUnidad =
+    totalPagado === null
+      ? null
+      : totalPagado / multiplicador;
+
+  const selectedPrice =
+    selectedColumn === null
+      ? null
+      : item.preciosSeleccionados?.find(
+          (price: any) =>
+            price.idReservaColumnaSeleccionada ===
+            selectedColumn.id
+        );
+
+  const precioCotizadoComparacion =
+    selectedPrice?.precioConfirmado !== null &&
+    selectedPrice?.precioConfirmado !== undefined
+      ? Number(selectedPrice.precioConfirmado)
+      : selectedPrice?.precioCotizado !== null &&
+          selectedPrice?.precioCotizado !== undefined
+        ? Number(selectedPrice.precioCotizado)
+        : null;
+
+  let resultadoComparacion:
+    | "MENOR_IGUAL"
+    | "MAYOR"
+    | null = null;
+
+  if (
+    valorPagadoUnidad !== null &&
+    precioCotizadoComparacion !== null
+  ) {
+    resultadoComparacion =
+      valorPagadoUnidad <= precioCotizadoComparacion
+        ? "MENOR_IGUAL"
+        : "MAYOR";
+  }
+
   return {
     id: compra.id,
-
-    codigoInterno:
-      compra.codigoInterno,
+    codigoInterno: compra.codigoInterno,
 
     proveedor: compra.proveedor
       ? {
           id: compra.proveedor.id,
-          codigo:
-            compra.proveedor.codigo ??
-            null,
+          codigo: compra.proveedor.codigo ?? null,
           nombreComercial:
-            compra.proveedor
-              .nombreComercial ??
-            null
+            compra.proveedor.nombreComercial ?? null
         }
       : null,
 
     codigoConfirmacionProveedor:
-      compra.codigoConfirmacionProveedor ??
-      null,
+      compra.codigoConfirmacionProveedor ?? null,
 
-    estado:
-      compra.estado,
+    estado: compra.estado,
 
-    fechaConfirmacion:
-      formatDateOnly(
-        compra.fechaConfirmacion
-      ),
+    fechaConfirmacion: formatDateOnly(
+      compra.fechaConfirmacion
+    ),
 
     tipoCancelacion:
       compra.tipoCancelacion ?? null,
 
-    fechaLimiteCancelacion:
-      formatDateTimeIso(
-        compra.fechaLimiteCancelacion
-      ),
+    fechaLimiteCancelacion: formatDateOnly(
+      compra.fechaLimiteCancelacion
+    ),
 
-    zonaHorariaCancelacion:
-      compra.zonaHorariaCancelacion ??
-      null,
+    columnaSeleccionada: selectedColumn
+      ? {
+          id: selectedColumn.id,
 
-    totalConfirmado:
-      compra.totalConfirmado === null ||
-      compra.totalConfirmado === undefined
-        ? null
-        : Number(compra.totalConfirmado),
+          grupo:
+            selectedColumn.grupoSnapshot,
+
+          nombre:
+            selectedColumn.nombreSnapshot,
+
+          tipo:
+            selectedColumn.tipoSnapshot,
+
+          unidad:
+            selectedColumn.unidadSnapshot,
+
+          multiplicador,
+
+          orden:
+            selectedColumn.orden,
+
+          label:
+            `${selectedColumn.grupoSnapshot} ${selectedColumn.nombreSnapshot}`
+              .replaceAll("*", " estrellas")
+              .replace(/\s+/g, " ")
+              .trim()
+        }
+      : null,
+
+    totalPagado,
+
+    valorPagadoUnidad,
+
+    precioCotizadoComparacion,
+
+    resultadoComparacion,
 
     monedaCodigo:
       compra.monedaCodigo,
@@ -312,19 +363,13 @@ function mapCompraProveedor(item: any) {
         id: pago.id,
 
         fechaPago:
-          formatDateOnly(
-            pago.fechaPago
-          ),
+          formatDateOnly(pago.fechaPago),
 
         valorMonedaOriginal:
-          pago.valorMonedaOriginal ===
-            null ||
-          pago.valorMonedaOriginal ===
-            undefined
+          pago.valorMonedaOriginal === null ||
+          pago.valorMonedaOriginal === undefined
             ? null
-            : Number(
-                pago.valorMonedaOriginal
-              ),
+            : Number(pago.valorMonedaOriginal),
 
         monedaOriginal:
           pago.monedaOriginal,
