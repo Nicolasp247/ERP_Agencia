@@ -13,6 +13,7 @@ type ConfirmacionColumn = {
   label?: string;
   grupo: string;
   nombre: string;
+  multiplicador: number;
 };
 
 type ConfirmacionRowPrice = {
@@ -265,6 +266,17 @@ function getPrice(row: ConfirmacionRow, columnId: number) {
   return row.precios.find((price) => price.columnId === columnId);
 }
 
+function purchaseAppliesToColumn(
+  row: ConfirmacionRow,
+  columnId: number
+) {
+  return (
+    row.compraProveedor
+      ?.columnaSeleccionada?.id ===
+    columnId
+  );
+}
+
 export function ConfirmacionBuilderTable({
   columns,
   rows,
@@ -441,17 +453,44 @@ export function ConfirmacionBuilderTable({
 
     return columns.map((column) => {
       const price = getPrice(row, column.id);
-      const value = price?.precioConfirmado ?? price?.precioCotizado;
+
+      const quotedValue =
+        price?.precioConfirmado ??
+        price?.precioCotizado;
+
+      const purchaseApplies =
+        purchaseAppliesToColumn(
+          row,
+          column.id
+        );
+
+      const paidValue = purchaseApplies
+        ? row.compraProveedor
+            ?.valorPagadoUnidad ?? null
+        : null;
+
+      const paidCurrency =
+        row.compraProveedor?.monedaCodigo ??
+        monedaCodigo;
+
+      const comparisonResult =
+        row.compraProveedor
+          ?.resultadoComparacion ?? null;
 
       const isEditingThisPrice =
         floatingPriceEditor?.row.id === row.id &&
-        floatingPriceEditor?.column.id === column.id;
+        floatingPriceEditor?.column.id ===
+          column.id;
 
       return (
         <td
           key={column.id}
           rowSpan={rowSpan}
-          className={isEditingThisPrice ? "builder-price-cell-editing" : undefined}
+          className={
+            isEditingThisPrice
+              ? "builder-price-cell-editing"
+              : undefined
+          }
         >
           <button
             className={
@@ -460,10 +499,43 @@ export function ConfirmacionBuilderTable({
                 : "builder-price-cell-button"
             }
             type="button"
-            onClick={() => openFloatingPriceEditor(row, column)}
+            onClick={() =>
+              openFloatingPriceEditor(
+                row,
+                column
+              )
+            }
             title="Editar precio confirmado"
           >
-            {formatPriceValue(value, monedaCodigo)}
+            {paidValue !== null ? (
+              <span className="confirmacion-paid-price">
+                <strong
+                  className={
+                    comparisonResult === "MAYOR"
+                      ? "confirmacion-paid-price-value confirmacion-paid-price-over"
+                      : "confirmacion-paid-price-value confirmacion-paid-price-ok"
+                  }
+                >
+                  {formatPriceValue(
+                    paidValue,
+                    paidCurrency
+                  )}
+                </strong>
+
+                <small className="confirmacion-quoted-price">
+                  Cotizado:{" "}
+                  {formatPriceValue(
+                    quotedValue,
+                    monedaCodigo
+                  )}
+                </small>
+              </span>
+            ) : (
+              formatPriceValue(
+                quotedValue,
+                monedaCodigo
+              )
+            )}
           </button>
         </td>
       );

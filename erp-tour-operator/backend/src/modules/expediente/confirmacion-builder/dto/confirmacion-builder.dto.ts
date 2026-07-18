@@ -96,12 +96,6 @@ export const confirmacionBuilderPurchaseSchema = z.object({
     "CANCELADA"
   ]),
 
-  idReservaColumnaSeleccionada: z.coerce
-    .number()
-    .int()
-    .positive()
-    .nullable(),
-
   codigoConfirmacionProveedor: z
     .string()
     .trim()

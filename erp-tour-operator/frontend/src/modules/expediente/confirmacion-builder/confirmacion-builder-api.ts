@@ -340,8 +340,6 @@ export type ConfirmacionPurchase = {
 export type ConfirmacionPurchaseFormValues = {
   estado: ConfirmacionPurchaseStatus;
 
-  idReservaColumnaSeleccionada: number | null;
-
   codigoConfirmacionProveedor: string | null;
   fechaConfirmacion: string | null;
 

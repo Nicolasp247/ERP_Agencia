@@ -77,11 +77,11 @@ export class ConfirmacionBuilderService {
       );
     }
 
-    if (record === "INVALID_COLUMN") {
+    if (record === "PRICE_COLUMN_NOT_FOUND") {
       throw new AppError(
         400,
-        "CONFIRMACION_PURCHASE_INVALID_COLUMN",
-        "La columna seleccionada no pertenece a esta confirmación"
+        "CONFIRMACION_PURCHASE_PRICE_COLUMN_NOT_FOUND",
+        "El servicio debe tener un precio registrado en una de las columnas de la confirmación"
       );
     }
 

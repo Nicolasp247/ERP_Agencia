@@ -268,17 +268,6 @@ export function ConfirmacionAdministrativePanel({
   );
 
   const [
-    selectedColumnId,
-    setSelectedColumnId
-  ] = useState(
-    compraProveedor?.columnaSeleccionada
-      ? String(
-          compraProveedor.columnaSeleccionada.id
-        )
-      : ""
-  );
-
-  const [
     totalPagado,
     setTotalPagado
   ] = useState(
@@ -329,15 +318,6 @@ export function ConfirmacionAdministrativePanel({
       )
     );
 
-    setSelectedColumnId(
-      compraProveedor?.columnaSeleccionada
-        ? String(
-            compraProveedor
-              .columnaSeleccionada.id
-          )
-        : ""
-    );
-
     setTotalPagado(
       compraProveedor?.totalPagado === null ||
         compraProveedor?.totalPagado ===
@@ -362,19 +342,48 @@ export function ConfirmacionAdministrativePanel({
   const showCancellationDeadline =
     tipoCancelacion === "GRATUITA_HASTA";
 
-  const selectedColumn = useMemo(
-    () =>
-      columns.find(
-        (column) =>
-          column.id ===
-          Number(selectedColumnId)
-      ) ?? null,
-    [columns, selectedColumnId]
-  );
+  const automaticColumn = useMemo(() => {
+    if (compraProveedor?.columnaSeleccionada) {
+      return (
+        columns.find(
+          (column) =>
+            column.id ===
+            compraProveedor.columnaSeleccionada?.id
+        ) ?? null
+      );
+    }
+
+    const columnsWithPrice = columns.filter(
+      (column) => {
+        const price = row.precios.find(
+          (item) =>
+            item.columnId === column.id
+        );
+
+        return (
+          price?.precioConfirmado !== null &&
+          price?.precioConfirmado !== undefined
+        ) || (
+          price?.precioCotizado !== null &&
+          price?.precioCotizado !== undefined
+        );
+      }
+    );
+
+    if (!columnsWithPrice.length) {
+      return null;
+    }
+
+    return columnsWithPrice[0];
+  }, [
+    columns,
+    row.precios,
+    compraProveedor?.columnaSeleccionada
+  ]);
 
   const dividedPaidValue = useMemo(() => {
     if (
-      !selectedColumn ||
+      !automaticColumn ||
       !totalPagado.trim()
     ) {
       return null;
@@ -388,13 +397,13 @@ export function ConfirmacionAdministrativePanel({
 
     const multiplier = Math.max(
       Number(
-        selectedColumn.multiplicador ?? 1
+        automaticColumn.multiplicador ?? 1
       ),
       1
     );
 
     return parsedTotal / multiplier;
-  }, [selectedColumn, totalPagado]);
+  }, [automaticColumn, totalPagado]);
 
   const statusHelp = useMemo(() => {
     if (estado === "PENDIENTE") {
@@ -457,13 +466,6 @@ export function ConfirmacionAdministrativePanel({
       return;
     }
 
-    if (!selectedColumnId) {
-      window.alert(
-        "Debes seleccionar la columna a la que corresponde el pago."
-      );
-      return;
-    }
-
     if (
       parsedTotal !== null &&
       (
@@ -479,9 +481,6 @@ export function ConfirmacionAdministrativePanel({
 
     onSave({
       estado,
-
-      idReservaColumnaSeleccionada:
-        Number(selectedColumnId),
 
       codigoConfirmacionProveedor:
         codigoConfirmacionProveedor.trim() ||
@@ -782,43 +781,32 @@ export function ConfirmacionAdministrativePanel({
           </label>
         ) : null}
 
-        <label>
-          <span>
-            Columna a la que aplica
-          </span>
+        <div className="confirmacion-admin-auto-column">
+          <span>Aplicación automática</span>
 
-          <select
-            disabled={isSaving}
-            onChange={(event) =>
-              setSelectedColumnId(
-                event.target.value
-              )
-            }
-            required
-            value={selectedColumnId}
-          >
-            <option value="">
-              Selecciona una columna
-            </option>
+          {automaticColumn ? (
+            <>
+              <strong>
+                {getColumnLabel(automaticColumn)}
+              </strong>
 
-            {columns.map((column) => (
-              <option
-                key={column.id}
-                value={column.id}
-              >
-                {getColumnLabel(column)}
-                {" · "}
-                multiplicador{" "}
+              <small>
+                El precio pagado se dividirá entre{" "}
                 {Math.max(
                   Number(
-                    column.multiplicador ?? 1
+                    automaticColumn.multiplicador ?? 1
                   ),
                   1
                 )}
-              </option>
-            ))}
-          </select>
-        </label>
+                .
+              </small>
+            </>
+          ) : (
+            <small>
+              No se encontró una columna con precio para este servicio.
+            </small>
+          )}
+        </div>
 
         <label>
           <span>Precio total pagado</span>
@@ -900,7 +888,7 @@ export function ConfirmacionAdministrativePanel({
           disabled={
             isSaving ||
             purchaseCurrency.trim().length !== 3 ||
-            !selectedColumnId
+            !automaticColumn
           }
           type="submit"
         >
