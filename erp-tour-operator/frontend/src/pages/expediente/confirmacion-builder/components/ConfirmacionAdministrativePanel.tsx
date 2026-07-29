@@ -13,9 +13,18 @@ import type {
   CompraProveedorCancelacionTipo,
   CompraProveedorCreateValues,
   CompraProveedorEstadoEditable,
+  CompraProveedorPago,
+  CompraProveedorPagoCreateValues,
+  CompraProveedorPagoUpdateValues,
+  CompraProveedorPagoVoidValues,
+  CompraProveedorReembolsoCreateValues,
   CompraProveedorReplaceValues,
   CompraProveedorUpdateValues
 } from "@/modules/contabilidad/compras-proveedor/compras-proveedor-api";
+
+import { ConfirmacionPaymentForm } from "@/pages/expediente/confirmacion-builder/components/accounting/ConfirmacionPaymentForm";
+import { ConfirmacionPaymentSummary } from "@/pages/expediente/confirmacion-builder/components/accounting/ConfirmacionPaymentSummary";
+import { ConfirmacionPaymentsList } from "@/pages/expediente/confirmacion-builder/components/accounting/ConfirmacionPaymentsList";
 
 export type LegacyConfirmacionPurchase = {
   id: number;
@@ -81,13 +90,37 @@ type ConfirmacionAdministrativePanelProps = {
     proveedorReservaId: number,
     values: CompraProveedorReplaceValues
   ) => Promise<void>;
+
+  onCreatePayment: (
+    proveedorReservaId: number,
+    values: CompraProveedorPagoCreateValues
+  ) => Promise<void>;
+
+  onCreateRefund: (
+    proveedorReservaId: number,
+    values: CompraProveedorReembolsoCreateValues
+  ) => Promise<void>;
+
+  onUpdatePayment: (
+    pagoId: number,
+    values: CompraProveedorPagoUpdateValues
+  ) => Promise<void>;
+
+  onVoidPayment: (
+    pagoId: number,
+    values: CompraProveedorPagoVoidValues
+  ) => Promise<void>;
 };
 
 type PanelMode =
   | "FORM"
   | "CANCEL"
   | "REPLACE"
-  | "HISTORY";
+  | "HISTORY"
+  | "PAYMENTS"
+  | "NEW_PAYMENT"
+  | "NEW_REFUND"
+  | "EDIT_PAYMENT";
 
 const MONTH_LABELS = [
   "Ene",
@@ -328,7 +361,11 @@ export function ConfirmacionAdministrativePanel({
   onCreate,
   onUpdate,
   onCancelReservation,
-  onReplace
+  onReplace,
+  onCreatePayment,
+  onCreateRefund,
+  onUpdatePayment,
+  onVoidPayment
 }: ConfirmacionAdministrativePanelProps) {
   const newPurchase = isNewPurchase(
     compraProveedor
@@ -443,6 +480,9 @@ export function ConfirmacionAdministrativePanel({
   const [motivoReemplazo, setMotivoReemplazo] =
     useState("");
 
+  const [editingPayment, setEditingPayment] =
+    useState<CompraProveedorPago | null>(null);
+
   useEffect(() => {
     setMode("FORM");
     setEstadoOperativo(
@@ -506,6 +546,7 @@ export function ConfirmacionAdministrativePanel({
     );
     setMotivoCancelacion("");
     setMotivoReemplazo("");
+    setEditingPayment(null);
   }, [
     compraProveedor,
     legacyPurchase,
@@ -822,6 +863,69 @@ export function ConfirmacionAdministrativePanel({
     );
   }
 
+
+  async function createPayment(
+    values: CompraProveedorPagoCreateValues
+  ) {
+    if (!newPurchase) {
+      return;
+    }
+
+    await onCreatePayment(
+      newPurchase.id,
+      values
+    );
+
+    setMode("PAYMENTS");
+  }
+
+  async function createRefund(
+    values: CompraProveedorReembolsoCreateValues
+  ) {
+    if (!newPurchase) {
+      return;
+    }
+
+    await onCreateRefund(
+      newPurchase.id,
+      values
+    );
+
+    setMode("PAYMENTS");
+  }
+
+  async function updatePayment(
+    pagoId: number,
+    values: CompraProveedorPagoUpdateValues
+  ) {
+    await onUpdatePayment(
+      pagoId,
+      values
+    );
+
+    setEditingPayment(null);
+    setMode("PAYMENTS");
+  }
+
+  async function voidPayment(
+    payment: CompraProveedorPago
+  ) {
+    const reason = window.prompt(
+      "Motivo de anulación del movimiento:"
+    );
+
+    if (!reason?.trim()) {
+      return;
+    }
+
+    await onVoidPayment(
+      payment.id,
+      {
+        motivo: reason.trim()
+      }
+    );
+  }
+
   const currentCode = newPurchase
     ? newPurchase.codigoProveedor
     : legacyPurchase
@@ -983,7 +1087,94 @@ export function ConfirmacionAdministrativePanel({
         </div>
       </section>
 
-      {mode === "HISTORY" && newPurchase ? (
+      {mode === "PAYMENTS" && newPurchase ? (
+        <section className="confirmacion-admin-payments">
+          <div className="confirmacion-admin-section-heading">
+            <div>
+              <h3>Movimientos financieros</h3>
+
+              <p>
+                Los pagos y reembolsos pertenecen al módulo
+                independiente de Contabilidad.
+              </p>
+            </div>
+
+            <button
+              className="link-button"
+              onClick={() => setMode("FORM")}
+              type="button"
+            >
+              Volver al formulario
+            </button>
+          </div>
+
+          <ConfirmacionPaymentSummary
+            compra={newPurchase}
+          />
+
+          <div className="confirmacion-payment-toolbar">
+            <button
+              className="primary-button"
+              disabled={isSaving}
+              onClick={() => {
+                setEditingPayment(null);
+                setMode("NEW_PAYMENT");
+              }}
+              type="button"
+            >
+              Registrar pago
+            </button>
+
+            <button
+              className="link-button"
+              disabled={isSaving}
+              onClick={() => {
+                setEditingPayment(null);
+                setMode("NEW_REFUND");
+              }}
+              type="button"
+            >
+              Registrar reembolso
+            </button>
+          </div>
+
+          <ConfirmacionPaymentsList
+            payments={newPurchase.pagos ?? []}
+            isSaving={isSaving}
+            onEdit={(payment) => {
+              setEditingPayment(payment);
+              setMode("EDIT_PAYMENT");
+            }}
+            onVoid={voidPayment}
+          />
+        </section>
+      ) : (
+        mode === "NEW_PAYMENT" ||
+        mode === "NEW_REFUND" ||
+        mode === "EDIT_PAYMENT"
+      ) && newPurchase ? (
+        <ConfirmacionPaymentForm
+          mode={
+            mode === "NEW_REFUND"
+              ? "REFUND"
+              : mode === "EDIT_PAYMENT"
+                ? "EDIT"
+                : "PAYMENT"
+          }
+          defaultCurrency={
+            newPurchase.monedaCodigo
+          }
+          payment={editingPayment}
+          isSaving={isSaving}
+          onCancel={() => {
+            setEditingPayment(null);
+            setMode("PAYMENTS");
+          }}
+          onCreatePayment={createPayment}
+          onCreateRefund={createRefund}
+          onUpdatePayment={updatePayment}
+        />
+      ) : mode === "HISTORY" && newPurchase ? (
         <section className="confirmacion-admin-history">
           <div className="confirmacion-admin-section-heading">
             <div>
@@ -1414,6 +1605,17 @@ export function ConfirmacionAdministrativePanel({
                     type="button"
                   >
                     Ver historial
+                  </button>
+
+                  <button
+                    className="link-button"
+                    disabled={isSaving}
+                    onClick={() =>
+                      setMode("PAYMENTS")
+                    }
+                    type="button"
+                  >
+                    Ver pagos
                   </button>
 
                   <button

@@ -5,6 +5,10 @@ import type {
   CompraProveedor,
   CompraProveedorCancelValues,
   CompraProveedorCreateValues,
+  CompraProveedorPagoCreateValues,
+  CompraProveedorPagoUpdateValues,
+  CompraProveedorPagoVoidValues,
+  CompraProveedorReembolsoCreateValues,
   CompraProveedorReplaceValues,
   CompraProveedorUpdateValues
 } from "@/modules/contabilidad/compras-proveedor/compras-proveedor-api";
@@ -76,6 +80,26 @@ type ConfirmacionBuilderTableProps = {
   onReplaceItemPurchase: (
     proveedorReservaId: number,
     values: CompraProveedorReplaceValues
+  ) => Promise<void>;
+
+  onCreateItemPayment: (
+    proveedorReservaId: number,
+    values: CompraProveedorPagoCreateValues
+  ) => Promise<void>;
+
+  onCreateItemRefund: (
+    proveedorReservaId: number,
+    values: CompraProveedorReembolsoCreateValues
+  ) => Promise<void>;
+
+  onUpdateItemPayment: (
+    pagoId: number,
+    values: CompraProveedorPagoUpdateValues
+  ) => Promise<void>;
+
+  onVoidItemPayment: (
+    pagoId: number,
+    values: CompraProveedorPagoVoidValues
   ) => Promise<void>;
   onDeleteItem: (itemId: number) => void;
   onMoveItem: (itemId: number, direction: "UP" | "DOWN") => void;
@@ -369,6 +393,10 @@ export function ConfirmacionBuilderTable({
   onUpdateItemPurchase,
   onCancelItemPurchase,
   onReplaceItemPurchase,
+  onCreateItemPayment,
+  onCreateItemRefund,
+  onUpdateItemPayment,
+  onVoidItemPayment,
   onUpdateItemNotes,
   onUpdateItemPrices
 }: ConfirmacionBuilderTableProps) {
@@ -1050,6 +1078,18 @@ export function ConfirmacionBuilderTable({
               }
               onReplace={
                 replaceAdministrativePurchase
+              }
+              onCreatePayment={
+                onCreateItemPayment
+              }
+              onCreateRefund={
+                onCreateItemRefund
+              }
+              onUpdatePayment={
+                onUpdateItemPayment
+              }
+              onVoidPayment={
+                onVoidItemPayment
               }
             />
           </div>

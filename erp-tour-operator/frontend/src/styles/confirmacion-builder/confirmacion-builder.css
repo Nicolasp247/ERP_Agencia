@@ -874,3 +874,157 @@
     width: 100%;
   }
 }
+
+/* =========================================================
+   Movimientos financieros conectados desde Confirmación
+   ========================================================= */
+
+.confirmacion-admin-payments {
+  display: grid;
+  gap: 1rem;
+}
+
+.confirmacion-payment-summary {
+  display: grid;
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.confirmacion-payment-summary > div {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid #ded7c8;
+  border-radius: 13px;
+  background: #ffffff;
+}
+
+.confirmacion-payment-summary span,
+.confirmacion-payment-item span {
+  color: #728187;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.confirmacion-payment-summary strong,
+.confirmacion-payment-item strong {
+  color: #12343a;
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.confirmacion-payment-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.confirmacion-payment-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.confirmacion-payment-item {
+  display: grid;
+  grid-template-columns:
+    repeat(7, minmax(0, 1fr))
+    auto;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #e2dbcd;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.confirmacion-payment-item > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.confirmacion-payment-item-void {
+  opacity: 0.62;
+  background: #f5f3ef;
+}
+
+.confirmacion-payment-item-actions {
+  display: flex !important;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 0.45rem !important;
+}
+
+.confirmacion-payment-form-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.confirmacion-payment-form-grid label {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+}
+
+.confirmacion-payment-form-grid label > span {
+  color: #17373d;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.confirmacion-payment-form-grid input,
+.confirmacion-payment-form-grid textarea {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #ddd6c7;
+  border-radius: 12px;
+  padding: 0.6rem 0.7rem;
+  background: #ffffff;
+  color: #061f25;
+  font: inherit;
+}
+
+.confirmacion-payment-form-grid textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+@media (max-width: 1100px) {
+  .confirmacion-payment-summary {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .confirmacion-payment-item {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .confirmacion-payment-item-actions {
+    justify-content: flex-start;
+  }
+
+  .confirmacion-payment-form-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .confirmacion-payment-summary,
+  .confirmacion-payment-item,
+  .confirmacion-payment-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .confirmacion-payment-toolbar {
+    display: grid;
+  }
+
+  .confirmacion-payment-toolbar button {
+    width: 100%;
+  }
+}
