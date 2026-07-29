@@ -247,6 +247,14 @@ export class ConfirmacionBuilderService {
       throw new AppError(404, "RESERVA_ITEM_NOT_FOUND", "Servicio de confirmación no encontrado");
     }
 
+    if (record === "HAS_ADMINISTRATIVE_HISTORY") {
+      throw new AppError(
+        409,
+        "RESERVA_ITEM_HAS_ADMINISTRATIVE_HISTORY",
+        "El servicio tiene reservas o movimientos administrativos y no puede eliminarse. Debe cancelarse o archivarse."
+      );
+    }
+
     return toConfirmacionBuilderDetail(record);
   }
 
@@ -275,6 +283,14 @@ export class ConfirmacionBuilderService {
         404,
         "CONFIRMACION_NOT_FOUND",
         "No existe confirmación creada para esta cotización"
+      );
+    }
+
+    if (deleted === "HAS_ADMINISTRATIVE_HISTORY") {
+      throw new AppError(
+        409,
+        "CONFIRMACION_HAS_ADMINISTRATIVE_HISTORY",
+        "La confirmación tiene reservas o movimientos administrativos y no puede eliminarse. Debe cancelarse o archivarse."
       );
     }
 

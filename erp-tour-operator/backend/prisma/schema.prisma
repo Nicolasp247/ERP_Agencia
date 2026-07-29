@@ -56,6 +56,54 @@ enum CompraProveedorPagoEstado {
   ANULADO
 }
 
+enum ProveedorReservaEstadoOperativo {
+  BORRADOR
+  SOLICITADA
+  CONFIRMADA
+  CANCELADA
+  REEMPLAZADA
+  REALIZADA
+}
+
+enum ProveedorReservaEstadoFinanciero {
+  SIN_PAGAR
+  PAGO_PROGRAMADO
+  PAGO_PARCIAL
+  PAGADO
+  FALTA_COP
+  REEMBOLSADO
+}
+
+enum ProveedorReservaCancelacionTipo {
+  GRATUITA_HASTA
+  NO_REEMBOLSABLE
+  CONDICIONES_ESPECIALES
+}
+
+enum ProveedorReservaPagoTipo {
+  PAGO
+  REEMBOLSO
+  AJUSTE
+}
+
+enum ProveedorReservaPagoEstado {
+  REGISTRADO
+  ANULADO
+}
+
+enum ProveedorReservaEventoTipo {
+  CREADA
+  ACTUALIZADA
+  CONFIRMADA
+  CANCELADA
+  REEMPLAZADA
+  MARCADA_REALIZADA
+  ARCHIVADA
+  PAGO_REGISTRADO
+  PAGO_ANULADO
+  REEMBOLSO_REGISTRADO
+}
+
 enum ReservaConfirmacionVersionEstado {
   ACTIVA
   REEMPLAZADA
@@ -322,23 +370,24 @@ model Cliente {
 }
 
 model Proveedor {
-  id               Int                 @id @default(autoincrement())
-  codigo           String?             @unique @db.VarChar(10)
-  nombreComercial  String              @map("nombre_comercial") @db.VarChar(100)
-  sitioWeb         String?             @map("sitio_web") @db.VarChar(255)
-  idPais           Int?                @map("id_pais")
-  idCiudad         Int?                @map("id_ciudad")
-  observaciones    String?             @db.Text
-  activo           Boolean             @default(true)
-  createdAt        DateTime            @default(now()) @map("created_at")
-  updatedAt        DateTime            @updatedAt @map("updated_at")
-  createdBy        Int?                @map("created_by")
-  updatedBy        Int?                @map("updated_by")
-  pais             Pais?               @relation(fields: [idPais], references: [id])
-  ciudad           Ciudad?             @relation(fields: [idCiudad], references: [id])
-  contactos        ProveedorContacto[]
-  servicios        Servicio[]
-  comprasProveedor CompraProveedor[]
+  id                Int                 @id @default(autoincrement())
+  codigo            String?             @unique @db.VarChar(10)
+  nombreComercial   String              @map("nombre_comercial") @db.VarChar(100)
+  sitioWeb          String?             @map("sitio_web") @db.VarChar(255)
+  idPais            Int?                @map("id_pais")
+  idCiudad          Int?                @map("id_ciudad")
+  observaciones     String?             @db.Text
+  activo            Boolean             @default(true)
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  createdBy         Int?                @map("created_by")
+  updatedBy         Int?                @map("updated_by")
+  pais              Pais?               @relation(fields: [idPais], references: [id])
+  ciudad            Ciudad?             @relation(fields: [idCiudad], references: [id])
+  contactos         ProveedorContacto[]
+  servicios         Servicio[]
+  comprasProveedor  CompraProveedor[]
+  reservasProveedor ProveedorReserva[]
 
   @@index([nombreComercial], map: "idx_proveedor_nombre")
   @@index([activo], map: "idx_proveedor_activo")
@@ -594,16 +643,17 @@ model CatalogoOpcion {
 }
 
 model Usuario {
-  id             Int                            @id @default(autoincrement())
-  nombre         String                         @db.VarChar(120)
-  email          String                         @unique @db.VarChar(120)
-  passwordHash   String                         @map("password_hash") @db.VarChar(255)
-  activo         Boolean                        @default(true)
-  createdAt      DateTime                       @default(now()) @map("created_at")
-  updatedAt      DateTime                       @updatedAt @map("updated_at")
-  roles          UsuarioRol[]
-  auditoria      AuditoriaEvento[]
-  confirmaciones ReservaConfirmacionComercial[] @relation("ConfirmacionUsuario")
+  id                      Int                            @id @default(autoincrement())
+  nombre                  String                         @db.VarChar(120)
+  email                   String                         @unique @db.VarChar(120)
+  passwordHash            String                         @map("password_hash") @db.VarChar(255)
+  activo                  Boolean                        @default(true)
+  createdAt               DateTime                       @default(now()) @map("created_at")
+  updatedAt               DateTime                       @updatedAt @map("updated_at")
+  roles                   UsuarioRol[]
+  auditoria               AuditoriaEvento[]
+  eventosProveedorReserva ProveedorReservaEvento[]
+  confirmaciones          ReservaConfirmacionComercial[] @relation("ConfirmacionUsuario")
 
   @@map("usuario")
 }
@@ -880,6 +930,7 @@ model Reserva {
   items                       ReservaItem[]
   confirmacionesComerciales   ReservaConfirmacionComercial[]
   comprasProveedor            CompraProveedor[]
+  reservasProveedor           ProveedorReserva[]
   liquidacion                 LiquidacionReserva?
 
   @@index([estado], map: "idx_reserva_estado")
@@ -938,6 +989,7 @@ model ReservaItem {
   cotizacionItemOrigen          CotizacionItem?                        @relation(fields: [idCotizacionItemOrigen], references: [id], onDelete: SetNull)
   servicio                      Servicio                               @relation(fields: [idServicio], references: [id])
   confirmaciones                ReservaConfirmacionComercialItem[]
+  reservasProveedorItems        ProveedorReservaItem[]
   compraProveedorItem           CompraProveedorItem?
   preciosSeleccionados          ReservaItemPrecioSeleccionado[]
   hotelesPrevistosSeleccionados ReservaItemHotelPrevistoSeleccionado[]
@@ -1030,6 +1082,139 @@ model CompraProveedorPago {
   @@index([fechaPago], map: "idx_compra_proveedor_pago_fecha")
   @@index([estado], map: "idx_compra_proveedor_pago_estado")
   @@map("compra_proveedor_pago")
+}
+
+model ProveedorReserva {
+  id                         Int  @id @default(autoincrement())
+  idReserva                  Int  @map("id_reserva")
+  idProveedor                Int  @map("id_proveedor")
+  idProveedorReservaAnterior Int? @unique(map: "uq_proveedor_reserva_anterior") @map("id_proveedor_reserva_anterior")
+
+  codigoInterno   String  @unique(map: "uq_proveedor_reserva_codigo_interno") @map("codigo_interno") @db.VarChar(50)
+  codigoProveedor String? @map("codigo_proveedor") @db.VarChar(160)
+
+  estadoOperativo  ProveedorReservaEstadoOperativo  @default(BORRADOR) @map("estado_operativo")
+  estadoFinanciero ProveedorReservaEstadoFinanciero @default(SIN_PAGAR) @map("estado_financiero")
+  esVigente        Boolean                          @default(true) @map("es_vigente")
+
+  fechaReserva           DateTime  @map("fecha_reserva") @db.Date
+  fechaConfirmacion      DateTime? @map("fecha_confirmacion") @db.Date
+  fechaPrevistaCobro     DateTime? @map("fecha_prevista_cobro") @db.Date
+  fechaLimiteCancelacion DateTime? @map("fecha_limite_cancelacion") @db.Date
+  fechaCancelacion       DateTime? @map("fecha_cancelacion") @db.Date
+  fechaRealizacion       DateTime? @map("fecha_realizacion") @db.Date
+
+  tipoCancelacion ProveedorReservaCancelacionTipo? @map("tipo_cancelacion")
+
+  valorContratado Decimal? @map("valor_contratado") @db.Decimal(14, 2)
+  monedaCodigo    String   @default("USD") @map("moneda_codigo") @db.Char(3)
+
+  motivoCancelacion  String? @map("motivo_cancelacion") @db.VarChar(500)
+  notaAdministrativa String? @map("nota_administrativa") @db.Text
+
+  archivadaAt   DateTime? @map("archivada_at")
+  archivadaBy   Int?      @map("archivada_by")
+  motivoArchivo String?   @map("motivo_archivo") @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy Int?     @map("created_by")
+  updatedBy Int?     @map("updated_by")
+
+  reserva   Reserva   @relation(fields: [idReserva], references: [id], onDelete: Restrict)
+  proveedor Proveedor @relation(fields: [idProveedor], references: [id])
+
+  reservaAnterior  ProveedorReserva? @relation("ProveedorReservaReemplazo", fields: [idProveedorReservaAnterior], references: [id], onDelete: SetNull)
+  reservaReemplazo ProveedorReserva? @relation("ProveedorReservaReemplazo")
+
+  items   ProveedorReservaItem[]
+  pagos   ProveedorReservaPago[]
+  eventos ProveedorReservaEvento[]
+
+  @@index([idReserva], map: "idx_proveedor_reserva_reserva")
+  @@index([idProveedor], map: "idx_proveedor_reserva_proveedor")
+  @@index([codigoProveedor], map: "idx_proveedor_reserva_codigo_proveedor")
+  @@index([estadoOperativo], map: "idx_proveedor_reserva_estado_operativo")
+  @@index([estadoFinanciero], map: "idx_proveedor_reserva_estado_financiero")
+  @@index([esVigente], map: "idx_proveedor_reserva_vigente")
+  @@index([fechaPrevistaCobro], map: "idx_proveedor_reserva_prevista_cobro")
+  @@index([fechaLimiteCancelacion], map: "idx_proveedor_reserva_limite_cancelacion")
+  @@map("proveedor_reserva")
+}
+
+model ProveedorReservaItem {
+  id                           Int  @id @default(autoincrement())
+  idProveedorReserva           Int  @map("id_proveedor_reserva")
+  idReservaItem                Int  @map("id_reserva_item")
+  idReservaColumnaSeleccionada Int? @map("id_reserva_columna_seleccionada")
+
+  valorAsignado Decimal? @map("valor_asignado") @db.Decimal(14, 2)
+  esPrincipal   Boolean  @default(false) @map("es_principal")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  proveedorReserva           ProveedorReserva            @relation(fields: [idProveedorReserva], references: [id], onDelete: Cascade)
+  reservaItem                ReservaItem                 @relation(fields: [idReservaItem], references: [id], onDelete: Restrict)
+  reservaColumnaSeleccionada ReservaColumnaSeleccionada? @relation(fields: [idReservaColumnaSeleccionada], references: [id], onDelete: SetNull)
+
+  @@unique([idProveedorReserva, idReservaItem], map: "uq_proveedor_reserva_item")
+  @@index([idReservaItem], map: "idx_proveedor_reserva_item_reserva_item")
+  @@index([idReservaColumnaSeleccionada], map: "idx_proveedor_reserva_item_columna")
+  @@map("proveedor_reserva_item")
+}
+
+model ProveedorReservaPago {
+  id                 Int @id @default(autoincrement())
+  idProveedorReserva Int @map("id_proveedor_reserva")
+
+  tipo   ProveedorReservaPagoTipo   @default(PAGO)
+  estado ProveedorReservaPagoEstado @default(REGISTRADO)
+
+  fechaCargo DateTime @map("fecha_cargo") @db.Date
+
+  valorMonedaOriginal Decimal @map("valor_moneda_original") @db.Decimal(14, 2)
+  monedaOriginal      String  @map("moneda_original") @db.Char(3)
+
+  valorCop   Decimal? @map("valor_cop") @db.Decimal(16, 2)
+  tasaCambio Decimal? @map("tasa_cambio") @db.Decimal(16, 6)
+
+  metodoPago     String? @map("metodo_pago") @db.VarChar(120)
+  referenciaPago String? @map("referencia_pago") @db.VarChar(180)
+  nota           String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy Int?     @map("created_by")
+  updatedBy Int?     @map("updated_by")
+
+  proveedorReserva ProveedorReserva @relation(fields: [idProveedorReserva], references: [id], onDelete: Restrict)
+
+  @@index([idProveedorReserva], map: "idx_proveedor_reserva_pago_reserva")
+  @@index([fechaCargo], map: "idx_proveedor_reserva_pago_fecha")
+  @@index([estado], map: "idx_proveedor_reserva_pago_estado")
+  @@map("proveedor_reserva_pago")
+}
+
+model ProveedorReservaEvento {
+  id                 Int  @id @default(autoincrement())
+  idProveedorReserva Int  @map("id_proveedor_reserva")
+  idUsuario          Int? @map("id_usuario")
+
+  tipo        ProveedorReservaEventoTipo
+  descripcion String?                    @db.VarChar(500)
+
+  datosAnteriores Json? @map("datos_anteriores")
+  datosNuevos     Json? @map("datos_nuevos")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  proveedorReserva ProveedorReserva @relation(fields: [idProveedorReserva], references: [id], onDelete: Restrict)
+  usuario          Usuario?         @relation(fields: [idUsuario], references: [id], onDelete: SetNull)
+
+  @@index([idProveedorReserva], map: "idx_proveedor_reserva_evento_reserva")
+  @@index([idUsuario], map: "idx_proveedor_reserva_evento_usuario")
+  @@index([createdAt], map: "idx_proveedor_reserva_evento_fecha")
+  @@map("proveedor_reserva_evento")
 }
 
 model ReservaConfirmacionComercial {
@@ -1125,9 +1310,10 @@ model ReservaColumnaSeleccionada {
   reserva                 Reserva            @relation(fields: [idReserva], references: [id], onDelete: Cascade)
   cotizacionColumnaOrigen CotizacionColumna? @relation(fields: [idCotizacionColumnaOrigen], references: [id])
 
-  precios          ReservaItemPrecioSeleccionado[]
-  hotelesPrevistos ReservaItemHotelPrevistoSeleccionado[]
-  comprasProveedor CompraProveedor[]
+  precios                ReservaItemPrecioSeleccionado[]
+  hotelesPrevistos       ReservaItemHotelPrevistoSeleccionado[]
+  comprasProveedor       CompraProveedor[]
+  reservasProveedorItems ProveedorReservaItem[]
 
   @@index([idReserva], map: "idx_reserva_columna_reserva")
   @@index([idCotizacionColumnaOrigen], map: "idx_reserva_columna_origen")

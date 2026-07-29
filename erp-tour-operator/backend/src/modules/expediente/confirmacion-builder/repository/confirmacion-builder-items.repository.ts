@@ -566,6 +566,30 @@ export class ConfirmacionBuilderItemsRepository {
         return null;
       }
 
+      const [
+        legacyPurchaseLinksCount,
+        providerBookingLinksCount
+      ] = await Promise.all([
+        tx.compraProveedorItem.count({
+          where: {
+            idReservaItem: itemId
+          }
+        }),
+
+        tx.proveedorReservaItem.count({
+          where: {
+            idReservaItem: itemId
+          }
+        })
+      ]);
+
+      if (
+        legacyPurchaseLinksCount > 0 ||
+        providerBookingLinksCount > 0
+      ) {
+        return "HAS_ADMINISTRATIVE_HISTORY" as const;
+      }
+
       await tx.reservaItemHotelPrevistoSeleccionado.deleteMany({
         where: {
           idReservaItem: itemId

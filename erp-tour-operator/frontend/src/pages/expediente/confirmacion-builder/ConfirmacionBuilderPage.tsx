@@ -17,7 +17,6 @@ import {
   updateConfirmacionBuilderItemNotes,
   updateConfirmacionBuilderItemPrices,
   updateConfirmacionPassenger,
-  upsertConfirmacionBuilderItemPurchase,
   type ConfirmacionBuilderFreeNotesFormValues,
   type ConfirmacionBuilderHotelPreviewFormValues,
   type ConfirmacionBuilderItemFormValues,
@@ -25,9 +24,19 @@ import {
   type ConfirmacionBuilderNoteFormValues,
   type ConfirmacionBuilderPriceFormValues,
   type ConfirmacionPassenger,
-  type ConfirmacionPassengerValues,
-  type ConfirmacionPurchaseFormValues
+  type ConfirmacionPassengerValues
 } from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";
+
+import {
+  cancelCompraProveedor,
+  createCompraProveedorForItem,
+  replaceCompraProveedor,
+  updateCompraProveedor,
+  type CompraProveedorCancelValues,
+  type CompraProveedorCreateValues,
+  type CompraProveedorReplaceValues,
+  type CompraProveedorUpdateValues
+} from "@/modules/contabilidad/compras-proveedor/compras-proveedor-api";
 
 import { ConfirmacionBuilderTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionBuilderTable";
 import { ConfirmacionOptionalServicesTable } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionOptionalServicesTable";
@@ -136,25 +145,70 @@ export function ConfirmacionBuilderPage() {
     }
   });
 
-  const updateItemPurchaseMutation = useMutation({
+  const refreshBuilder = async () => {
+    await queryClient.invalidateQueries({
+      queryKey
+    });
+  };
+
+  const createItemPurchaseMutation = useMutation({
     mutationFn: ({
       itemId,
       values
     }: {
       itemId: number;
-      values: ConfirmacionPurchaseFormValues;
+      values: CompraProveedorCreateValues;
     }) =>
-      upsertConfirmacionBuilderItemPurchase(
+      createCompraProveedorForItem(
         itemId,
         values
       ),
+    onSuccess: refreshBuilder
+  });
 
-    onSuccess: (data) => {
-      queryClient.setQueryData(
-        queryKey,
-        data
-      );
-    }
+  const updateItemPurchaseMutation = useMutation({
+    mutationFn: ({
+      proveedorReservaId,
+      values
+    }: {
+      proveedorReservaId: number;
+      values: CompraProveedorUpdateValues;
+    }) =>
+      updateCompraProveedor(
+        proveedorReservaId,
+        values
+      ),
+    onSuccess: refreshBuilder
+  });
+
+  const cancelItemPurchaseMutation = useMutation({
+    mutationFn: ({
+      proveedorReservaId,
+      values
+    }: {
+      proveedorReservaId: number;
+      values: CompraProveedorCancelValues;
+    }) =>
+      cancelCompraProveedor(
+        proveedorReservaId,
+        values
+      ),
+    onSuccess: refreshBuilder
+  });
+
+  const replaceItemPurchaseMutation = useMutation({
+    mutationFn: ({
+      proveedorReservaId,
+      values
+    }: {
+      proveedorReservaId: number;
+      values: CompraProveedorReplaceValues;
+    }) =>
+      replaceCompraProveedor(
+        proveedorReservaId,
+        values
+      ),
+    onSuccess: refreshBuilder
   });
 
   const updateItemHotelsMutation = useMutation({
@@ -394,17 +448,47 @@ export function ConfirmacionBuilderPage() {
           rows={builder.rows ?? []}
           monedaCodigo={monedaCodigo}
           isSavingPurchase={
-            updateItemPurchaseMutation.isPending
+            createItemPurchaseMutation.isPending ||
+            updateItemPurchaseMutation.isPending ||
+            cancelItemPurchaseMutation.isPending ||
+            replaceItemPurchaseMutation.isPending
           }
-          onUpdateItemPurchase={(
+          onCreateItemPurchase={async (
             itemId,
             values
-          ) =>
-            updateItemPurchaseMutation.mutate({
+          ) => {
+            await createItemPurchaseMutation.mutateAsync({
               itemId,
               values
-            })
-          }
+            });
+          }}
+          onUpdateItemPurchase={async (
+            proveedorReservaId,
+            values
+          ) => {
+            await updateItemPurchaseMutation.mutateAsync({
+              proveedorReservaId,
+              values
+            });
+          }}
+          onCancelItemPurchase={async (
+            proveedorReservaId,
+            values
+          ) => {
+            await cancelItemPurchaseMutation.mutateAsync({
+              proveedorReservaId,
+              values
+            });
+          }}
+          onReplaceItemPurchase={async (
+            proveedorReservaId,
+            values
+          ) => {
+            await replaceItemPurchaseMutation.mutateAsync({
+              proveedorReservaId,
+              values
+            });
+          }}
           onDeleteItem={(itemId) =>
             deleteItemMutation.mutate(itemId)
           }

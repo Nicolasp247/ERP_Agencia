@@ -8,11 +8,38 @@ import {
 } from "react";
 
 import type {
-  ConfirmacionPurchase,
-  ConfirmacionPurchaseCancellationType,
-  ConfirmacionPurchaseFormValues,
-  ConfirmacionPurchaseStatus
-} from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";
+  CompraProveedor,
+  CompraProveedorCancelValues,
+  CompraProveedorCancelacionTipo,
+  CompraProveedorCreateValues,
+  CompraProveedorEstadoEditable,
+  CompraProveedorReplaceValues,
+  CompraProveedorUpdateValues
+} from "@/modules/contabilidad/compras-proveedor/compras-proveedor-api";
+
+export type LegacyConfirmacionPurchase = {
+  id: number;
+  codigoInterno: string;
+  codigoConfirmacionProveedor: string | null;
+  estado: string;
+  fechaConfirmacion: string | null;
+  tipoCancelacion: CompraProveedorCancelacionTipo | null;
+  fechaLimiteCancelacion: string | null;
+  columnaSeleccionada: {
+    id: number;
+    multiplicador: number;
+  } | null;
+  totalPagado: number | null;
+  valorPagadoUnidad: number | null;
+  precioCotizadoComparacion: number | null;
+  resultadoComparacion: "MENOR_IGUAL" | "MAYOR" | null;
+  monedaCodigo: string;
+  notaAdministrativa: string;
+};
+
+export type ConfirmacionAdministrativePurchase =
+  | CompraProveedor
+  | LegacyConfirmacionPurchase;
 
 type ConfirmacionAdministrativeColumn = {
   id: number;
@@ -26,7 +53,6 @@ type ConfirmacionAdministrativeRow = {
   fecha: string | null;
   fechaFin?: string | null;
   servicioIncluido: string;
-
   precios: Array<{
     columnId: number;
     precioCotizado: number | null;
@@ -36,14 +62,32 @@ type ConfirmacionAdministrativeRow = {
 
 type ConfirmacionAdministrativePanelProps = {
   operador: string;
-  compraProveedor?: ConfirmacionPurchase | null;
+  compraProveedor?: ConfirmacionAdministrativePurchase | null;
   monedaCodigo: string;
   columns: ConfirmacionAdministrativeColumn[];
   row: ConfirmacionAdministrativeRow;
   isSaving?: boolean;
-  onCancel: () => void;
-  onSave: (values: ConfirmacionPurchaseFormValues) => void;
+  onClose: () => void;
+  onCreate: (values: CompraProveedorCreateValues) => Promise<void>;
+  onUpdate: (
+    proveedorReservaId: number,
+    values: CompraProveedorUpdateValues
+  ) => Promise<void>;
+  onCancelReservation: (
+    proveedorReservaId: number,
+    values: CompraProveedorCancelValues
+  ) => Promise<void>;
+  onReplace: (
+    proveedorReservaId: number,
+    values: CompraProveedorReplaceValues
+  ) => Promise<void>;
 };
+
+type PanelMode =
+  | "FORM"
+  | "CANCEL"
+  | "REPLACE"
+  | "HISTORY";
 
 const MONTH_LABELS = [
   "Ene",
@@ -59,6 +103,33 @@ const MONTH_LABELS = [
   "Nov",
   "Dic"
 ];
+
+function isNewPurchase(
+  value:
+    | ConfirmacionAdministrativePurchase
+    | null
+    | undefined
+): value is CompraProveedor {
+  return Boolean(
+    value &&
+      "estadoOperativo" in value &&
+      "codigoProveedor" in value
+  );
+}
+
+function todayIsoDate() {
+  const today = new Date();
+
+  const year = today.getFullYear();
+  const month = String(
+    today.getMonth() + 1
+  ).padStart(2, "0");
+  const day = String(
+    today.getDate()
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
 
 function isoToDisplayInput(
   value: string | null | undefined
@@ -117,6 +188,22 @@ function displayInputToIso(value: string) {
   ].join("-");
 }
 
+function normalizeDateInput(value: string) {
+  const digits = value
+    .replace(/\D/g, "")
+    .slice(0, 8);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+  if (digits.length <= 4) {
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  }
+
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
 function formatAdministrativeDate(
   value: string | null | undefined
 ) {
@@ -132,26 +219,10 @@ function formatAdministrativeDate(
     return value;
   }
 
-  const year = match[1];
-  const monthNumber = Number(match[2]);
-  const day = match[3];
-
   const monthLabel =
-    MONTH_LABELS[monthNumber - 1] ?? "";
+    MONTH_LABELS[Number(match[2]) - 1] ?? "";
 
-  return `${day}/${monthLabel}(${match[2]})/${year}`;
-}
-
-function getColumnLabel(
-  column: ConfirmacionAdministrativeColumn
-) {
-  return (
-    column.label ||
-    `${column.grupo} ${column.nombre}`
-      .replaceAll("*", " estrellas")
-      .replace(/\s+/g, " ")
-      .trim()
-  );
+  return `${match[3]}/${monthLabel}(${match[2]})/${match[1]}`;
 }
 
 function formatServiceDate(
@@ -204,18 +275,46 @@ function formatMoney(
   return `${Number(value).toFixed(2)} ${currency}`;
 }
 
-function normalizeDateInput(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 8);
+function getColumnLabel(
+  column: ConfirmacionAdministrativeColumn
+) {
+  return (
+    column.label ||
+    `${column.grupo} ${column.nombre}`
+      .replaceAll("*", " estrellas")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+}
 
-  if (digits.length <= 2) {
-    return digits;
-  }
+function getOperationalStatusLabel(
+  value: string
+) {
+  const labels: Record<string, string> = {
+    BORRADOR: "Borrador",
+    SOLICITADA: "Solicitada",
+    CONFIRMADA: "Confirmada",
+    CANCELADA: "Cancelada",
+    REEMPLAZADA: "Reemplazada",
+    REALIZADA: "Realizada"
+  };
 
-  if (digits.length <= 4) {
-    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  }
+  return labels[value] ?? value;
+}
 
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+function getFinancialStatusLabel(
+  value: string
+) {
+  const labels: Record<string, string> = {
+    SIN_PAGAR: "Sin pagar",
+    PAGO_PROGRAMADO: "Pago programado",
+    PAGO_PARCIAL: "Pago parcial",
+    PAGADO: "Pagado",
+    FALTA_COP: "Falta COP",
+    REEMBOLSADO: "Reembolsado"
+  };
+
+  return labels[value] ?? value;
 }
 
 export function ConfirmacionAdministrativePanel({
@@ -225,122 +324,194 @@ export function ConfirmacionAdministrativePanel({
   columns,
   row,
   isSaving = false,
-  onCancel,
-  onSave
+  onClose,
+  onCreate,
+  onUpdate,
+  onCancelReservation,
+  onReplace
 }: ConfirmacionAdministrativePanelProps) {
-  const [estado, setEstado] =
-    useState<ConfirmacionPurchaseStatus>(
-      compraProveedor?.estado ?? "PENDIENTE"
+  const newPurchase = isNewPurchase(
+    compraProveedor
+  )
+    ? compraProveedor
+    : null;
+
+  const legacyPurchase =
+    !newPurchase &&
+    compraProveedor &&
+    "codigoConfirmacionProveedor" in compraProveedor
+      ? compraProveedor
+      : null;
+
+  const isLegacy =
+    Boolean(legacyPurchase);
+
+  const [mode, setMode] =
+    useState<PanelMode>("FORM");
+
+  const [estadoOperativo, setEstadoOperativo] =
+    useState<CompraProveedorEstadoEditable>(
+      newPurchase?.estadoOperativo === "REALIZADA"
+        ? "REALIZADA"
+        : newPurchase?.estadoOperativo === "SOLICITADA"
+          ? "SOLICITADA"
+          : newPurchase?.estadoOperativo === "CONFIRMADA"
+            ? "CONFIRMADA"
+            : "BORRADOR"
     );
 
-  const [
-    codigoConfirmacionProveedor,
-    setCodigoConfirmacionProveedor
-  ] = useState(
-    compraProveedor?.codigoConfirmacionProveedor ?? ""
-  );
+  const [codigoProveedor, setCodigoProveedor] =
+    useState(
+      newPurchase?.codigoProveedor ??
+        (legacyPurchase
+          ?.codigoConfirmacionProveedor ?? "")
+    );
 
-  const [
-    fechaConfirmacion,
-    setFechaConfirmacion
-  ] = useState(
-    isoToDisplayInput(
-      compraProveedor?.fechaConfirmacion
-    )
-  );
+  const [fechaReserva, setFechaReserva] =
+    useState(
+      isoToDisplayInput(
+        newPurchase?.fechaReserva ??
+          todayIsoDate()
+      )
+    );
 
-  const [
-    tipoCancelacion,
-    setTipoCancelacion
-  ] = useState<
-    ConfirmacionPurchaseCancellationType | ""
-  >(
-    compraProveedor?.tipoCancelacion ?? ""
-  );
+  const [fechaConfirmacion, setFechaConfirmacion] =
+    useState(
+      isoToDisplayInput(
+        newPurchase?.fechaConfirmacion ??
+          legacyPurchase
+            ?.fechaConfirmacion
+      )
+    );
+
+  const [fechaPrevistaCobro, setFechaPrevistaCobro] =
+    useState(
+      isoToDisplayInput(
+        newPurchase?.fechaPrevistaCobro
+      )
+    );
+
+  const [tipoCancelacion, setTipoCancelacion] =
+    useState<
+      CompraProveedorCancelacionTipo | ""
+    >(
+      newPurchase?.tipoCancelacion ??
+        compraProveedor?.tipoCancelacion ??
+        ""
+    );
 
   const [
     fechaLimiteCancelacion,
     setFechaLimiteCancelacion
   ] = useState(
     isoToDisplayInput(
-      compraProveedor?.fechaLimiteCancelacion
+      newPurchase?.fechaLimiteCancelacion ??
+        compraProveedor?.fechaLimiteCancelacion
     )
   );
 
-  const [
-    totalPagado,
-    setTotalPagado
-  ] = useState(
-    compraProveedor?.totalPagado === null ||
-      compraProveedor?.totalPagado === undefined
-      ? ""
-      : String(compraProveedor.totalPagado)
-  );
-
-  const [
-    purchaseCurrency,
-    setPurchaseCurrency
-  ] = useState(
-    compraProveedor?.monedaCodigo ??
-      monedaCodigo
-  );
-
-  const [
-    notaAdministrativa,
-    setNotaAdministrativa
-  ] = useState(
-    compraProveedor?.notaAdministrativa ?? ""
-  );
-
-  useEffect(() => {
-    setEstado(
-      compraProveedor?.estado ?? "PENDIENTE"
+  const [valorContratado, setValorContratado] =
+    useState(
+      newPurchase?.valorContratado === null ||
+        newPurchase?.valorContratado === undefined
+        ? legacyPurchase?.totalPagado !== null &&
+          legacyPurchase?.totalPagado !== undefined
+          ? String(legacyPurchase.totalPagado)
+          : ""
+        : String(newPurchase.valorContratado)
     );
 
-    setCodigoConfirmacionProveedor(
-      compraProveedor
-        ?.codigoConfirmacionProveedor ?? ""
-    );
-
-    setFechaConfirmacion(
-      isoToDisplayInput(
-        compraProveedor?.fechaConfirmacion
-      )
-    );
-
-    setTipoCancelacion(
-      compraProveedor?.tipoCancelacion ?? ""
-    );
-
-    setFechaLimiteCancelacion(
-      isoToDisplayInput(
-        compraProveedor?.fechaLimiteCancelacion
-      )
-    );
-
-    setTotalPagado(
-      compraProveedor?.totalPagado === null ||
-        compraProveedor?.totalPagado ===
-          undefined
-        ? ""
-        : String(
-            compraProveedor.totalPagado
-          )
-    );
-
-    setPurchaseCurrency(
+  const [purchaseCurrency, setPurchaseCurrency] =
+    useState(
       compraProveedor?.monedaCodigo ??
         monedaCodigo
     );
 
-    setNotaAdministrativa(
-      compraProveedor
-        ?.notaAdministrativa ?? ""
+  const [notaAdministrativa, setNotaAdministrativa] =
+    useState(
+      compraProveedor?.notaAdministrativa ?? ""
     );
-  }, [compraProveedor, monedaCodigo]);
 
-  const showCancellationDeadline =
-    tipoCancelacion === "GRATUITA_HASTA";
+  const [motivoCancelacion, setMotivoCancelacion] =
+    useState("");
+
+  const [fechaCancelacion, setFechaCancelacion] =
+    useState(
+      isoToDisplayInput(todayIsoDate())
+    );
+
+  const [motivoReemplazo, setMotivoReemplazo] =
+    useState("");
+
+  useEffect(() => {
+    setMode("FORM");
+    setEstadoOperativo(
+      newPurchase?.estadoOperativo === "REALIZADA"
+        ? "REALIZADA"
+        : newPurchase?.estadoOperativo === "SOLICITADA"
+          ? "SOLICITADA"
+          : newPurchase?.estadoOperativo === "CONFIRMADA"
+            ? "CONFIRMADA"
+            : "BORRADOR"
+    );
+    setCodigoProveedor(
+      newPurchase?.codigoProveedor ??
+        (legacyPurchase
+          ?.codigoConfirmacionProveedor ?? "")
+    );
+    setFechaReserva(
+      isoToDisplayInput(
+        newPurchase?.fechaReserva ??
+          todayIsoDate()
+      )
+    );
+    setFechaConfirmacion(
+      isoToDisplayInput(
+        newPurchase?.fechaConfirmacion ??
+          legacyPurchase
+            ?.fechaConfirmacion
+      )
+    );
+    setFechaPrevistaCobro(
+      isoToDisplayInput(
+        newPurchase?.fechaPrevistaCobro
+      )
+    );
+    setTipoCancelacion(
+      newPurchase?.tipoCancelacion ??
+        compraProveedor?.tipoCancelacion ??
+        ""
+    );
+    setFechaLimiteCancelacion(
+      isoToDisplayInput(
+        newPurchase?.fechaLimiteCancelacion ??
+          compraProveedor?.fechaLimiteCancelacion
+      )
+    );
+    setValorContratado(
+      newPurchase?.valorContratado === null ||
+        newPurchase?.valorContratado === undefined
+        ? legacyPurchase?.totalPagado !== null &&
+          legacyPurchase?.totalPagado !== undefined
+          ? String(legacyPurchase.totalPagado)
+          : ""
+        : String(newPurchase.valorContratado)
+    );
+    setPurchaseCurrency(
+      compraProveedor?.monedaCodigo ??
+        monedaCodigo
+    );
+    setNotaAdministrativa(
+      compraProveedor?.notaAdministrativa ?? ""
+    );
+    setMotivoCancelacion("");
+    setMotivoReemplazo("");
+  }, [
+    compraProveedor,
+    legacyPurchase,
+    monedaCodigo,
+    newPurchase
+  ]);
 
   const automaticColumn = useMemo(() => {
     if (compraProveedor?.columnaSeleccionada) {
@@ -348,13 +519,14 @@ export function ConfirmacionAdministrativePanel({
         columns.find(
           (column) =>
             column.id ===
-            compraProveedor.columnaSeleccionada?.id
+            compraProveedor
+              .columnaSeleccionada?.id
         ) ?? null
       );
     }
 
-    const columnsWithPrice = columns.filter(
-      (column) => {
+    return (
+      columns.find((column) => {
         const price = row.precios.find(
           (item) =>
             item.columnId === column.id
@@ -367,83 +539,91 @@ export function ConfirmacionAdministrativePanel({
           price?.precioCotizado !== null &&
           price?.precioCotizado !== undefined
         );
-      }
+      }) ?? null
     );
-
-    if (!columnsWithPrice.length) {
-      return null;
-    }
-
-    return columnsWithPrice[0];
   }, [
     columns,
-    row.precios,
-    compraProveedor?.columnaSeleccionada
+    compraProveedor?.columnaSeleccionada,
+    row.precios
   ]);
 
-  const dividedPaidValue = useMemo(() => {
+  const contractedUnitValue = useMemo(() => {
     if (
       !automaticColumn ||
-      !totalPagado.trim()
+      !valorContratado.trim()
     ) {
       return null;
     }
 
-    const parsedTotal = Number(totalPagado);
+    const parsedValue =
+      Number(valorContratado);
 
-    if (!Number.isFinite(parsedTotal)) {
+    if (!Number.isFinite(parsedValue)) {
       return null;
     }
 
-    const multiplier = Math.max(
-      Number(
-        automaticColumn.multiplicador ?? 1
-      ),
-      1
+    return (
+      parsedValue /
+      Math.max(
+        Number(
+          automaticColumn.multiplicador ?? 1
+        ),
+        1
+      )
     );
+  }, [
+    automaticColumn,
+    valorContratado
+  ]);
 
-    return parsedTotal / multiplier;
-  }, [automaticColumn, totalPagado]);
+  const showCancellationDeadline =
+    tipoCancelacion ===
+    "GRATUITA_HASTA";
 
   const statusHelp = useMemo(() => {
-    if (estado === "PENDIENTE") {
-      return "Todavía no se ha solicitado ni confirmado el servicio.";
+    if (estadoOperativo === "BORRADOR") {
+      return "Registro preliminar. Todavía no se ha solicitado al proveedor.";
     }
 
-    if (estado === "SOLICITADA") {
-      return "La reserva fue solicitada al operador y está pendiente de respuesta.";
+    if (estadoOperativo === "SOLICITADA") {
+      return "La reserva fue solicitada y está pendiente de respuesta.";
     }
 
-    if (estado === "CONFIRMADA") {
-      return "El operador confirmó la prestación del servicio.";
+    if (estadoOperativo === "CONFIRMADA") {
+      return "El proveedor confirmó la prestación del servicio.";
     }
 
-    if (estado === "PAGAR_DESPUES") {
-      return "El servicio está confirmado, pero el pago se realizará posteriormente.";
-    }
+    return "El servicio fue marcado como realizado.";
+  }, [estadoOperativo]);
 
-    return "La compra o reserva fue cancelada.";
-  }, [estado]);
-
-  function submitForm(
-    event: FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
+  function parseFormValues() {
+    const parsedReservationDate =
+      displayInputToIso(fechaReserva);
 
     const parsedConfirmationDate =
       displayInputToIso(fechaConfirmacion);
 
-    const parsedCancellationDate =
+    const parsedPlannedChargeDate =
+      displayInputToIso(fechaPrevistaCobro);
+
+    const parsedCancellationDeadline =
       showCancellationDeadline
         ? displayInputToIso(
             fechaLimiteCancelacion
           )
         : null;
 
-    const parsedTotal =
-      totalPagado.trim()
-        ? Number(totalPagado)
+    const parsedValue =
+      valorContratado.trim()
+        ? Number(valorContratado)
         : null;
+
+    if (!parsedReservationDate) {
+      window.alert(
+        "La fecha de reserva debe tener formato dd/mm/yyyy."
+      );
+      return null;
+    }
 
     if (
       fechaConfirmacion.trim() &&
@@ -452,61 +632,200 @@ export function ConfirmacionAdministrativePanel({
       window.alert(
         "La fecha de confirmación debe tener formato dd/mm/yyyy."
       );
-      return;
+      return null;
+    }
+
+    if (
+      fechaPrevistaCobro.trim() &&
+      !parsedPlannedChargeDate
+    ) {
+      window.alert(
+        "La fecha prevista de cobro debe tener formato dd/mm/yyyy."
+      );
+      return null;
     }
 
     if (
       showCancellationDeadline &&
       fechaLimiteCancelacion.trim() &&
-      !parsedCancellationDate
+      !parsedCancellationDeadline
     ) {
       window.alert(
         "La fecha máxima de cancelación debe tener formato dd/mm/yyyy."
       );
-      return;
+      return null;
     }
 
     if (
-      parsedTotal !== null &&
+      parsedValue !== null &&
       (
-        !Number.isFinite(parsedTotal) ||
-        parsedTotal < 0
+        !Number.isFinite(parsedValue) ||
+        parsedValue < 0
       )
     ) {
       window.alert(
-        "El precio total pagado debe ser un valor válido."
+        "El valor contratado debe ser un número válido."
       );
-      return;
+      return null;
     }
 
-    onSave({
-      estado,
+    if (
+      purchaseCurrency.trim().length !== 3
+    ) {
+      window.alert(
+        "La moneda debe tener tres letras."
+      );
+      return null;
+    }
 
-      codigoConfirmacionProveedor:
-        codigoConfirmacionProveedor.trim() ||
-        null,
-
+    return {
+      estadoOperativo,
+      codigoProveedor:
+        codigoProveedor.trim() || null,
+      fechaReserva:
+        parsedReservationDate,
       fechaConfirmacion:
         parsedConfirmationDate,
-
+      fechaPrevistaCobro:
+        parsedPlannedChargeDate,
       tipoCancelacion:
         tipoCancelacion || null,
-
       fechaLimiteCancelacion:
-        parsedCancellationDate,
-
-      totalPagado:
-        parsedTotal,
-
+        parsedCancellationDeadline,
+      valorContratado:
+        parsedValue,
       monedaCodigo:
         purchaseCurrency
           .trim()
           .toUpperCase(),
-
       notaAdministrativa:
         notaAdministrativa.trim() || null
-    });
+    } satisfies CompraProveedorCreateValues;
   }
+
+  async function submitForm(
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+
+    if (isLegacy) {
+      window.alert(
+        "Este registro pertenece al sistema anterior. Debe migrarse antes de editarlo desde Compras a proveedores."
+      );
+      return;
+    }
+
+    const values = parseFormValues();
+
+    if (!values) {
+      return;
+    }
+
+    if (newPurchase) {
+      await onUpdate(
+        newPurchase.id,
+        values
+      );
+    } else {
+      await onCreate(values);
+    }
+  }
+
+  async function submitCancellation() {
+    if (!newPurchase) {
+      return;
+    }
+
+    const parsedDate =
+      displayInputToIso(fechaCancelacion);
+
+    if (!parsedDate) {
+      window.alert(
+        "La fecha de cancelación debe tener formato dd/mm/yyyy."
+      );
+      return;
+    }
+
+    if (!motivoCancelacion.trim()) {
+      window.alert(
+        "Debes indicar el motivo de la cancelación."
+      );
+      return;
+    }
+
+    await onCancelReservation(
+      newPurchase.id,
+      {
+        fechaCancelacion: parsedDate,
+        motivoCancelacion:
+          motivoCancelacion.trim()
+      }
+    );
+  }
+
+  async function submitReplacement() {
+    if (!newPurchase) {
+      return;
+    }
+
+    const values = parseFormValues();
+
+    if (!values) {
+      return;
+    }
+
+    if (!codigoProveedor.trim()) {
+      window.alert(
+        "La nueva reserva debe tener código de proveedor."
+      );
+      return;
+    }
+
+    if (!motivoReemplazo.trim()) {
+      window.alert(
+        "Debes indicar el motivo del reemplazo."
+      );
+      return;
+    }
+
+    const replacementStatus =
+      values.estadoOperativo === "SOLICITADA"
+        ? "SOLICITADA"
+        : "CONFIRMADA";
+
+    await onReplace(
+      newPurchase.id,
+      {
+        codigoProveedor:
+          codigoProveedor.trim(),
+        motivoReemplazo:
+          motivoReemplazo.trim(),
+        estadoOperativo:
+          replacementStatus,
+        fechaReserva:
+          values.fechaReserva,
+        fechaConfirmacion:
+          values.fechaConfirmacion,
+        fechaPrevistaCobro:
+          values.fechaPrevistaCobro,
+        tipoCancelacion:
+          values.tipoCancelacion,
+        fechaLimiteCancelacion:
+          values.fechaLimiteCancelacion,
+        valorContratado:
+          values.valorContratado,
+        monedaCodigo:
+          values.monedaCodigo,
+        notaAdministrativa:
+          values.notaAdministrativa
+      }
+    );
+  }
+
+  const currentCode = newPurchase
+    ? newPurchase.codigoProveedor
+    : legacyPurchase
+      ?.codigoConfirmacionProveedor ?? null;
 
   return (
     <form
@@ -516,35 +835,46 @@ export function ConfirmacionAdministrativePanel({
       <div className="confirmacion-admin-heading">
         <div>
           <p className="eyebrow">
-            Gestión administrativa
+            Conexión con Contabilidad
           </p>
 
           <h2>
-            {compraProveedor
-              ? "Editar confirmación del operador"
-              : "Registrar confirmación del operador"}
+            {newPurchase
+              ? "Reserva vigente del proveedor"
+              : isLegacy
+                ? "Registro administrativo anterior"
+                : "Crear reserva del proveedor"}
           </h2>
+
+          <p>
+            La confirmación muestra el servicio. La compra,
+            sus estados y su historial se administran en el
+            módulo independiente de Contabilidad.
+          </p>
         </div>
 
         <button
           aria-label="Cerrar"
           className="icon-button"
           disabled={isSaving}
-          onClick={onCancel}
+          onClick={onClose}
           type="button"
         >
           ×
         </button>
       </div>
 
+      {isLegacy ? (
+        <div className="confirmacion-admin-legacy-warning">
+          Este movimiento fue creado con el sistema anterior.
+          Se conserva en modo lectura hasta realizar la migración.
+        </div>
+      ) : null}
+
       <section className="confirmacion-admin-service-summary">
         <div className="confirmacion-admin-service-main">
-          <span>Servicio seleccionado</span>
-
-          <strong>
-            {row.servicioIncluido}
-          </strong>
-
+          <span>Servicio confirmado</span>
+          <strong>{row.servicioIncluido}</strong>
           <small>
             {formatServiceDate(
               row.fecha,
@@ -554,30 +884,57 @@ export function ConfirmacionAdministrativePanel({
         </div>
 
         <div className="confirmacion-admin-summary-item">
-          <span>Operador</span>
+          <span>Proveedor</span>
           <strong>{operador}</strong>
         </div>
 
         <div className="confirmacion-admin-summary-item">
-          <span>Código actual</span>
-
+          <span>Código vigente</span>
           <strong>
-            {compraProveedor
-              ?.codigoConfirmacionProveedor ||
-              "Sin confirmar"}
+            {currentCode || "Sin código"}
           </strong>
         </div>
 
-        {compraProveedor ? (
-          <div className="confirmacion-admin-summary-item">
-            <span>Código interno</span>
+        <div className="confirmacion-admin-summary-item">
+          <span>Historial</span>
+          <strong>
+            {newPurchase
+              ? `${newPurchase.historialCantidad} registro(s)`
+              : isLegacy
+                ? "Sistema anterior"
+                : "Sin movimientos"}
+          </strong>
+        </div>
+      </section>
 
+      {newPurchase ? (
+        <section className="confirmacion-accounting-status-strip">
+          <div>
+            <span>Estado operativo</span>
             <strong>
-              {compraProveedor.codigoInterno}
+              {getOperationalStatusLabel(
+                newPurchase.estadoOperativo
+              )}
             </strong>
           </div>
-        ) : null}
-      </section>
+
+          <div>
+            <span>Estado financiero</span>
+            <strong>
+              {getFinancialStatusLabel(
+                newPurchase.estadoFinanciero
+              )}
+            </strong>
+          </div>
+
+          <div>
+            <span>Código interno</span>
+            <strong>
+              {newPurchase.codigoInterno}
+            </strong>
+          </div>
+        </section>
+      ) : null}
 
       <section className="confirmacion-admin-service-prices">
         <h3>
@@ -626,279 +983,519 @@ export function ConfirmacionAdministrativePanel({
         </div>
       </section>
 
-      <div className="confirmacion-admin-grid">
-        <label>
-          <span>Estado</span>
+      {mode === "HISTORY" && newPurchase ? (
+        <section className="confirmacion-admin-history">
+          <div className="confirmacion-admin-section-heading">
+            <div>
+              <h3>Historial de reservas</h3>
+              <p>
+                Las reservas reemplazadas o canceladas se
+                conservan y nunca pisan el código anterior.
+              </p>
+            </div>
 
-          <select
-            disabled={isSaving}
-            onChange={(event) =>
-              setEstado(
-                event.target
-                  .value as ConfirmacionPurchaseStatus
+            <button
+              className="link-button"
+              onClick={() => setMode("FORM")}
+              type="button"
+            >
+              Volver al formulario
+            </button>
+          </div>
+
+          <div className="confirmacion-admin-history-list">
+            {newPurchase.historial.map(
+              (historyItem) => (
+                <article
+                  className={
+                    historyItem.esVigente
+                      ? "confirmacion-admin-history-item confirmacion-admin-history-item-active"
+                      : "confirmacion-admin-history-item"
+                  }
+                  key={historyItem.id}
+                >
+                  <div>
+                    <span>Código proveedor</span>
+                    <strong>
+                      {historyItem.codigoProveedor ||
+                        "Sin código"}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Estado</span>
+                    <strong>
+                      {getOperationalStatusLabel(
+                        historyItem.estadoOperativo
+                      )}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Fecha reserva</span>
+                    <strong>
+                      {formatAdministrativeDate(
+                        historyItem.fechaReserva
+                      )}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Motivo</span>
+                    <strong>
+                      {historyItem.motivoCancelacion ||
+                        "Sin observación"}
+                    </strong>
+                  </div>
+                </article>
               )
-            }
-            value={estado}
-          >
-            <option value="PENDIENTE">
-              Pendiente
-            </option>
+            )}
+          </div>
+        </section>
+      ) : mode === "CANCEL" && newPurchase ? (
+        <section className="confirmacion-admin-operation-box confirmacion-admin-operation-danger">
+          <div className="confirmacion-admin-section-heading">
+            <div>
+              <h3>Cancelar reserva vigente</h3>
+              <p>
+                La reserva seguirá visible en el historial y
+                dejará de ser la reserva activa.
+              </p>
+            </div>
+          </div>
 
-            <option value="SOLICITADA">
-              Solicitada
-            </option>
+          <div className="confirmacion-admin-operation-grid">
+            <label>
+              <span>Fecha de cancelación</span>
+              <input
+                disabled={isSaving}
+                inputMode="numeric"
+                maxLength={10}
+                onChange={(event) =>
+                  setFechaCancelacion(
+                    normalizeDateInput(
+                      event.target.value
+                    )
+                  )
+                }
+                placeholder="dd/mm/yyyy"
+                value={fechaCancelacion}
+              />
+            </label>
 
-            <option value="CONFIRMADA">
-              Confirmada
-            </option>
-
-            <option value="PAGAR_DESPUES">
-              Pagar después
-            </option>
-
-            <option value="CANCELADA">
-              Cancelada
-            </option>
-          </select>
-
-          <small>{statusHelp}</small>
-        </label>
-
-        <label>
-          <span>
-            Código de confirmación
-          </span>
-
-          <input
-            disabled={isSaving}
-            maxLength={120}
-            onChange={(event) =>
-              setCodigoConfirmacionProveedor(
-                event.target.value
-              )
-            }
-            placeholder="Ej: T451238"
-            value={
-              codigoConfirmacionProveedor
-            }
-          />
-        </label>
-
-        <label>
-          <span>Fecha de confirmación</span>
-
-          <input
-            disabled={isSaving}
-            inputMode="numeric"
-            maxLength={10}
-            onChange={(event) =>
-              setFechaConfirmacion(
-                normalizeDateInput(
-                  event.target.value
-                )
-              )
-            }
-            placeholder="dd/mm/yyyy"
-            value={fechaConfirmacion}
-          />
-
-          {compraProveedor?.fechaConfirmacion ? (
-            <small>
-              Guardada:{" "}
-              {formatAdministrativeDate(
-                compraProveedor
-                  .fechaConfirmacion
-              )}
-            </small>
-          ) : null}
-        </label>
-
-        <label>
-          <span>
-            Política de cancelación
-          </span>
-
-          <select
-            disabled={isSaving}
-            onChange={(event) =>
-              setTipoCancelacion(
-                event.target.value as
-                  | ConfirmacionPurchaseCancellationType
-                  | ""
-              )
-            }
-            value={tipoCancelacion}
-          >
-            <option value="">
-              Sin definir
-            </option>
-
-            <option value="GRATUITA_HASTA">
-              Gratuita hasta una fecha
-            </option>
-
-            <option value="NO_REEMBOLSABLE">
-              No reembolsable
-            </option>
-
-            <option value="CONDICIONES_ESPECIALES">
-              Condiciones especiales
-            </option>
-          </select>
-        </label>
-
-        {showCancellationDeadline ? (
-          <label>
-            <span>
-              Cancelación gratuita hasta
-            </span>
-
-            <input
-              disabled={isSaving}
-              inputMode="numeric"
-              maxLength={10}
-              onChange={(event) =>
-                setFechaLimiteCancelacion(
-                  normalizeDateInput(
+            <label className="confirmacion-admin-notes">
+              <span>Motivo de cancelación</span>
+              <textarea
+                disabled={isSaving}
+                onChange={(event) =>
+                  setMotivoCancelacion(
                     event.target.value
                   )
-                )
-              }
-              placeholder="dd/mm/yyyy"
-              value={fechaLimiteCancelacion}
-            />
+                }
+                placeholder="Ej: El proveedor no confirmó disponibilidad."
+                value={motivoCancelacion}
+              />
+            </label>
+          </div>
 
-            {compraProveedor
-              ?.fechaLimiteCancelacion ? (
-              <small>
-                Guardada:{" "}
-                {formatAdministrativeDate(
-                  compraProveedor
-                    .fechaLimiteCancelacion
-                )}
-              </small>
-            ) : null}
-          </label>
-        ) : null}
+          <div className="confirmacion-admin-actions">
+            <button
+              className="link-button"
+              disabled={isSaving}
+              onClick={() => setMode("FORM")}
+              type="button"
+            >
+              Volver
+            </button>
 
-        <div className="confirmacion-admin-auto-column">
-          <span>Aplicación automática</span>
-
-          {automaticColumn ? (
-            <>
-              <strong>
-                {getColumnLabel(automaticColumn)}
-              </strong>
-
-              <small>
-                El precio pagado se dividirá entre{" "}
-                {Math.max(
-                  Number(
-                    automaticColumn.multiplicador ?? 1
-                  ),
-                  1
-                )}
-                .
-              </small>
-            </>
-          ) : (
-            <small>
-              No se encontró una columna con precio para este servicio.
-            </small>
-          )}
-        </div>
-
-        <label>
-          <span>Precio total pagado</span>
-
-          <input
-            disabled={isSaving}
-            min="0"
-            onChange={(event) =>
-              setTotalPagado(
-                event.target.value
-              )
-            }
-            placeholder="0.00"
-            step="0.01"
-            type="number"
-            value={totalPagado}
-          />
-
-          {dividedPaidValue !== null ? (
-            <small>
-              Valor dividido:{" "}
-              {formatMoney(
-                dividedPaidValue,
-                purchaseCurrency
-              )}
-            </small>
+            <button
+              className="danger-button"
+              disabled={isSaving}
+              onClick={submitCancellation}
+              type="button"
+            >
+              {isSaving
+                ? "Cancelando..."
+                : "Confirmar cancelación"}
+            </button>
+          </div>
+        </section>
+      ) : (
+        <>
+          {mode === "REPLACE" ? (
+            <div className="confirmacion-admin-replace-notice">
+              Se creará una reserva nueva y la actual quedará
+              marcada como reemplazada. El código anterior se
+              conservará en el historial.
+            </div>
           ) : null}
-        </label>
 
-        <label>
-          <span>Moneda</span>
+          <div className="confirmacion-admin-grid">
+            <label>
+              <span>Estado operativo</span>
 
-          <input
-            disabled={isSaving}
-            maxLength={3}
-            minLength={3}
-            onChange={(event) =>
-              setPurchaseCurrency(
-                event.target.value
-                  .toUpperCase()
-                  .replace(/[^A-Z]/g, "")
-                  .slice(0, 3)
-              )
-            }
-            placeholder="USD"
-            required
-            value={purchaseCurrency}
-          />
-        </label>
+              <select
+                disabled={isSaving || isLegacy}
+                onChange={(event) =>
+                  setEstadoOperativo(
+                    event.target
+                      .value as CompraProveedorEstadoEditable
+                  )
+                }
+                value={estadoOperativo}
+              >
+                <option value="BORRADOR">
+                  Borrador
+                </option>
+                <option value="SOLICITADA">
+                  Solicitada
+                </option>
+                <option value="CONFIRMADA">
+                  Confirmada
+                </option>
+                <option value="REALIZADA">
+                  Realizada
+                </option>
+              </select>
 
-        <label className="confirmacion-admin-notes">
-          <span>Notas administrativas</span>
+              <small>{statusHelp}</small>
+            </label>
 
-          <textarea
-            disabled={isSaving}
-            onChange={(event) =>
-              setNotaAdministrativa(
-                event.target.value
-              )
-            }
-            placeholder="Condiciones, contacto del operador, observaciones de la compra..."
-            value={notaAdministrativa}
-          />
-        </label>
-      </div>
+            <label>
+              <span>Código del proveedor</span>
 
-      <div className="confirmacion-admin-actions">
-        <button
-          className="link-button"
-          disabled={isSaving}
-          onClick={onCancel}
-          type="button"
-        >
-          Cancelar
-        </button>
+              <input
+                disabled={isSaving || isLegacy}
+                maxLength={120}
+                onChange={(event) =>
+                  setCodigoProveedor(
+                    event.target.value
+                  )
+                }
+                placeholder="Ej: A121599"
+                value={codigoProveedor}
+              />
+            </label>
 
-        <button
-          className="primary-button"
-          disabled={
-            isSaving ||
-            purchaseCurrency.trim().length !== 3 ||
-            !automaticColumn
-          }
-          type="submit"
-        >
-          {isSaving
-            ? "Guardando..."
-            : compraProveedor
-              ? "Guardar cambios"
-              : "Crear confirmación"}
-        </button>
-      </div>
+            <label>
+              <span>Fecha de reserva</span>
+
+              <input
+                disabled={isSaving || isLegacy}
+                inputMode="numeric"
+                maxLength={10}
+                onChange={(event) =>
+                  setFechaReserva(
+                    normalizeDateInput(
+                      event.target.value
+                    )
+                  )
+                }
+                placeholder="dd/mm/yyyy"
+                value={fechaReserva}
+              />
+            </label>
+
+            <label>
+              <span>Fecha de confirmación</span>
+
+              <input
+                disabled={isSaving || isLegacy}
+                inputMode="numeric"
+                maxLength={10}
+                onChange={(event) =>
+                  setFechaConfirmacion(
+                    normalizeDateInput(
+                      event.target.value
+                    )
+                  )
+                }
+                placeholder="dd/mm/yyyy"
+                value={fechaConfirmacion}
+              />
+            </label>
+
+            <label>
+              <span>Fecha prevista de cobro</span>
+
+              <input
+                disabled={isSaving || isLegacy}
+                inputMode="numeric"
+                maxLength={10}
+                onChange={(event) =>
+                  setFechaPrevistaCobro(
+                    normalizeDateInput(
+                      event.target.value
+                    )
+                  )
+                }
+                placeholder="dd/mm/yyyy"
+                value={fechaPrevistaCobro}
+              />
+
+              <small>
+                Esta fecha programa el pago, pero no registra
+                un pago real.
+              </small>
+            </label>
+
+            <label>
+              <span>Política de cancelación</span>
+
+              <select
+                disabled={isSaving || isLegacy}
+                onChange={(event) =>
+                  setTipoCancelacion(
+                    event.target.value as
+                      | CompraProveedorCancelacionTipo
+                      | ""
+                  )
+                }
+                value={tipoCancelacion}
+              >
+                <option value="">
+                  Sin definir
+                </option>
+                <option value="GRATUITA_HASTA">
+                  Gratuita hasta una fecha
+                </option>
+                <option value="NO_REEMBOLSABLE">
+                  No reembolsable
+                </option>
+                <option value="CONDICIONES_ESPECIALES">
+                  Condiciones especiales
+                </option>
+              </select>
+            </label>
+
+            {showCancellationDeadline ? (
+              <label>
+                <span>
+                  Cancelación gratuita hasta
+                </span>
+
+                <input
+                  disabled={isSaving || isLegacy}
+                  inputMode="numeric"
+                  maxLength={10}
+                  onChange={(event) =>
+                    setFechaLimiteCancelacion(
+                      normalizeDateInput(
+                        event.target.value
+                      )
+                    )
+                  }
+                  placeholder="dd/mm/yyyy"
+                  value={fechaLimiteCancelacion}
+                />
+              </label>
+            ) : null}
+
+            <div className="confirmacion-admin-auto-column">
+              <span>Columna aplicada</span>
+
+              {automaticColumn ? (
+                <>
+                  <strong>
+                    {getColumnLabel(
+                      automaticColumn
+                    )}
+                  </strong>
+                  <small>
+                    Multiplicador:{" "}
+                    {Math.max(
+                      Number(
+                        automaticColumn
+                          .multiplicador ?? 1
+                      ),
+                      1
+                    )}
+                  </small>
+                </>
+              ) : (
+                <small>
+                  No se encontró una columna con precio.
+                </small>
+              )}
+            </div>
+
+            <label>
+              <span>Valor total contratado</span>
+
+              <input
+                disabled={isSaving || isLegacy}
+                min="0"
+                onChange={(event) =>
+                  setValorContratado(
+                    event.target.value
+                  )
+                }
+                placeholder="0.00"
+                step="0.01"
+                type="number"
+                value={valorContratado}
+              />
+
+              {contractedUnitValue !== null ? (
+                <small>
+                  Valor por unidad:{" "}
+                  {formatMoney(
+                    contractedUnitValue,
+                    purchaseCurrency
+                  )}
+                </small>
+              ) : null}
+            </label>
+
+            <label>
+              <span>Moneda</span>
+
+              <input
+                disabled={isSaving || isLegacy}
+                maxLength={3}
+                minLength={3}
+                onChange={(event) =>
+                  setPurchaseCurrency(
+                    event.target.value
+                      .toUpperCase()
+                      .replace(/[^A-Z]/g, "")
+                      .slice(0, 3)
+                  )
+                }
+                placeholder="USD"
+                required
+                value={purchaseCurrency}
+              />
+            </label>
+
+            {mode === "REPLACE" ? (
+              <label className="confirmacion-admin-notes">
+                <span>Motivo del reemplazo</span>
+
+                <textarea
+                  disabled={isSaving}
+                  onChange={(event) =>
+                    setMotivoReemplazo(
+                      event.target.value
+                    )
+                  }
+                  placeholder="Ej: El proveedor emitió un nuevo código o se cambió de operador."
+                  value={motivoReemplazo}
+                />
+              </label>
+            ) : null}
+
+            <label className="confirmacion-admin-notes">
+              <span>Notas administrativas</span>
+
+              <textarea
+                disabled={isSaving || isLegacy}
+                onChange={(event) =>
+                  setNotaAdministrativa(
+                    event.target.value
+                  )
+                }
+                placeholder="Condiciones, contacto del proveedor y observaciones..."
+                value={notaAdministrativa}
+              />
+            </label>
+          </div>
+
+          <div className="confirmacion-admin-actions confirmacion-admin-actions-spread">
+            <div className="confirmacion-admin-secondary-actions">
+              {newPurchase && mode === "FORM" ? (
+                <>
+                  <button
+                    className="link-button"
+                    disabled={isSaving}
+                    onClick={() =>
+                      setMode("HISTORY")
+                    }
+                    type="button"
+                  >
+                    Ver historial
+                  </button>
+
+                  <button
+                    className="link-button"
+                    disabled={isSaving}
+                    onClick={() =>
+                      setMode("REPLACE")
+                    }
+                    type="button"
+                  >
+                    Reemplazar reserva
+                  </button>
+
+                  <button
+                    className="danger-link-button"
+                    disabled={isSaving}
+                    onClick={() =>
+                      setMode("CANCEL")
+                    }
+                    type="button"
+                  >
+                    Cancelar reserva
+                  </button>
+                </>
+              ) : mode === "REPLACE" ? (
+                <button
+                  className="link-button"
+                  disabled={isSaving}
+                  onClick={() => {
+                    setMode("FORM");
+                    setMotivoReemplazo("");
+                  }}
+                  type="button"
+                >
+                  Volver
+                </button>
+              ) : null}
+            </div>
+
+            <div className="confirmacion-admin-primary-actions">
+              <button
+                className="link-button"
+                disabled={isSaving}
+                onClick={onClose}
+                type="button"
+              >
+                Cerrar
+              </button>
+
+              {!isLegacy ? (
+                <button
+                  className="primary-button"
+                  disabled={
+                    isSaving ||
+                    !automaticColumn ||
+                    purchaseCurrency
+                      .trim().length !== 3
+                  }
+                  onClick={
+                    mode === "REPLACE"
+                      ? submitReplacement
+                      : undefined
+                  }
+                  type={
+                    mode === "REPLACE"
+                      ? "button"
+                      : "submit"
+                  }
+                >
+                  {isSaving
+                    ? "Guardando..."
+                    : mode === "REPLACE"
+                      ? "Crear reemplazo"
+                      : newPurchase
+                        ? "Guardar cambios"
+                        : "Crear reserva"}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </>
+      )}
     </form>
   );
 }

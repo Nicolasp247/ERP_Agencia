@@ -18,6 +18,7 @@ import { reportesRouter } from "@/modules/reportes";
 import { servicioRouter } from "@/modules/servicio";
 import { tarifaRouter } from "@/modules/tarifa";
 import { confirmacionBuilderRouter } from "@/modules/expediente/confirmacion-builder";
+import { comprasProveedorRouter } from "@/modules/contabilidad/compras-proveedor";
 
 export const apiRouter = Router();
 
@@ -35,6 +36,7 @@ apiRouter.use("/auth", authRouter);
 apiRouter.use("/auditoria", auditoriaRouter);
 apiRouter.use("/cliente-agente", clienteAgenteRouter);
 apiRouter.use("/cliente", clienteRouter);
+apiRouter.use("/contabilidad/compras-proveedor", comprasProveedorRouter);
 apiRouter.use("/expedientes", expedienteRouter);
 apiRouter.use("/cotizacion-builder", cotizacionBuilderRouter);
 apiRouter.use("/confirmacion-builder", confirmacionBuilderRouter);

@@ -2,11 +2,18 @@
 
 import { Fragment, useMemo, useState } from "react";
 import type {
-  ConfirmacionPurchase,
-  ConfirmacionPurchaseFormValues
-} from "@/modules/expediente/confirmacion-builder/confirmacion-builder-api";
+  CompraProveedor,
+  CompraProveedorCancelValues,
+  CompraProveedorCreateValues,
+  CompraProveedorReplaceValues,
+  CompraProveedorUpdateValues
+} from "@/modules/contabilidad/compras-proveedor/compras-proveedor-api";
 
-import { ConfirmacionAdministrativePanel } from "@/pages/expediente/confirmacion-builder/components/ConfirmacionAdministrativePanel";
+import {
+  ConfirmacionAdministrativePanel,
+  type ConfirmacionAdministrativePurchase,
+  type LegacyConfirmacionPurchase
+} from "@/pages/expediente/confirmacion-builder/components/ConfirmacionAdministrativePanel";
 
 type ConfirmacionColumn = {
   id: number;
@@ -29,7 +36,7 @@ type ConfirmacionRow = {
   ordenDia: number;
   servicioIncluido: string;
   operador: string;
-  compraProveedor?: ConfirmacionPurchase | null;
+  compraProveedor?: ConfirmacionAdministrativePurchase | null;
   linkReserva?: string | null;
   notas?: string | null;
   tipoServicio?: string | null;
@@ -51,10 +58,25 @@ type ConfirmacionBuilderTableProps = {
   monedaCodigo: string;
   isSavingPurchase?: boolean;
 
-  onUpdateItemPurchase: (
+  onCreateItemPurchase: (
     itemId: number,
-    values: ConfirmacionPurchaseFormValues
-  ) => void;
+    values: CompraProveedorCreateValues
+  ) => Promise<void>;
+
+  onUpdateItemPurchase: (
+    proveedorReservaId: number,
+    values: CompraProveedorUpdateValues
+  ) => Promise<void>;
+
+  onCancelItemPurchase: (
+    proveedorReservaId: number,
+    values: CompraProveedorCancelValues
+  ) => Promise<void>;
+
+  onReplaceItemPurchase: (
+    proveedorReservaId: number,
+    values: CompraProveedorReplaceValues
+  ) => Promise<void>;
   onDeleteItem: (itemId: number) => void;
   onMoveItem: (itemId: number, direction: "UP" | "DOWN") => void;
   onUpdateItemNotes: (
@@ -266,6 +288,65 @@ function getPrice(row: ConfirmacionRow, columnId: number) {
   return row.precios.find((price) => price.columnId === columnId);
 }
 
+function isNewPurchase(
+  purchase:
+    | ConfirmacionAdministrativePurchase
+    | null
+    | undefined
+): purchase is CompraProveedor {
+  return Boolean(
+    purchase &&
+      "estadoOperativo" in purchase &&
+      "codigoProveedor" in purchase
+  );
+}
+
+function isLegacyPurchase(
+  purchase:
+    | ConfirmacionAdministrativePurchase
+    | null
+    | undefined
+): purchase is LegacyConfirmacionPurchase {
+  return Boolean(
+    purchase &&
+      "codigoConfirmacionProveedor" in purchase
+  );
+}
+
+function getPurchaseUnitValue(
+  purchase:
+    | ConfirmacionAdministrativePurchase
+    | null
+    | undefined
+) {
+  if (isNewPurchase(purchase)) {
+    return purchase.valorContratadoUnidad;
+  }
+
+  if (isLegacyPurchase(purchase)) {
+    return purchase.valorPagadoUnidad;
+  }
+
+  return null;
+}
+
+function getPurchaseCode(
+  purchase:
+    | ConfirmacionAdministrativePurchase
+    | null
+    | undefined
+) {
+  if (isNewPurchase(purchase)) {
+    return purchase.codigoProveedor;
+  }
+
+  if (isLegacyPurchase(purchase)) {
+    return purchase.codigoConfirmacionProveedor;
+  }
+
+  return null;
+}
+
 function purchaseAppliesToColumn(
   row: ConfirmacionRow,
   columnId: number
@@ -284,7 +365,10 @@ export function ConfirmacionBuilderTable({
   isSavingPurchase = false,
   onDeleteItem,
   onMoveItem,
+  onCreateItemPurchase,
   onUpdateItemPurchase,
+  onCancelItemPurchase,
+  onReplaceItemPurchase,
   onUpdateItemNotes,
   onUpdateItemPrices
 }: ConfirmacionBuilderTableProps) {
@@ -313,11 +397,51 @@ export function ConfirmacionBuilderTable({
     setAdministrativeRow(null);
   }
 
-  function saveAdministrativePanel(
+  async function createAdministrativePurchase(
     row: ConfirmacionRow,
-    values: ConfirmacionPurchaseFormValues
+    values: CompraProveedorCreateValues
   ) {
-    onUpdateItemPurchase(row.id, values);
+    await onCreateItemPurchase(
+      row.id,
+      values
+    );
+
+    setAdministrativeRow(null);
+  }
+
+  async function updateAdministrativePurchase(
+    proveedorReservaId: number,
+    values: CompraProveedorUpdateValues
+  ) {
+    await onUpdateItemPurchase(
+      proveedorReservaId,
+      values
+    );
+
+    setAdministrativeRow(null);
+  }
+
+  async function cancelAdministrativePurchase(
+    proveedorReservaId: number,
+    values: CompraProveedorCancelValues
+  ) {
+    await onCancelItemPurchase(
+      proveedorReservaId,
+      values
+    );
+
+    setAdministrativeRow(null);
+  }
+
+  async function replaceAdministrativePurchase(
+    proveedorReservaId: number,
+    values: CompraProveedorReplaceValues
+  ) {
+    await onReplaceItemPurchase(
+      proveedorReservaId,
+      values
+    );
+
     setAdministrativeRow(null);
   }
 
@@ -465,8 +589,9 @@ export function ConfirmacionBuilderTable({
         );
 
       const paidValue = purchaseApplies
-        ? row.compraProveedor
-            ?.valorPagadoUnidad ?? null
+        ? getPurchaseUnitValue(
+            row.compraProveedor
+          )
         : null;
 
       const paidCurrency =
@@ -660,13 +785,13 @@ export function ConfirmacionBuilderTable({
       <span className="confirmacion-operator-content">
         <strong>{row.operador}</strong>
 
-        {row.compraProveedor
-          ?.codigoConfirmacionProveedor ? (
+        {getPurchaseCode(
+          row.compraProveedor
+        ) ? (
           <span className="confirmacion-operator-code">
-            {
+            {getPurchaseCode(
               row.compraProveedor
-                .codigoConfirmacionProveedor
-            }
+            )}
           </span>
         ) : (
           <span className="confirmacion-operator-pending">
@@ -910,12 +1035,21 @@ export function ConfirmacionBuilderTable({
               }
               monedaCodigo={monedaCodigo}
               isSaving={isSavingPurchase}
-              onCancel={closeAdministrativePanel}
-              onSave={(values) =>
-                saveAdministrativePanel(
+              onClose={closeAdministrativePanel}
+              onCreate={(values) =>
+                createAdministrativePurchase(
                   administrativeRow,
                   values
                 )
+              }
+              onUpdate={
+                updateAdministrativePurchase
+              }
+              onCancelReservation={
+                cancelAdministrativePurchase
+              }
+              onReplace={
+                replaceAdministrativePurchase
               }
             />
           </div>

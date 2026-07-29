@@ -69,6 +69,30 @@ export class ConfirmacionBuilderLifecycleRepository {
         return null;
       }
 
+      const [
+        legacyPurchasesCount,
+        providerBookingsCount
+      ] = await Promise.all([
+        tx.compraProveedor.count({
+          where: {
+            idReserva: reserva.id
+          }
+        }),
+
+        tx.proveedorReserva.count({
+          where: {
+            idReserva: reserva.id
+          }
+        })
+      ]);
+
+      if (
+        legacyPurchasesCount > 0 ||
+        providerBookingsCount > 0
+      ) {
+        return "HAS_ADMINISTRATIVE_HISTORY" as const;
+      }
+
       const reservaItemIds = reserva.items.map((item) => item.id);
 
       if (reservaItemIds.length > 0) {
