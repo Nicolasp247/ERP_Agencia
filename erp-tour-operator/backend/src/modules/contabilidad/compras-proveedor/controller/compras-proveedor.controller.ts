@@ -14,6 +14,7 @@ import {
   comprasProveedorPaymentCreateSchema,
   comprasProveedorPaymentUpdateSchema,
   comprasProveedorPaymentVoidSchema,
+  comprasProveedorListQuerySchema,
   comprasProveedorRefundCreateSchema,
   comprasProveedorReplaceSchema,
   comprasProveedorUpdateSchema
@@ -22,6 +23,23 @@ import {
 import { comprasProveedorService } from "@/modules/contabilidad/compras-proveedor/service/compras-proveedor.service";
 
 export class ComprasProveedorController {
+  list = async (
+    req: Request,
+    res: Response
+  ) => {
+    const query =
+      comprasProveedorListQuerySchema.parse(
+        req.query
+      );
+
+    const data =
+      await comprasProveedorService.list(
+        query
+      );
+
+    res.json(ok(data));
+  };
+
   getById = async (
     req: Request,
     res: Response

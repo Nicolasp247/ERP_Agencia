@@ -8,6 +8,8 @@ import { AgenteFormPage } from "@/pages/agentes/AgenteFormPage";
 import { AgentesListPage } from "@/pages/agentes/AgentesListPage";
 import { CotizacionBuilderPage } from "@/pages/expediente/cotizacion-builder/CotizacionBuilderPage";
 import { ConfirmacionBuilderPage } from "@/pages/expediente/confirmacion-builder/ConfirmacionBuilderPage";
+import { CompraProveedorDetailPage } from "@/pages/contabilidad/compras-proveedor/CompraProveedorDetailPage";
+import { ComprasProveedorPage } from "@/pages/contabilidad/compras-proveedor/ComprasProveedorPage";
 import { ClienteDetailPage } from "@/pages/ClienteDetailPage";
 import { ClienteFormPage } from "@/pages/ClienteFormPage";
 import { ClientesListPage } from "@/pages/ClientesListPage";
@@ -193,6 +195,24 @@ export function AppRouter() {
         <Route path="/expedientes/:id" element={<Protected><ExpedienteDetailPage /></Protected>} />
         <Route path="/expedientes/:id/versiones/:versionId/construir" element={<Protected><CotizacionBuilderPage /></Protected>} />
         <Route path="/expedientes/:id/versiones/:versionId/confirmacion" element={<Protected><ConfirmacionBuilderPage /></Protected>} />
+
+        <Route
+          element={
+            <Protected>
+              <ComprasProveedorPage />
+            </Protected>
+          }
+          path="/contabilidad/compras-proveedor"
+        />
+
+        <Route
+          element={
+            <Protected>
+              <CompraProveedorDetailPage />
+            </Protected>
+          }
+          path="/contabilidad/compras-proveedor/:id"
+        />
 
         <Route
           element={

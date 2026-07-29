@@ -400,3 +400,87 @@ export type ComprasProveedorPaymentVoidInput =
   z.infer<
     typeof comprasProveedorPaymentVoidSchema
   >;
+
+const comprasProveedorListOperationalStateSchema = z.enum([
+  "BORRADOR",
+  "SOLICITADA",
+  "CONFIRMADA",
+  "CANCELADA",
+  "REEMPLAZADA",
+  "REALIZADA"
+]);
+
+const comprasProveedorFinancialStateSchema = z.enum([
+  "SIN_PAGAR",
+  "PAGO_PROGRAMADO",
+  "PAGO_PARCIAL",
+  "PAGADO",
+  "FALTA_COP",
+  "REEMBOLSADO"
+]);
+
+const booleanQuerySchema = z
+  .union([
+    z.boolean(),
+    z.enum(["true", "false"])
+  ])
+  .transform((value) =>
+    typeof value === "boolean"
+      ? value
+      : value === "true"
+  );
+
+export const comprasProveedorListQuerySchema =
+  z.object({
+    search: z
+      .string()
+      .trim()
+      .max(160)
+      .optional(),
+
+    estadoOperativo:
+      comprasProveedorListOperationalStateSchema
+        .optional(),
+
+    estadoFinanciero:
+      comprasProveedorFinancialStateSchema
+        .optional(),
+
+    soloVigentes:
+      booleanQuerySchema
+        .default(true),
+
+    soloPendientes:
+      booleanQuerySchema
+        .default(false),
+
+    fechaCobroDesde:
+      dateStringSchema.optional(),
+
+    fechaCobroHasta:
+      dateStringSchema.optional(),
+
+    fechaServicioDesde:
+      dateStringSchema.optional(),
+
+    fechaServicioHasta:
+      dateStringSchema.optional(),
+
+    page: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(1),
+
+    pageSize: z.coerce
+      .number()
+      .int()
+      .min(10)
+      .max(100)
+      .default(25)
+  });
+
+export type ComprasProveedorListQuery =
+  z.infer<
+    typeof comprasProveedorListQuerySchema
+  >;

@@ -38,6 +38,13 @@ comprasProveedorRouter.use(
 );
 
 comprasProveedorRouter.get(
+  "/",
+  asyncHandler(
+    comprasProveedorController.list
+  )
+);
+
+comprasProveedorRouter.get(
   "/items/:itemId",
   validateParams(itemParamsSchema),
   asyncHandler(

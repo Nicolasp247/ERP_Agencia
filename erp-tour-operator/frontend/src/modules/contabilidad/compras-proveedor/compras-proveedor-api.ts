@@ -332,3 +332,167 @@ export async function voidCompraProveedorPago(
 
   return response.data.data;
 }
+
+export type CompraProveedorListItem = {
+  id: number;
+  codigoInterno: string;
+  codigoProveedor: string | null;
+  estadoOperativo: CompraProveedorEstadoOperativo;
+  estadoFinanciero: CompraProveedorEstadoFinanciero;
+  esVigente: boolean;
+
+  fechaReserva: string | null;
+  fechaPrevistaCobro: string | null;
+  fechaLimiteCancelacion: string | null;
+  fechaServicio: string | null;
+
+  proveedor: {
+    id: number;
+    codigo: string | null;
+    nombreComercial: string | null;
+  } | null;
+
+  expediente: {
+    id: number;
+    codigo: string;
+    nombre: string;
+  };
+
+  reserva: {
+    id: number;
+    codigoReserva: string;
+    cliente: {
+      id: number;
+      nombreCompleto: string;
+    } | null;
+  };
+
+  servicio: string;
+
+  valorContratado: number | null;
+  totalPagado: number;
+  totalReembolsado: number;
+  saldoPendiente: number | null;
+  monedaCodigo: string;
+};
+
+export type CompraProveedorListFilters = {
+  search?: string;
+  estadoOperativo?: CompraProveedorEstadoOperativo | "";
+  estadoFinanciero?: CompraProveedorEstadoFinanciero | "";
+  soloVigentes?: boolean;
+  soloPendientes?: boolean;
+  fechaCobroDesde?: string;
+  fechaCobroHasta?: string;
+  fechaServicioDesde?: string;
+  fechaServicioHasta?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type CompraProveedorListResponse = {
+  items: CompraProveedorListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export async function getComprasProveedorList(
+  filters: CompraProveedorListFilters = {}
+) {
+  const params = new URLSearchParams();
+
+  if (filters.search?.trim()) {
+    params.set(
+      "search",
+      filters.search.trim()
+    );
+  }
+
+  if (filters.estadoOperativo) {
+    params.set(
+      "estadoOperativo",
+      filters.estadoOperativo
+    );
+  }
+
+  if (filters.estadoFinanciero) {
+    params.set(
+      "estadoFinanciero",
+      filters.estadoFinanciero
+    );
+  }
+
+  params.set(
+    "soloVigentes",
+    String(
+      filters.soloVigentes ?? true
+    )
+  );
+
+  params.set(
+    "soloPendientes",
+    String(
+      filters.soloPendientes ?? false
+    )
+  );
+
+  if (filters.fechaCobroDesde) {
+    params.set(
+      "fechaCobroDesde",
+      filters.fechaCobroDesde
+    );
+  }
+
+  if (filters.fechaCobroHasta) {
+    params.set(
+      "fechaCobroHasta",
+      filters.fechaCobroHasta
+    );
+  }
+
+  if (filters.fechaServicioDesde) {
+    params.set(
+      "fechaServicioDesde",
+      filters.fechaServicioDesde
+    );
+  }
+
+  if (filters.fechaServicioHasta) {
+    params.set(
+      "fechaServicioHasta",
+      filters.fechaServicioHasta
+    );
+  }
+
+  params.set(
+    "page",
+    String(filters.page ?? 1)
+  );
+
+  params.set(
+    "pageSize",
+    String(filters.pageSize ?? 25)
+  );
+
+  const response = await api.get<
+    ApiResponse<CompraProveedorListResponse>
+  >(
+    `/contabilidad/compras-proveedor?${params.toString()}`
+  );
+
+  return response.data.data;
+}
+
+export async function getCompraProveedorById(
+  proveedorReservaId: number
+) {
+  const response = await api.get<
+    ApiResponse<CompraProveedor>
+  >(
+    `/contabilidad/compras-proveedor/reservas/${proveedorReservaId}`
+  );
+
+  return response.data.data;
+}

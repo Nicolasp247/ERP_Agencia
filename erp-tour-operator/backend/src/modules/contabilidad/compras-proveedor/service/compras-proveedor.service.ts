@@ -5,6 +5,7 @@ import { AppError } from "@/core/errors/app-error";
 import type {
   ComprasProveedorCancelInput,
   ComprasProveedorCreateInput,
+  ComprasProveedorListQuery,
   ComprasProveedorPaymentCreateInput,
   ComprasProveedorPaymentUpdateInput,
   ComprasProveedorPaymentVoidInput,
@@ -17,10 +18,31 @@ import {
   toCompraProveedorHistory
 } from "@/modules/contabilidad/compras-proveedor/mapper/compras-proveedor.mapper";
 
+import {
+  toCompraProveedorList
+} from "@/modules/contabilidad/compras-proveedor/mapper/compras-proveedor-list.mapper";
+
+import { comprasProveedorListRepository } from "@/modules/contabilidad/compras-proveedor/repository/compras-proveedor-list.repository";
 import { comprasProveedorReadRepository } from "@/modules/contabilidad/compras-proveedor/repository/compras-proveedor-read.repository";
 import { comprasProveedorRepository } from "@/modules/contabilidad/compras-proveedor/repository/compras-proveedor.repository";
 
 export class ComprasProveedorService {
+  async list(
+    filters: ComprasProveedorListQuery
+  ) {
+    const result =
+      await comprasProveedorListRepository.findPage(
+        filters
+      );
+
+    return toCompraProveedorList(
+      result.items,
+      result.total,
+      filters.page,
+      filters.pageSize
+    );
+  }
+
   async getById(
     proveedorReservaId: number
   ) {
